@@ -21,6 +21,7 @@ ui <- dashboardPage(
 		uiOutput("meteridSelectBox"),
 		radioButtons('normalizationRadioButton', 'Normalization',
 			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
+		sliderInput('windowSizeSlider', 'Window Size', 1, 30, 5, step = 1),
 
 		hr(),
 
@@ -101,7 +102,7 @@ server <- function(input, output) {
 
 	neuralNetworkData <- reactive({
 		df <- dataset()
-		numInputNeurons <- 5
+		numInputNeurons <- input$windowSizeSlider
 
 		if (is.null(df))
 		{
@@ -111,11 +112,8 @@ server <- function(input, output) {
 		numCols = numInputNeurons + 1
 		numRows = length(df$consumption) - numInputNeurons
 
-		d <- data.frame(xt = df$consumption[numCols:400])
-		for (i in 1:numInputNeurons)
-		{
-			d[paste('xt', i, sep = '')] <- df$consumption[(numCols - i):(length(df$consumption) - i)]
-		}
+		d <- as.data.frame(rollapply(df$consumption, width = numInputNeurons+1, FUN = abs, by = 1), by.column = TRUE)
+		names(d) <- paste0('xt', 0:numInputNeurons)
 		d
 	})
 
@@ -128,7 +126,7 @@ server <- function(input, output) {
 		}
 
 		n <- names(nnData)
-		f <- as.formula(paste("xt ~ ", paste(n[!n %in% "xt"], collapse = " + ")))
+		f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
 
 		neuralnet(f, nnData, hidden=0, rep = 10, linear.output=FALSE)
 	})
