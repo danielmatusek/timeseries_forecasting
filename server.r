@@ -117,7 +117,7 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  
-	  d <- as.data.frame(rollapply(df$consumption, width = windowSize+1, FUN = abs, by = 1), by.column = TRUE)
+	  d <- as.data.frame(rollapply(df$consumption, width = windowSize+1, FUN = identity, by = 1), by.column = TRUE)
 	  names(d) <- paste0('xt', 0:windowSize)
 	  d
 	})
@@ -156,17 +156,46 @@ server <- function(input, output) {
 	})
 	
 	neuralNetworkTest <- reactive({
+	  db <- database()
 	  network <- neuralNetwork()
 	  windows = windowSplit()
+	  meterid <- input$meteridSelect
+	  normalization <- input$normalizationRadioButton
 	  
 	  if (is.null(network))
 	  {
 	    return(NULL)
 	  }
 	  
+	  expected <- windows$trainset$xt0
 	  windows$trainset$xt0 <- NULL
 	  
-	  compute(network, windows$trainset)
+	  n <- compute(network, windows$trainset)
+	  n$net.expected <- expected
+	  
+	  
+	  scale <- 1
+	  offset <- 0
+	  if (normalization == 'zScore')
+	  {
+	    df <- db[[meterid]]
+	    scale <- sd(df$consumption)
+	    offset <- mean(df$consumption)
+	  }
+	  else if (normalization == 'minmax')
+	  {
+	    df <- db[[meterid]]
+	    maxs <- max(df$consumption)
+	    mins <- min(df$consumption)
+	    
+	    scale <- maxs - mins
+	    offset <- mins
+	  }
+	  
+	  n$net.result <- n$net.result * scale + offset
+	  n$net.expected <- n$net.expected * scale + offset
+	  
+	  n
 	})
 
 	output$meteridSelectBox <- renderUI({
@@ -208,7 +237,10 @@ server <- function(input, output) {
 		plot(nn, rep = "best")
 	})
 	
-	output$neuralNetworkTestResultsTable <- renderDataTable(neuralNetworkTest()$net.result)
+	output$neuralNetworkTestResultsTable <- renderDataTable({
+	  result <- neuralNetworkTest()
+	  data.frame(expected = result$net.expected, result = result$net.result)
+	})
 }
 
 shinyApp(ui, server)
