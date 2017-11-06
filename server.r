@@ -2,6 +2,7 @@ library(shiny)
 library(shinydashboard)
 library(plotly)
 library(neuralnet)
+library(zoo)
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
@@ -22,6 +23,7 @@ ui <- dashboardPage(
 		radioButtons('normalizationRadioButton', 'Normalization',
 			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
 		sliderInput('windowSizeSlider', 'Window Size', 1, 30, 5, step = 1),
+		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, step = 1),
 
 		hr(),
 
@@ -36,21 +38,27 @@ ui <- dashboardPage(
 			tabItem(tabName = "data",
 				tabBox(width = NULL,
 					tabPanel("Chart",
-						plotlyOutput("dataChart", height="500px")
+						plotlyOutput("dataChart", height = "600px")
 					),
 					tabPanel("Table",
-						dataTableOutput("table")
-					)
+						dataTableOutput("dataTable")
+					),
+				  tabPanel('Train Data',
+  				  dataTableOutput('trainDataTable')
+          ),
+				  tabPanel('Test Data',
+  				  dataTableOutput('testDataTable')
+				  )
 				)
 			),
 
 			tabItem(tabName = "neuralNetwork",
 				tabBox(width = NULL,
 					tabPanel("Chart",
-						plotOutput("neuralNetworkChart", height="500px")
+						plotOutput("neuralNetworkChart", height = "600px")
 					),
-					tabPanel("Tabelle",
-						dataTableOutput("neuralNetworkTable")
+					tabPanel("Test Results",
+						dataTableOutput("neuralNetworkTestResultsTable")
 					)
 				)
 			)
@@ -99,36 +107,66 @@ server <- function(input, output) {
 			data.frame(day = df$day, consumption = df$consumption)
 		}
 	})
-
-	neuralNetworkData <- reactive({
-		df <- dataset()
-		numInputNeurons <- input$windowSizeSlider
-
-		if (is.null(df))
-		{
-			return(NULL)
-		}
-
-		numCols = numInputNeurons + 1
-		numRows = length(df$consumption) - numInputNeurons
-
-		d <- as.data.frame(rollapply(df$consumption, width = numInputNeurons+1, FUN = abs, by = 1), by.column = TRUE)
-		names(d) <- paste0('xt', 0:numInputNeurons)
-		d
+	
+	windows <- reactive({
+	  df <- dataset()
+	  windowSize <- input$windowSizeSlider
+	  
+	  if (is.null(df))
+	  {
+	    return(NULL)
+	  }
+	  
+	  d <- as.data.frame(rollapply(df$consumption, width = windowSize+1, FUN = abs, by = 1), by.column = TRUE)
+	  names(d) <- paste0('xt', 0:windowSize)
+	  d
+	})
+	
+	windowSplit <- reactive({
+	  ws <- windows()
+	  dataSplitFactor <- input$dataSplitSlider;
+	  
+	  if (is.null(ws))
+	  {
+	    return(NULL)
+	  }
+	  
+	  index <- 1:nrow(ws)
+	  trainindex <- sample(index, trunc(length(index) * dataSplitFactor / 100))
+	  trainset <- ws[trainindex, ]
+	  testset <- ws[-trainindex, ]
+	  
+	  list(trainset = trainset, testset = testset)
 	})
 
 	neuralNetwork <- reactive({
-		nnData = neuralNetworkData()
+		nnData = windowSplit()
 
 		if (is.null(nnData))
 		{
 			return(NULL)
 		}
+		
+		nnData <- nnData$trainset
 
 		n <- names(nnData)
 		f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
 
-		neuralnet(f, nnData, hidden=0, rep = 10, linear.output=FALSE)
+		neuralnet(f, nnData, hidden = 0, rep = 10, linear.output = FALSE)
+	})
+	
+	neuralNetworkTest <- reactive({
+	  network <- neuralNetwork()
+	  windows = windowSplit()
+	  
+	  if (is.null(network))
+	  {
+	    return(NULL)
+	  }
+	  
+	  windows$trainset$xt0 <- NULL
+	  
+	  compute(network, windows$trainset)
 	})
 
 	output$meteridSelectBox <- renderUI({
@@ -154,6 +192,10 @@ server <- function(input, output) {
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
 	})
+	
+	output$dataTable <- renderDataTable(dataset())
+	output$trainDataTable <- renderDataTable(windowSplit()$trainset)
+	output$testDataTable <- renderDataTable(windowSplit()$testset)
 
 	output$neuralNetworkChart <- renderPlot({
 		nn <- neuralNetwork()
@@ -165,6 +207,8 @@ server <- function(input, output) {
 
 		plot(nn, rep = "best")
 	})
+	
+	output$neuralNetworkTestResultsTable <- renderDataTable(neuralNetworkTest()$net.result)
 }
 
 shinyApp(ui, server)
