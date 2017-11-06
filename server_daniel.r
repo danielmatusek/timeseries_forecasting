@@ -6,6 +6,7 @@ library(shiny)
 library(shinydashboard)
 library(plotly)
 library(neuralnet)
+require(stats)
 
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
