@@ -29,6 +29,7 @@ ui <- dashboardPage(
 			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
 		sliderInput('windowSizeSlider', 'Window Size', 1, 30, 5, step = 1),
 		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, step = 1),
+		sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1),
 
 		hr(),
 
@@ -73,7 +74,10 @@ ui <- dashboardPage(
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,
 			               tabPanel("Chart",
-			                        plotOutput("aRChart", height = "600px")
+			                        plotlyOutput("aRChart", height = "600px")
+			               ),
+			               tabPanel("Forecast",
+			                        plotlyOutput("aRCForecast", height = "600px")
 			               ),
 			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
 			        )
@@ -83,6 +87,7 @@ ui <- dashboardPage(
 )
 
 server <- function(input, output) {
+  
 	database <- reactive({
 		file <- input$dataFile
 
@@ -263,49 +268,93 @@ server <- function(input, output) {
 
 	aRModel <- reactive({
 	    meterid <- input$meteridSelect
+	    dataSplitFactor <- input$dataSplitSlider / 100;
 	    
 	    if(is.null(meterid))
 	    {
 	      return(NULL)
 	    }
 	    
-	    db <- database()
+	    db <- dataset()
 	    
 	    if(is.null(db))
 	    {
 	      return(NULL)
 	    }
 	    
-	    df = db[[meterid]]
+	    
+	    
+	    df = db$consumption
 	    winSize = input$windowSizeSlider
-	    aRModel = arima(ts(df$consumption), order= c(winSize,0,0))
-	    forecast(aRModel)
+	    numPredictValues = input$dataPrediction
+	    
+	    to = round(length(df) * dataSplitFactor)
+	    trainData = df[1: to]
+	    aRModel = arima(ts(trainData,start = 1, end = to), order= c(winSize,0,0))
+	    forecast(aRModel, h = numPredictValues)
 	  })
 	
-	output$aRChart <- renderPlot({
-	    
+	output$aRChart <- renderPlotly({
+	  
 	    fc = aRModel()
 	    
 	    if (is.null(fc))
 	    {
 	      return(NULL)
 	    }
+	   
+	    df = data.frame(fitted = fc$fitted, act = fc$x)
 	    
-	    plot(fc, xlab = "day", ylab = "consumption")
+	    p <- plot_ly(df , y = ~fitted, type ="scatter", name= "fitted", mode= "lines+markers")%>%
+	      add_trace(y = ~act, name = 'actual', mode = 'lines+markers')
+	    p$elementId <- NULL
+	    p
 	    
 	  })
 
 	output$ARResultsTable <- renderDataTable({
 	  
 	  fc = aRModel()
-	  
-	  
 	  data.frame(expected = fc$x , result = fc$fitted)
+	})
+
+	output$aRCForecast <- renderPlotly({
 	  
+	  dataSplitFactor <- input$dataSplitSlider / 100;
+	  fc = aRModel()
+	  if (is.null(fc))
+	  {
+	    return(NULL)
+	  }
+	  
+	  db <- dataset()
+	  
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  
+	  
+	  
+	  df = db$consumption
+	  
+	  act = 0
+	  numTrain = round(length(df) * dataSplitFactor)
+	  
+	  if((length(df) - numTrain) > input$dataPrediction)
+	  {
+	    act = db$consumption[numTrain+1 : input$dataPrediction]
+	  }
+	  
+	  df = data.frame(actual = act, forecast = fc$mean)
+	  
+	  p <- plot_ly(df , y = ~forecast, type ="scatter", name= "Forecast Values", mode= "lines+markers")%>%
+	    add_trace(y = ~actual, name = 'Actual Values', mode = 'lines+markers')
+	  p$elementId <- NULL
+	  p
 	  
 	  
 	})
-
 	
 
 }
