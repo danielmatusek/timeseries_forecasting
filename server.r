@@ -3,6 +3,9 @@ library(shinydashboard)
 library(plotly)
 library(neuralnet)
 library(zoo)
+require(ggplot2)
+require(forecast)
+
 
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
@@ -31,7 +34,9 @@ ui <- dashboardPage(
 
 		sidebarMenu(id="tabs",
 			menuItem("Data", tabName = "data", icon = icon("database")),
-			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90"))
+			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
+			
 		)
 	),
 
@@ -63,6 +68,15 @@ ui <- dashboardPage(
 						dataTableOutput("neuralNetworkTestResultsTable")
 					)
 				)
+			),
+			
+			tabItem(tabName = "aRModel",
+			        tabBox(width = NULL,
+			               tabPanel("Chart",
+			                        plotOutput("aRChart", height = "600px")
+			               ),
+			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
+			        )
 			)
 		)
 	)
@@ -227,7 +241,9 @@ server <- function(input, output) {
 	output$dataTable <- renderDataTable(dataset())
 	output$trainDataTable <- renderDataTable(windowSplit()$trainset)
 	output$testDataTable <- renderDataTable(windowSplit()$testset)
-
+  
+	
+	
 	output$neuralNetworkChart <- renderPlot({
 		nn <- neuralNetwork()
 
@@ -243,6 +259,55 @@ server <- function(input, output) {
 	  result <- neuralNetworkTest()
 	  data.frame(expected = result$net.expected, result = result$net.result)
 	})
+	
+
+	aRModel <- reactive({
+	    meterid <- input$meteridSelect
+	    
+	    if(is.null(meterid))
+	    {
+	      return(NULL)
+	    }
+	    
+	    db <- database()
+	    
+	    if(is.null(db))
+	    {
+	      return(NULL)
+	    }
+	    
+	    df = db[[meterid]]
+	    winSize = input$windowSizeSlider
+	    aRModel = arima(ts(df$consumption), order= c(winSize,0,0))
+	    forecast(aRModel)
+	  })
+	
+	output$aRChart <- renderPlot({
+	    
+	    fc = aRModel()
+	    
+	    if (is.null(fc))
+	    {
+	      return(NULL)
+	    }
+	    
+	    plot(fc, xlab = "day", ylab = "consumption")
+	    
+	  })
+
+	output$ARResultsTable <- renderDataTable({
+	  
+	  fc = aRModel()
+	  
+	  
+	  data.frame(expected = fc$x , result = fc$fitted)
+	  
+	  
+	  
+	})
+
+	
+
 }
 
 shinyApp(ui, server)
