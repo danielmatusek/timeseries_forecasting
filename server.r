@@ -4,8 +4,11 @@ library(plotly)
 library(neuralnet)
 library(zoo)
 library(ggplot2)
+library(forecast)
+
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
+
 
 ui <- dashboardPage(
 	dashboardHeader(title = "FPADB"),
@@ -25,12 +28,15 @@ ui <- dashboardPage(
 			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
 		sliderInput('windowSizeSlider', 'Window Size', 1, 30, 5, step = 1),
 		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, step = 1),
+		sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1),
 
 		hr(),
 
 		sidebarMenu(id="tabs",
 			menuItem("Data", tabName = "data", icon = icon("database")),
-			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90"))
+			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
+			
 		)
 	),
 
@@ -69,6 +75,18 @@ ui <- dashboardPage(
 				    dataTableOutput('neuralNetworkCrossValidationTable')
 				  )
 				)
+			),
+			
+			tabItem(tabName = "aRModel",
+			        tabBox(width = NULL,
+			               tabPanel("Chart",
+			                        plotlyOutput("aRChart", height = "600px")
+			               ),
+			               tabPanel("Forecast",
+			                        plotlyOutput("aRCForecast", height = "600px")
+			               ),
+			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
+			        )
 			)
 		)
 	)
@@ -87,7 +105,7 @@ trainNeuralNetwork <- function(trainset) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   
-  neuralnet(f, trainset, hidden = c(5, 3), linear.output = TRUE)
+  neuralnet(f, trainset, hidden = 0, linear.output = TRUE)
 }
 
 testNeuralNetwork <- function(neuralNetwork, testset, scale, offset) {
@@ -104,6 +122,7 @@ testNeuralNetwork <- function(neuralNetwork, testset, scale, offset) {
 }
 
 server <- function(input, output) {
+  
 	database <- reactive({
 		file <- input$dataFile
 
@@ -286,7 +305,9 @@ server <- function(input, output) {
 	output$dataTable <- renderDataTable(dataset())
 	output$trainDataTable <- renderDataTable(windowSplit()$trainset)
 	output$testDataTable <- renderDataTable(windowSplit()$testset)
-
+  
+	
+	
 	output$neuralNetworkChart <- renderPlot({
 		nn <- neuralNetwork()
 
@@ -330,6 +351,99 @@ server <- function(input, output) {
 	})
 	
 	output$neuralNetworkCrossValidationTable <- renderDataTable(data.frame(MSE = neuralNetworkCrossValidation()))
+
+	aRModel <- reactive({
+	    meterid <- input$meteridSelect
+	    dataSplitFactor <- input$dataSplitSlider / 100;
+	    
+	    if(is.null(meterid))
+	    {
+	      return(NULL)
+	    }
+	    
+	    db <- dataset()
+	    
+	    if(is.null(db))
+	    {
+	      return(NULL)
+	    }
+	    
+	    
+	    
+	    df = db$consumption
+	    winSize = input$windowSizeSlider
+	    numPredictValues = input$dataPrediction
+	    
+	    to = round(length(df) * dataSplitFactor)
+	    trainData = df[1: to]
+	    aRModel = arima(ts(trainData,start = 1, end = to), order= c(winSize,0,0))
+	    forecast(aRModel, h = numPredictValues)
+	  })
+	
+	output$aRChart <- renderPlotly({
+	  
+	    fc = aRModel()
+	    
+	    if (is.null(fc))
+	    {
+	      return(NULL)
+	    }
+	   
+	    df = data.frame(fitted = fc$fitted, act = fc$x)
+	    
+	    p <- plot_ly(df , y = ~fitted, type ="scatter", name= "fitted", mode= "lines+markers")%>%
+	      add_trace(y = ~act, name = 'actual', mode = 'lines+markers')
+	    p$elementId <- NULL
+	    p
+	    
+	  })
+
+	output$ARResultsTable <- renderDataTable({
+	  
+	  fc = aRModel()
+	  data.frame(expected = fc$x , result = fc$fitted)
+	})
+
+	output$aRCForecast <- renderPlotly({
+	  
+	  dataSplitFactor <- input$dataSplitSlider / 100;
+	  fc = aRModel()
+	  if (is.null(fc))
+	  {
+	    return(NULL)
+	  }
+	  
+	  db <- dataset()
+	  
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  
+	  
+	  df = db$consumption
+	  
+	  act = 0
+	  numTrain = round(length(df) * dataSplitFactor)
+	  
+	  if((length(df) - numTrain) > input$dataPrediction)
+	  {
+	    act = db$consumption[numTrain+1 : input$dataPrediction]
+	  }
+	  else
+	  {
+	    act = rep(0, input$dataPrediction)
+	  }
+	  
+	  df = data.frame(actual = act, forecast = fc$mean)
+	  
+	  p <- plot_ly(df , y = ~forecast, type ="scatter", name= "Forecast Values", mode= "lines+markers")%>%
+	    add_trace(y = ~actual, name = 'Actual Values', mode = 'lines+markers')
+	  p$elementId <- NULL
+	  p
+	  
+	  
+	})
 }
 
 shinyApp(ui, server)
