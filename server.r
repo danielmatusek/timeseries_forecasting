@@ -3,6 +3,8 @@ library(shinydashboard)
 library(plotly)
 library(neuralnet)
 library(zoo)
+library(ggplot2)
+library(forecast)
 
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
@@ -29,12 +31,15 @@ ui <- dashboardPage(
 			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
 		uiOutput('windowSizeSlider'),
 		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
+		sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1),
 
 		hr(),
 
 		sidebarMenu(id="tabs",
 			menuItem("Data", tabName = "data", icon = icon("database")),
-			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90"))
+			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
+			
 		)
 	),
 
@@ -64,17 +69,66 @@ ui <- dashboardPage(
 					),
 					tabPanel("Test Results",
 						dataTableOutput("neuralNetworkTestResultsTable")
-					)
+					),
+				  tabPanel('Result Chart',
+				    plotOutput('neuralNetworkTestResultChart')
+				  ),
+				  tabPanel('Cross Validation',
+				    plotlyOutput('neuralNetworkCrossValidationChart'),
+				    dataTableOutput('neuralNetworkCrossValidationTable')
+				  )
 				)
+			),
+			
+			tabItem(tabName = "aRModel",
+			        tabBox(width = NULL,
+			               tabPanel("Chart",
+			                        plotlyOutput("aRChart", height = "600px")
+			               ),
+			               tabPanel("Forecast",
+			                        plotlyOutput("aRCForecast", height = "600px")
+			               ),
+			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
+			        )
 			)
 		)
 	)
 )
 
+splitWindows <- function(windows, splitFactor) {
+  index <- 1:nrow(windows)
+  trainindex <- sample(index, trunc(length(index) * splitFactor))
+  trainset <- windows[trainindex, ]
+  testset <- windows[-trainindex, ]
+  
+  list(trainset = trainset, testset = testset)
+}
+
+trainNeuralNetwork <- function(trainset) {
+  n <- names(trainset)
+  f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
+  
+  neuralnet(f, trainset, hidden = 0, linear.output = TRUE)
+}
+
+testNeuralNetwork <- function(neuralNetwork, testset, scale, offset) {
+  expected <- testset$xt0
+  testset$xt0 <- NULL
+  
+  n <- compute(neuralNetwork, testset)
+  
+  n$net.result <- n$net.result * scale + offset
+  n$net.expected <- expected * scale + offset
+  n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
+  
+  n
+}
+
 server <- function(input, output) {
+
   database_basis <- reactive({
     file <- input$dataFile
-    
+
     if (is.null(file))
     {
       return(NULL)
@@ -82,7 +136,7 @@ server <- function(input, output) {
     
     df <- read.csv(file$datapath, header=input$headerCheckbox, sep=input$separatorRadioButton)
   })
-  
+
 	database <- reactive({
 		df <- database_basis()
 		if(is.null(df)) return(NULL)
@@ -170,12 +224,7 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  
-	  index <- 1:nrow(ws)
-	  trainindex <- sample(index, trunc(length(index) * dataSplitFactor / 100))
-	  trainset <- ws[trainindex, ]
-	  testset <- ws[-trainindex, ]
-	  
-	  list(trainset = trainset, testset = testset)
+	  splitWindows(ws, dataSplitFactor / 100)
 	})
 
 	neuralNetwork <- reactive({
@@ -186,12 +235,7 @@ server <- function(input, output) {
 			return(NULL)
 		}
 		
-		nnData <- nnData$trainset
-
-		n <- names(nnData)
-		f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
-
-		neuralnet(f, nnData, hidden = 4, rep = 10, linear.output = FALSE)
+		trainNeuralNetwork(nnData$trainset)
 	})
 	
 	neuralNetworkTest <- reactive({
@@ -206,13 +250,40 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  
-	  expected <- windows$trainset$xt0
-	  windows$trainset$xt0 <- NULL
+	  scale <- 1
+	  offset <- 0
+	  if (normalization == 'zScore')
+	  {
+	    df <- db[[meterid]]
+	    scale <- sd(df$consumption)
+	    offset <- mean(df$consumption)
+	  }
+	  else if (normalization == 'minmax')
+	  {
+	    df <- db[[meterid]]
+	    maxs <- max(df$consumption)
+	    mins <- min(df$consumption)
+	    
+	    scale <- maxs - mins
+	    offset <- mins
+	  }
 	  
-	  n <- compute(network, windows$trainset)
-	  n$net.expected <- expected
+	  testNeuralNetwork(network, windows$testset, scale, offset)
+	})
+	
+	neuralNetworkCrossValidation <- reactive({
+	  db <- database()
+	  ws <- windows()
+	  dataSplitFactor <- input$dataSplitSlider;
+	  meterid <- input$meteridSelect
+	  normalization <- input$normalizationRadioButton
 	  
+	  if (is.null(ws))
+	  {
+	    return(NULL)
+	  }
 	  
+	  # Calculate Scale and Offset
 	  scale <- 1
 	  offset <- 0
 	  if (normalization == 'zScore')
@@ -231,10 +302,17 @@ server <- function(input, output) {
 	    offset <- mins
 	  }
 	  
-	  n$net.result <- n$net.result * scale + offset
-	  n$net.expected <- n$net.expected * scale + offset
+	  # Cross Validation
+	  mse <- NULL
+	  for (i in 1:10)
+	  {
+	    windows <- splitWindows(ws, dataSplitFactor / 100)
+	    network <- trainNeuralNetwork(windows$trainset)
+	    results <- testNeuralNetwork(network, windows$testset, scale, offset)
+	    mse[i] <- results$net.mse
+	  }
 	  
-	  n
+	  mse
 	})
 
 	output$meteridSelectBox <- renderUI({
@@ -264,7 +342,9 @@ server <- function(input, output) {
 	output$dataTable <- renderDataTable(dataset())
 	output$trainDataTable <- renderDataTable(windowSplit()$trainset)
 	output$testDataTable <- renderDataTable(windowSplit()$testset)
-
+  
+	
+	
 	output$neuralNetworkChart <- renderPlot({
 		nn <- neuralNetwork()
 
@@ -279,6 +359,127 @@ server <- function(input, output) {
 	output$neuralNetworkTestResultsTable <- renderDataTable({
 	  result <- neuralNetworkTest()
 	  data.frame(expected = result$net.expected, result = result$net.result)
+	})
+	
+	output$neuralNetworkTestResultChart <- renderPlot({
+	  result <- neuralNetworkTest()
+	  
+	  if (is.null(result))
+	  {
+	    return(NULL)
+	  }
+	  
+	  plot(result$net.expected, result$net.result, col = 'red', main='Real vs predicted NN', pch=18, cex=0.7)
+	  abline(0, 1, lwd = 2)
+	  mtext(paste('MSE = ', sum((result$net.expected - result$net.result)^2)/nrow(result$net.result)))
+	})
+	
+	output$neuralNetworkCrossValidationChart <- renderPlotly({
+	  mse <- neuralNetworkCrossValidation()
+	  
+	  if (is.null(mse))
+	  {
+	    return(NULL)
+	  }
+	  
+	  p <- plot_ly(x = mse, type = 'box', pointpos = -1.8, boxpoints = 'all', name = 'MSE')
+	  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
+	  p
+	})
+	
+	output$neuralNetworkCrossValidationTable <- renderDataTable(data.frame(MSE = neuralNetworkCrossValidation()))
+
+	aRModel <- reactive({
+	    meterid <- input$meteridSelect
+	    dataSplitFactor <- input$dataSplitSlider / 100;
+	    
+	    if(is.null(meterid))
+	    {
+	      return(NULL)
+	    }
+	    
+	    db <- dataset()
+	    
+	    if(is.null(db))
+	    {
+	      return(NULL)
+	    }
+	    
+	    
+	    
+	    df = db$consumption
+	    winSize = input$windowSizeSlider
+	    numPredictValues = input$dataPrediction
+	    
+	    to = round(length(df) * dataSplitFactor)
+	    trainData = df[1: to]
+	    aRModel = arima(ts(trainData,start = 1, end = to), order= c(winSize,0,0))
+	    forecast(aRModel, h = numPredictValues)
+	  })
+	
+	output$aRChart <- renderPlotly({
+	  
+	    fc = aRModel()
+	    
+	    if (is.null(fc))
+	    {
+	      return(NULL)
+	    }
+	   
+	    df = data.frame(fitted = fc$fitted, act = fc$x)
+	    
+	    p <- plot_ly(df , y = ~fitted, type ="scatter", name= "fitted", mode= "lines+markers")%>%
+	      add_trace(y = ~act, name = 'actual', mode = 'lines+markers')
+	    p$elementId <- NULL
+	    p
+	    
+	  })
+
+	output$ARResultsTable <- renderDataTable({
+	  
+	  fc = aRModel()
+	  data.frame(expected = fc$x , result = fc$fitted)
+	})
+
+	output$aRCForecast <- renderPlotly({
+	  
+	  dataSplitFactor <- input$dataSplitSlider / 100;
+	  fc = aRModel()
+	  if (is.null(fc))
+	  {
+	    return(NULL)
+	  }
+	  
+	  db <- dataset()
+	  
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  
+	  
+	  df = db$consumption
+	  
+	  act = 0
+	  numTrain = round(length(df) * dataSplitFactor)
+	  
+	  if((length(df) - numTrain) > input$dataPrediction)
+	  {
+	    act = db$consumption[numTrain+1 : input$dataPrediction]
+	  }
+	  else
+	  {
+	    act = rep(0, input$dataPrediction)
+	  }
+	  
+	  df = data.frame(actual = act, forecast = fc$mean)
+	  
+	  p <- plot_ly(df , y = ~forecast, type ="scatter", name= "Forecast Values", mode= "lines+markers")%>%
+	    add_trace(y = ~actual, name = 'Actual Values', mode = 'lines+markers')
+	  p$elementId <- NULL
+	  p
+	  
+	  
 	})
 }
 
