@@ -345,6 +345,10 @@ server <- function(input, output) {
 	  {
 	    act = db$consumption[numTrain+1 : input$dataPrediction]
 	  }
+	  else
+	  {
+	    act = rep(0, input$dataPrediction)
+	  }
 	  
 	  df = data.frame(actual = act, forecast = fc$mean)
 	  
