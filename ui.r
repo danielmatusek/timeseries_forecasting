@@ -56,7 +56,8 @@ ui <- dashboardPage(
 						plotOutput("neuralNetworkChart", height = "600px")
 					),
 					tabPanel("Test Results",
-						dataTableOutput("neuralNetworkTestResultsTable")
+						dataTableOutput("neuralNetworkTestResultsTable"),
+						dataTableOutput("ErrorMetricTable")
 					),
 				  tabPanel('Result Chart',
 				    plotOutput('neuralNetworkTestResultChart')

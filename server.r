@@ -1,6 +1,8 @@
 library(forecast)
 library(neuralnet)
 library(zoo)
+library(hydroGOF) #rmse function
+library(TSPred) #sMape function
 
 source('windows.r')
 source('autoRegression.r')
@@ -95,7 +97,7 @@ server <- function(input, output) {
 	  }
 	  
 	  d <- as.data.frame(rollapply(df[,y()], width = windowSize+1, FUN = identity, by = 1), by.column = TRUE)
-	  names(d) <- paste0('xt', 0:windowSize)
+	  names(d) <- paste0('xt', windowSize:0)
 	  d
 	})
 	
@@ -390,4 +392,17 @@ server <- function(input, output) {
 	  
 	  
 	})
+	
+	error_metric <- function(forecast_set, test_set, vergleich){
+	  #browser()
+	  rmse <- rmse(forecast_set, test_set)
+	  smape <- sMAPE(test_set, forecast_set)
+	  data.frame(rmse,smape, sqrt(vergleich))
+	}
+	
+	output$ErrorMetricTable <- renderDataTable({
+	  result <- neuralNetworkTest()
+	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
+	})
+	
 }
