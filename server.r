@@ -1,128 +1,10 @@
-library(shiny)
-library(shinydashboard)
-library(plotly)
+library(forecast)
 library(neuralnet)
 library(zoo)
-library(ggplot2)
-library(forecast)
 
-
-options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
-
-
-ui <- dashboardPage(
-	dashboardHeader(title = "FPADB"),
-
-	dashboardSidebar(
-		checkboxInput('headerCheckbox', 'Header', TRUE),
-		radioButtons('separatorRadioButton', 'Separator',
-			c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),
-		uiOutput("x_axis"),
-		uiOutput("y_axis"),
-		uiOutput("z_axis"),		
-		fileInput('dataFile', NULL,
-			accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
-		),
-
-		hr(),
-
-		uiOutput("meteridSelectBox"),
-		radioButtons('normalizationRadioButton', 'Normalization',
-			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
-		uiOutput('windowSizeSlider'),
-		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
-		sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1),
-
-		hr(),
-
-		sidebarMenu(id="tabs",
-			menuItem("Data", tabName = "data", icon = icon("database")),
-			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
-			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
-			
-		)
-	),
-
-	dashboardBody(
-		tabItems(
-			tabItem(tabName = "data",
-				tabBox(width = NULL,
-					tabPanel("Chart",
-						plotlyOutput("dataChart", height = "600px")
-					),
-					tabPanel("Table",
-						dataTableOutput("dataTable")
-					),
-				  tabPanel('Train Data',
-  				  dataTableOutput('trainDataTable')
-          ),
-				  tabPanel('Test Data',
-  				  dataTableOutput('testDataTable')
-				  )
-				)
-			),
-
-			tabItem(tabName = "neuralNetwork",
-				tabBox(width = NULL,
-					tabPanel("Chart",
-						plotOutput("neuralNetworkChart", height = "600px")
-					),
-					tabPanel("Test Results",
-						dataTableOutput("neuralNetworkTestResultsTable")
-					),
-				  tabPanel('Result Chart',
-				    plotOutput('neuralNetworkTestResultChart')
-				  ),
-				  tabPanel('Cross Validation',
-				    plotlyOutput('neuralNetworkCrossValidationChart'),
-				    dataTableOutput('neuralNetworkCrossValidationTable')
-				  )
-				)
-			),
-			
-			tabItem(tabName = "aRModel",
-			        tabBox(width = NULL,
-			               tabPanel("Chart",
-			                        plotlyOutput("aRChart", height = "600px")
-			               ),
-			               tabPanel("Forecast",
-			                        plotlyOutput("aRCForecast", height = "600px")
-			               ),
-			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
-			        )
-			)
-		)
-	)
-)
-
-splitWindows <- function(windows, splitFactor) {
-  index <- 1:nrow(windows)
-  trainindex <- sample(index, trunc(length(index) * splitFactor))
-  trainset <- windows[trainindex, ]
-  testset <- windows[-trainindex, ]
-  
-  list(trainset = trainset, testset = testset)
-}
-
-trainNeuralNetwork <- function(trainset) {
-  n <- names(trainset)
-  f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
-  
-  neuralnet(f, trainset, hidden = 0, linear.output = TRUE)
-}
-
-testNeuralNetwork <- function(neuralNetwork, testset, scale, offset) {
-  expected <- testset$xt0
-  testset$xt0 <- NULL
-  
-  n <- compute(neuralNetwork, testset)
-  
-  n$net.result <- n$net.result * scale + offset
-  n$net.expected <- expected * scale + offset
-  n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
-  
-  n
-}
+source('windows.r')
+source('autoRegression.r')
+source('neuralNetwork.r')
 
 server <- function(input, output) {
 
@@ -190,12 +72,12 @@ server <- function(input, output) {
 	
 	output$windowSizeSlider <- renderUI({
 	  db <- database()
+	  meterid <- input$meteridSelect
 	  
-	  if (is.null(db))
+	  if (is.null(db) || is.null(meterid))
 	  {
 	    return(NULL)
 	  }
-	  meterid <- input$meteridSelect
 	  df <- db[[meterid]]
 	  sliderInput('windowSizeSlider', 'Window Size', 1, max(df[,x()])*0.1, max(df[,x()])*0.05, step = 1)
 	})	
@@ -482,5 +364,3 @@ server <- function(input, output) {
 	  
 	})
 }
-
-shinyApp(ui, server)
