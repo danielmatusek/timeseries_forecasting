@@ -6,7 +6,7 @@ trainNeuralNetwork <- function(trainset) {
   
   window_size <- length(trainset) - 1
   
-  hidden_layer = c(3,2) #set the hidden layer vector
+  hidden_layer = c(0) #set the hidden layer vector
   # Calculate Bias Neuron weights
   excluded_weights = c(1) # first bias needs to be excluded every time
   if(hidden_layer[1] > 0){ #only if hidden layer are present
