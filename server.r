@@ -6,6 +6,8 @@ source('windows.r')
 source('autoRegression.r')
 source('neuralNetwork.r')
 
+options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
+
 server <- function(input, output) {
 
   database_basis <- reactive({
@@ -206,6 +208,31 @@ server <- function(input, output) {
 		}
 
 		selectInput("meteridSelect", "Dataset", names(db))
+	})
+	
+	output$normalizationRadioButton <- renderUI({
+	  db <- database()
+	  
+	  if (is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  
+	  radioButtons('normalizationRadioButton', 'Normalization',
+	               c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none')
+	  
+	})	
+	
+	output$dataPrediction <- renderUI({
+	  db <- database()
+	  
+	  if (is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  
+	  sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1)
+	  
 	})
 
 	output$dataChart <- renderPlotly({

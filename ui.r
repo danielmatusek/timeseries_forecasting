@@ -5,32 +5,29 @@ ui <- dashboardPage(
 	dashboardHeader(title = "FPADB"),
 
 	dashboardSidebar(
-		checkboxInput('headerCheckbox', 'Header', TRUE),
-		radioButtons('separatorRadioButton', 'Separator',
-			c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),
-		uiOutput("x_axis"),
-		uiOutput("y_axis"),
-		uiOutput("z_axis"),		
-		fileInput('dataFile', NULL,
-			accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
-		),
-
-		hr(),
-
-		uiOutput("meteridSelectBox"),
-		radioButtons('normalizationRadioButton', 'Normalization',
-			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
-		uiOutput('windowSizeSlider'),
-		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
-		sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1),
-
-		hr(),
-
-		sidebarMenu(id="tabs",
-			menuItem("Data", tabName = "data", icon = icon("database")),
-			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
-			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
-			
+	  sidebarMenu(id="tabs",
+	              menuItem("Data", tabName = "data", icon = icon("database")),
+		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("table")),
+		            hr(),
+                
+		            conditionalPanel("input.tabs === 'data'",
+		                             checkboxInput('headerCheckbox', 'Header', TRUE),
+		                             radioButtons('separatorRadioButton', 'Separator',
+		                                          c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),
+		                             uiOutput("x_axis"),
+		                             uiOutput("y_axis"),
+		                             uiOutput("z_axis"),		
+		                             fileInput('dataFile', NULL,
+		                                       accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
+		                             ),
+		                             hr()
+		            ),
+		            uiOutput("meteridSelectBox"),
+		            uiOutput('normalizationRadioButton'),
+		    		    uiOutput('windowSizeSlider'),
+		            sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
+		    		    uiOutput('dataPrediction')
 		)
 	),
 
