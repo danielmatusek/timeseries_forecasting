@@ -23,6 +23,9 @@ ui <- dashboardPage(
 		                             ),
 		                             hr()
 		            ),
+		            conditionalPanel("input.tabs === 'neuralNetwork'",
+		                             checkboxInput('biasCheckbox', 'Exclude Bias in ANN', TRUE),
+		                             hr()),
 		            uiOutput("meteridSelectBox"),
 		            uiOutput('normalizationRadioButton'),
 		    		    uiOutput('windowSizeSlider'),

@@ -119,7 +119,7 @@ server <- function(input, output) {
 			return(NULL)
 		}
 		
-		trainNeuralNetwork(nnData$trainset)
+		trainNeuralNetwork(nnData$trainset, input)
 	})
 	
 	neuralNetworkTest <- reactive({
@@ -191,7 +191,7 @@ server <- function(input, output) {
 	  for (i in 1:10)
 	  {
 	    windows <- splitWindows(ws, dataSplitFactor / 100)
-	    network <- trainNeuralNetwork(windows$trainset)
+	    network <- trainNeuralNetwork(windows$trainset, input)
 	    results <- testNeuralNetwork(network, windows$testset, scale, offset)
 	    mse[i] <- results$net.mse
 	  }
