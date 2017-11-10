@@ -9,6 +9,7 @@ ui <- dashboardPage(
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("table")),
+		            menuItem("Comparision", tabName = "comparision", icon = icon("table")),
 		            hr(),
                 
 		            conditionalPanel("input.tabs === 'data'",
@@ -74,7 +75,8 @@ ui <- dashboardPage(
 			                        plotlyOutput("aRChart", height = "600px")
 			               ),
 			               tabPanel("Statistic",
-			                        plotlyOutput("aRStatistic", height = "600px")
+			                        dataTableOutput("arMLE"),
+			                        dataTableOutput("arCoef")
 			               )
 			        )
 			)

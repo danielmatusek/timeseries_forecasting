@@ -319,10 +319,26 @@ server <- function(input, output) {
 
 	
 
-	output$aRStatistic <- renderDataTable({
+	output$arMLE <- renderDataTable({
 	  
-	  return(NULL)
-	  
-	  
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  data.frame( MSE = getMLE(db$consumption, input$windowSizeSlider, input$dataPrediction)$mse)
 	})
+	
+	output$arCoef <- renderDataTable({
+	  
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  data.frame(coef = getCoef(db$consumption, input$windowSizeSlider, input$dataPrediction)$coef)
+	})
+	
+	
+	
 }
