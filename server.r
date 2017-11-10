@@ -1,4 +1,4 @@
-library(forecast)
+library(stats)
 library(neuralnet)
 library(zoo)
 library(hydroGOF) #rmse function
@@ -300,95 +300,30 @@ server <- function(input, output) {
 	
 	output$neuralNetworkCrossValidationTable <- renderDataTable(data.frame(MSE = neuralNetworkCrossValidation()))
 
-	aRModel <- reactive({
-	    meterid <- input$meteridSelect
-	    dataSplitFactor <- input$dataSplitSlider / 100;
-	    
-	    if(is.null(meterid))
-	    {
-	      return(NULL)
-	    }
-	    
-	    db <- dataset()
-	    
+	
+	
+	output$aRChart <- renderPlotly({
+	  
+	    db = dataset()
 	    if(is.null(db))
 	    {
 	      return(NULL)
 	    }
 	    
-	    
-	    
-	    df = db$consumption
-	    winSize = input$windowSizeSlider
-	    numPredictValues = input$dataPrediction
-	    
-	    to = round(length(df) * dataSplitFactor)
-	    trainData = df[1: to]
-	    aRModel = arima(ts(trainData,start = 1, end = to), order= c(winSize,0,0))
-	    forecast(aRModel, h = numPredictValues)
-	  })
-	
-	output$aRChart <- renderPlotly({
-	  
-	    fc = aRModel()
-	    
-	    if (is.null(fc))
+  	  aRMList = getARModelList(db$consumption, input$windowSizeSlider, input$dataPrediction)
+	    if (is.null(aRMList))
 	    {
 	      return(NULL)
 	    }
-	   
-	    df = data.frame(fitted = fc$fitted, act = fc$x)
-	    
-	    p <- plot_ly(df , y = ~fitted, type ="scatter", name= "fitted", mode= "lines+markers")%>%
-	      add_trace(y = ~act, name = 'actual', mode = 'lines+markers')
-	    p$elementId <- NULL
-	    p
-	    
+  	  
+  	  getPlotlyModel(aRMList, db$consumption, input$dataPrediction)
 	  })
 
-	output$ARResultsTable <- renderDataTable({
-	  
-	  fc = aRModel()
-	  data.frame(expected = fc$x , result = fc$fitted)
-	})
+	
 
-	output$aRCForecast <- renderPlotly({
+	output$aRStatistic <- renderDataTable({
 	  
-	  dataSplitFactor <- input$dataSplitSlider / 100;
-	  fc = aRModel()
-	  if (is.null(fc))
-	  {
-	    return(NULL)
-	  }
-	  
-	  db <- dataset()
-	  
-	  if(is.null(db))
-	  {
-	    return(NULL)
-	  }
-	  
-	  
-	  df = db$consumption
-	  
-	  act = 0
-	  numTrain = round(length(df) * dataSplitFactor)
-	  
-	  if((length(df) - numTrain) > input$dataPrediction)
-	  {
-	    act = db$consumption[numTrain+1 : input$dataPrediction]
-	  }
-	  else
-	  {
-	    act = rep(0, input$dataPrediction)
-	  }
-	  
-	  df = data.frame(actual = act, forecast = fc$mean)
-	  
-	  p <- plot_ly(df , y = ~forecast, type ="scatter", name= "Forecast Values", mode= "lines+markers")%>%
-	    add_trace(y = ~actual, name = 'Actual Values', mode = 'lines+markers')
-	  p$elementId <- NULL
-	  p
+	  return(NULL)
 	  
 	  
 	})

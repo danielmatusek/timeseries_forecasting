@@ -74,10 +74,9 @@ ui <- dashboardPage(
 			               tabPanel("Chart",
 			                        plotlyOutput("aRChart", height = "600px")
 			               ),
-			               tabPanel("Forecast",
-			                        plotlyOutput("aRCForecast", height = "600px")
-			               ),
-			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
+			               tabPanel("Statistic",
+			                        plotlyOutput("aRStatistic", height = "600px")
+			               )
 			        )
 			)
 		)
