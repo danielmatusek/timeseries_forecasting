@@ -7,22 +7,24 @@ trainNeuralNetwork <- function(trainset) {
   window_size <- length(trainset) - 1
   
   hidden_layer = c(0) #set the hidden layer vector
-  # Calculate Bias Neuron weights
+  
+  # Calculate Bias Neuron weights (see: https://stackoverflow.com/q/40633567)
   excluded_weights = c(1) # first bias needs to be excluded every time
   if(hidden_layer[1] > 0){ #only if hidden layer are present
     
-    layer_vector <- NULL
-    layer_vector[1] <- window_size
+    
+    layer_vector <- NULL #we need the number of nodes in every vertical row (e.g. c(num(input_neuron), num(first_hidden_layer)...))
+    layer_vector[1] <- window_size #number of input neurons
     for(i in 1:length(hidden_layer)){
-      layer_vector[i+1] <- hidden_layer[i]
+      layer_vector[i+1] <- hidden_layer[i] #create the layer vector
     }
-    current_bias <- 1
-    exclude_counter <- 2
-    for (i in 1:length(hidden_layer)){
-      for (j in 1:hidden_layer[i]){
-        current_bias <- current_bias + layer_vector[i] + 1
-        excluded_weights[exclude_counter] <- current_bias
-        exclude_counter <- exclude_counter + 1
+    current_bias <- 1 #first bias always 1
+    exclude_counter <- 2 #to fill the exclude-vector. first one is already filled (1), so begin with 2
+    for (i in 1:length(hidden_layer)){ #iterate through the vertical layers, beginning with input nodes
+      for (j in 1:hidden_layer[i]){ #iterate through the nodes of the current layer
+        current_bias <- current_bias + layer_vector[i] + 1 #from bias to bias calculate new_value = old_value + n + 1 where n is number of nodes in current layer
+        excluded_weights[exclude_counter] <- current_bias #add to vector for excluded weights
+        exclude_counter <- exclude_counter + 1 #go to next element in exclude vector
       }
     }
   }
