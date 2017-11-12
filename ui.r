@@ -17,12 +17,11 @@ ui <- dashboardPage(
 
 		hr(),
 
-		uiOutput("meteridSelectBox"),
+		uiOutput("idSelectBox"),
 		radioButtons('normalizationRadioButton', 'Normalization',
 			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
 		uiOutput('windowSizeSlider'),
-		sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
-		sliderInput('dataPrediction', 'Predict Values', 1, 50, 10, step = 1),
+		sliderInput('horizon', 'Predict Values', 1, 50, 10, step = 1),
 
 		hr(),
 
@@ -30,7 +29,6 @@ ui <- dashboardPage(
 			menuItem("Data", tabName = "data", icon = icon("database")),
 			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
-			
 		)
 	),
 
@@ -57,17 +55,7 @@ ui <- dashboardPage(
 				tabBox(width = NULL,
 					tabPanel("Chart",
 						plotOutput("neuralNetworkChart", height = "600px")
-					),
-					tabPanel("Test Results",
-						dataTableOutput("neuralNetworkTestResultsTable")
-					),
-				  tabPanel('Result Chart',
-				    plotOutput('neuralNetworkTestResultChart')
-				  ),
-				  tabPanel('Cross Validation',
-				    plotlyOutput('neuralNetworkCrossValidationChart'),
-				    dataTableOutput('neuralNetworkCrossValidationTable')
-				  )
+					)
 				)
 			),
 			
