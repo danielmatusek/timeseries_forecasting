@@ -7,6 +7,7 @@ library(TSPred) #sMape function
 source('windows.r')
 source('autoRegression.r')
 source('neuralNetwork.r')
+source('comparision.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
@@ -300,35 +301,25 @@ server <- function(input, output) {
 	
 	output$neuralNetworkCrossValidationTable <- renderDataTable(data.frame(MSE = neuralNetworkCrossValidation()))
 
-	
-	
-	output$aRChart <- renderPlotly({
-	  
-	    db = dataset()
-	    if(is.null(db))
-	    {
-	      return(NULL)
-	    }
-	    
-  	  aRMList = getARModelList(db$consumption, input$windowSizeSlider, input$dataPrediction)
-	    if (is.null(aRMList))
-	    {
-	      return(NULL)
-	    }
-  	  
-  	  getPlotlyModel(aRMList, db$consumption, input$dataPrediction)
-	  })
-
-	
-
-	output$arMLE <- renderDataTable({
-	  
+	arModel <- reactive({
 	  db = dataset()
 	  if(is.null(db))
 	  {
 	    return(NULL)
 	  }
-	  data.frame( MSE = getMLE(db$consumption, input$windowSizeSlider, input$dataPrediction)$mse)
+	  ARModel(db$consumption, input$windowSizeSlider, input$dataPrediction)
+	  })
+	
+	output$aRChart <- renderPlotly({
+	    arModel()
+  	  getPlotlyModel()
+	  })
+
+	
+
+	output$arMLE <- renderDataTable({
+	  arModel()
+	  error_metric_AR()
 	})
 	
 	output$arCoef <- renderDataTable({
@@ -338,15 +329,34 @@ server <- function(input, output) {
 	  {
 	    return(NULL)
 	  }
-	  data.frame(coef = getCoef(db$consumption, input$windowSizeSlider, input$dataPrediction)$coef)
+	  arModel()
+	  data.frame(coef = getARCoef())
 	})
 	
+	
+	output$compareBoxplot <- renderPlotly({
+	  
+	  database = database()
+	  if(is.null(database))
+	  {
+	    return(NULL)
+	  }
+	  boxplotComarision(database, input$windowSizeSlider, input$dataPrediction)
+	  
+	})
+	
+	  output$compareError <- renderDataTable({
+	  
+	    error_metric_compare()
+	})
+	
+	
 
-	error_metric <- function(forecast_set, test_set, vergleich){
-	  #browser()
-	  rmse <- rmse(forecast_set, test_set)
+	error_metric <- function(forecast_set, test_set){
+	  mse <- mse(test_set, forecast_set)
+	  rmse <- rmse(test_set, forecast_set)
 	  smape <- sMAPE(test_set, forecast_set)
-	  data.frame(rmse,smape, sqrt(vergleich))
+	  data.frame(mse = mse,rmse = rmse, smape = smape)
 	}
 	
 	output$ErrorMetricTable <- renderDataTable({
