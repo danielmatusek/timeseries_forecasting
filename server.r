@@ -220,11 +220,6 @@ server <- function(input, output) {
 	
 	
 	
-	
-	
-	
-
-
 
 	arModel <- reactive({
 	  db = dataset()
@@ -232,7 +227,7 @@ server <- function(input, output) {
 	  {
 	    return(NULL)
 	  }
-	  ARModel(db$y, input$windowSizeSlider, input$dataPrediction)
+	  ARModel(db$y, input$windowSizeSlider, input$horizonSlider)
 	  })
 	
 	output$aRChart <- renderPlotly({
@@ -267,7 +262,7 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 
-	  boxplotComarision(database, input$windowSizeSlider, input$dataPrediction)
+	  boxplotComarision(database, input$windowSizeSlider, input$horizonSlider)
 	})
 	
 	  output$compareError <- renderDataTable({

@@ -30,7 +30,6 @@ ui <- dashboardPage(
 		            uiOutput("idSelectBox"),
 		            uiOutput('normalizationRadioButton'),
 		    		    uiOutput('windowSizeSlider'),
-		            sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
 		    		    uiOutput('horizonSlider')
 		)
 	),

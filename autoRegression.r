@@ -16,11 +16,11 @@ ARModel <- function(consumptionData, window, predValue)
   trainData <<- consumptionData[1: spl]
   testData <<- consumptionData[(spl+1): length(consumptionData)]
   
-  #ar = stats::arima(ts(trainData, start = 1, end = spl), order= c(window,0,0), optim.method = "Nelder-Mead")
-  ar = stats::ar(ts(trainData),aic=FALSE, window, method ="burg")
+  
+  ar = stats::ar(ts(trainData),aic = FALSE, window, method ="burg")
   model$ar <<- ar
   model$coef <<- ar$coef
-  tsPred = predict(ar,n.ahead=predictValue)
+  tsPred = predict(ar,n.ahead = predictValue)
   model$forecast <<- tsPred$pred
   model
 }
@@ -50,6 +50,12 @@ getARCoef <- function()
 }
 
 error_metric_AR <- function(){
+  
+  if(is.null(testData) || is.null(model$forecast))
+  { 
+    return(NULL)
+  }
+  
   mse <- mse(testData, model$forecast)
   rmse <- rmse(testData, model$forecast)
   smape <- sMAPE(testData, model$forecast)

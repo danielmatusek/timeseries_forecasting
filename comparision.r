@@ -5,8 +5,10 @@ source('autoRegression.r')
 source('neuralNetwork.r')
 
 
-boxplotComarision <- function(db,window, predValue)
+boxplotComarision <- function(db, window, predValue)
 {
+
+  
   meterids <- names(db)
   
   len = length(meterids)
@@ -18,14 +20,13 @@ boxplotComarision <- function(db,window, predValue)
   for(i in 1 : length(meterids))
   {
     meterid = meterids[i]
-    cdata = db[[meterid]]$consumption
+    cdata = db[[meterid]]$y
     ARModel(cdata, window, predValue)
     error  = error_metric_AR()
     MSES <<- c(MSES, error$mse)
     RMSES <<- c(RMSES, error$rmse)
     SMAPES <<- c(SMAPES, error$smape)
   }
-  
   
   
   p <- plot_ly(type='box')%>%
