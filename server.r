@@ -25,7 +25,6 @@ getPredictionPlotly <- function(testResults, id) {
   names(prediction) <- c('prediction')
   prediction$x <- data.sets[[id]]$x
   prediction$y <- data.sets[[id]]$y
-  browser()
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
     add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
