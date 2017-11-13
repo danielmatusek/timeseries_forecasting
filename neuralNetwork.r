@@ -83,8 +83,8 @@ testNeuralNetworks <- function() {
     id <- neuralNetwork.forEach.ids[i]
     
     neuralNetwork.testResults.forEach[[id]] <<- testNeuralNetwork(neuralNetwork.forEach[[id]], id)
-    neuralNetwork.testResults.forEach.hiddenLayers <<- testNeuralNetwork(neuralNetwork.forEach.hiddenLayers[[id]], id)
-    neuralNetwork.testResults.forAll <<- testNeuralNetwork(neuralNetwork.forAll, id)
-    neuralNetwork.testResults.forAll.hiddenLayers <<- testNeuralNetwork(neuralNetwork.forAll.hiddenLayers, id)
+    neuralNetwork.testResults.forEach.hiddenLayers[[id]] <<- testNeuralNetwork(neuralNetwork.forEach.hiddenLayers[[id]], id)
+    neuralNetwork.testResults.forAll[[id]] <<- testNeuralNetwork(neuralNetwork.forAll, id)
+    neuralNetwork.testResults.forAll.hiddenLayers[[id]] <<- testNeuralNetwork(neuralNetwork.forAll.hiddenLayers, id)
   }
 }

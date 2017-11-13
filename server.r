@@ -19,13 +19,13 @@ getPredictionPlotly <- function(testResults, id) {
   }
   
   prediction <- rbindlist(list(
-    as.data.table(
-      rep(NA, length(data.normalized[[id]]$y) - length(testResults[[id]]$net.result))),
+    as.data.table(rep(NA, length(data.sets[[id]]$y) - length(testResults[[id]]$net.result))),
     as.data.table(testResults[[id]]$net.result)
   ))
   names(prediction) <- c('prediction')
-  prediction$x <- data.normalized[[id]]$x
-  prediction$y <- data.normalized[[id]]$y
+  prediction$x <- data.sets[[id]]$x
+  prediction$y <- data.sets[[id]]$y
+  browser()
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
     add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
