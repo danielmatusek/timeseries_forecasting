@@ -23,8 +23,13 @@ getPredictionPlotly <- function(testResults, id) {
     as.data.table(testResults[[id]]$net.result)
   ))
   names(prediction) <- c('prediction')
+  
   prediction$x <- data.sets[[id]]$x
   prediction$y <- data.sets[[id]]$y
+  
+  startIndex = length(data.sets[[id]]$y) - length(testResults[[id]]$net.result)
+  prediction$prediction[[startIndex]] <- prediction$y[[startIndex]]
+  
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
     add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
@@ -120,7 +125,9 @@ server <- function(input, output) {
 	  
 		if (!is.null(data.trainSets))
 		{
-		  trainNeuralNetworks(input$biasCheckbox)
+		  withProgress(message = 'Learning Neural Networks', value = 0, {
+		    trainNeuralNetworks(input$biasCheckbox)
+		  })
 		  
 		  list(forEach = neuralNetwork.forEach, forAll = neuralNetwork.forAll)
 		}
