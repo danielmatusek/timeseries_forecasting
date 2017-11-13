@@ -2,7 +2,7 @@ library(plotly)
 library(forecast)
 library(stats)
 
-
+model <<- NULL
 
 ARModel <- function(consumptionData, window, predValue)
 {
