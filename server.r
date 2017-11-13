@@ -283,5 +283,22 @@ server <- function(input, output) {
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
 
+	output$arACF <- renderPlot({
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  plotACF(db$y)
+	})
+	
+	output$arPACF <- renderPlot({
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  plotPACF(db$y)
+	})
 	
 }

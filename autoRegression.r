@@ -62,4 +62,14 @@ error_metric_AR <- function(){
   data.frame(mse = mse,rmse = rmse, smape = smape)
 }
 
+plotACF <- function(consumptionData){
+  data_acf <- acf(consumptionData)
+  data_acf
+}
+
+plotPACF <- function(consumptionData){
+  data_pacf <- pacf(consumptionData)
+  data_pacf
+}
+
 
