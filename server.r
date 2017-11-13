@@ -8,6 +8,7 @@ library(zoo)
 
 source('autoRegression.r')
 source('neuralNetwork.r')
+source('comparision.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
@@ -133,8 +134,8 @@ server <- function(input, output) {
 	  {
 	    testNeuralNetworks()
 	    
-	    list(neuralNetwork.testResults.forEach, neuralNetwork.testRestlts.forEach.hiddenLayers,
-	      neuralNetwork.testResults.forAll, neuralNetwork.testRestlts.forAll.hiddenLayers)
+	    list(neuralNetwork.testResults.forEach, neuralNetwork.testResults.forEach.hiddenLayers,
+	      neuralNetwork.testResults.forAll, neuralNetwork.testResults.forAll.hiddenLayers)
 	  }
 	})
 
@@ -223,58 +224,27 @@ server <- function(input, output) {
 	
 	
 
-	aRModel <- reactive({
-	    meterid <- input$idSelect
-	    dataSplitFactor <- input$dataSplitSlider / 100;
-	    
-	    if(is.null(meterid))
-	    {
-	      return(NULL)
-	    }
-	    
-	    db <- dataset()
-	    
-	    if(is.null(db))
-	    {
-	      return(NULL)
-	    }
-	    
-	    
-	    df = db$y
-	    winSize = input$windowSizeSlider
-	    numPredictValues = input$horizonSlider
-	    browser()
-	    
-	    to = round(length(df) * dataSplitFactor)
-	    trainData = df[1: to]
-	    aRModel = arima(ts(trainData,start = 1, end = to), order= c(winSize,0,0))
-	    forecast(aRModel, h = numPredictValues)
-	})
-	
-	
-	output$aRChart <- renderPlotly({
-	  
-	    db = dataset()
-	    
-  	  aRMList = getARModelList(db$consumption, input$windowSizeSlider, input$dataPrediction)
-	    if (is.null(aRMList))
-	    {
-	      return(NULL)
-	    }
-  	  
-  	  getPlotlyModel(aRMList, db$consumption, input$dataPrediction)
-	  })
 
-	
 
-	output$arMLE <- renderDataTable({
-	  
+	arModel <- reactive({
 	  db = dataset()
 	  if(is.null(db))
 	  {
 	    return(NULL)
 	  }
-	  data.frame( MSE = getMLE(db$consumption, input$windowSizeSlider, input$dataPrediction)$mse)
+	  ARModel(db$y, input$windowSizeSlider, input$dataPrediction)
+	  })
+	
+	output$aRChart <- renderPlotly({
+	    arModel()
+  	  getPlotlyModel()
+	  })
+
+	
+
+	output$arMLE <- renderDataTable({
+	  arModel()
+	  error_metric_AR()
 	})
 	
 	output$arCoef <- renderDataTable({
@@ -284,16 +254,34 @@ server <- function(input, output) {
 	  {
 	    return(NULL)
 	  }
-
-	  data.frame(coef = getCoef(db$y, input$windowSizeSlider, input$dataPrediction)$coef)
+	  arModel()
+	  data.frame(coef = getARCoef())
 	})
 	
+	
+	output$compareBoxplot <- renderPlotly({
+	  
+	  database = database()
+	  if(is.null(database))
+	  {
+	    return(NULL)
+	  }
 
-	error_metric <- function(forecast_set, test_set, vergleich){
-	  #browser()
-	  rmse <- rmse(forecast_set, test_set)
+	  boxplotComarision(database, input$windowSizeSlider, input$dataPrediction)
+	})
+	
+	  output$compareError <- renderDataTable({
+	  
+	    error_metric_compare()
+	})
+	
+	
+
+	error_metric <- function(forecast_set, test_set){
+	  mse <- mse(test_set, forecast_set)
+	  rmse <- rmse(test_set, forecast_set)
 	  smape <- sMAPE(test_set, forecast_set)
-	  data.frame(rmse,smape, sqrt(vergleich))
+	  data.frame(mse = mse,rmse = rmse, smape = smape)
 	}
 	
 	output$ErrorMetricTable <- renderDataTable({

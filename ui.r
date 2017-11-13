@@ -84,7 +84,20 @@ ui <- dashboardPage(
 			                        dataTableOutput("arCoef")
 			               )
 			        )
+			),
+			tabItem(tabName = "comparision",
+			        tabBox(width = NULL,
+			               tabPanel("Boxplot",
+			                        plotlyOutput("compareBoxplot", height = "600px")
+			               ),
+			               tabPanel("Error Metric",
+			                        dataTableOutput("compareError")
+			               )
+			        )
 			)
+			
+			
+			
 		)
 	)
 )
