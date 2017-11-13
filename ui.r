@@ -5,30 +5,33 @@ ui <- dashboardPage(
 	dashboardHeader(title = "FPADB"),
 
 	dashboardSidebar(
-		checkboxInput('headerCheckbox', 'Header', TRUE),
-		radioButtons('separatorRadioButton', 'Separator',
-			c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),
-		uiOutput("x_axis"),
-		uiOutput("y_axis"),
-		uiOutput("z_axis"),		
-		fileInput('dataFile', NULL,
-			accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
-		),
-
-		hr(),
-
-		uiOutput("idSelectBox"),
-		radioButtons('normalizationRadioButton', 'Normalization',
-			c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none'),
-		uiOutput('windowSizeSlider'),
-		sliderInput('horizon', 'Predict Values', 1, 50, 10, step = 1),
-
-		hr(),
-
-		sidebarMenu(id="tabs",
-			menuItem("Data", tabName = "data", icon = icon("database")),
-			menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
-			menuItem("Autoregressive", tabName = "aRModel", icon = icon("table"))
+	  sidebarMenu(id="tabs",
+	              menuItem("Data", tabName = "data", icon = icon("database")),
+		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("table")),
+		            menuItem("Comparision", tabName = "comparision", icon = icon("table")),
+		            hr(),
+                
+		            conditionalPanel("input.tabs === 'data'",
+		                             checkboxInput('headerCheckbox', 'Header', TRUE),
+		                             radioButtons('separatorRadioButton', 'Separator',
+		                                          c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),
+		                             uiOutput("x_axis"),
+		                             uiOutput("y_axis"),
+		                             uiOutput("z_axis"),		
+		                             fileInput('dataFile', NULL,
+		                                       accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
+		                             ),
+		                             hr()
+		            ),
+		            conditionalPanel("input.tabs === 'neuralNetwork'",
+		                             checkboxInput('biasCheckbox', 'Exclude Bias in ANN', TRUE),
+		                             hr()),
+		            uiOutput("idSelectBox"),
+		            uiOutput('normalizationRadioButton'),
+		    		    uiOutput('windowSizeSlider'),
+		            sliderInput('dataSplitSlider', 'Split Training/Test Data', 1, 100, 70, post = " %", step = 1),
+		    		    uiOutput('horizonSlider')
 		)
 	),
 
@@ -55,7 +58,19 @@ ui <- dashboardPage(
 				tabBox(width = NULL,
 					tabPanel("Chart",
 						plotOutput("neuralNetworkChart", height = "600px")
-					)
+					),
+				  tabPanel('Forecast /1',
+				    plotlyOutput('neuralNetworkForecastForEachChart')
+				  ),
+				  tabPanel('Forecast /1 hidden',
+				    plotlyOutput('neuralNetworkForecastForEachHiddenChart')
+				  ),
+				  tabPanel('Forecast /n',
+				    plotlyOutput('neuralNetworkForecastForAllChart')
+				  ),
+				  tabPanel('Forecast /n hidden',
+				    plotlyOutput('neuralNetworkForecastForAllHiddenChart')
+				  )
 				)
 			),
 			
@@ -64,10 +79,10 @@ ui <- dashboardPage(
 			               tabPanel("Chart",
 			                        plotlyOutput("aRChart", height = "600px")
 			               ),
-			               tabPanel("Forecast",
-			                        plotlyOutput("aRCForecast", height = "600px")
-			               ),
-			               tabPanel("Test Results", dataTableOutput("ARResultsTable"))
+			               tabPanel("Statistic",
+			                        dataTableOutput("arMLE"),
+			                        dataTableOutput("arCoef")
+			               )
 			        )
 			)
 		)

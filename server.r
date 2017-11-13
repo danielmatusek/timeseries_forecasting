@@ -1,52 +1,71 @@
-library(forecast)
 library(data.table)
+library(forecast)
+library(hydroGOF) #rmse function
 library(neuralnet)
+library(stats)
+library(TSPred) #sMape function
 library(zoo)
 
 source('autoRegression.r')
 source('neuralNetwork.r')
+
+options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
+
+getPredictionPlotly <- function(testResults, id) {
+  if (is.null(testResults) || is.null(id))
+  {
+    return(NULL)
+  }
+  
+  prediction <- rbindlist(list(
+    as.data.table(
+      rep(NA, length(data.normalized[[id]]$y) - length(testResults[[id]]$net.result))),
+    as.data.table(testResults[[id]]$net.result)
+  ))
+  names(prediction) <- c('prediction')
+  prediction$x <- data.normalized[[id]]$x
+  prediction$y <- data.normalized[[id]]$y
+  p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
+    add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
+  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
+  p
+}
 
 server <- function(input, output) {
 
   database <- reactive({
     file <- input$dataFile
 
-    if (is.null(file))
+    if (!is.null(file))
     {
-      return(NULL)
+      #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+      data <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+      parseData(data, xName = input$x_axis, yName = input$y_axis)
+      
+      data.sets
     }
-    
-    #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    data <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    parseData(data, xName = input$x_axis, yName = input$y_axis)
-    
-    data.sets
   })
   
   dataNormalized <- reactive({
     database()
     normalizationMethod <- input$normalizationRadioButton
     
-    if (is.null(data.sets) || is.null(normalizationMethod))
+    if (!is.null(data.sets) && !is.null(normalizationMethod))
     {
-      return(NULL)
+      normalizeData(normalizationMethod)
+      
+      data.normalized
     }
-    
-    normalizeData(normalizationMethod)
-    
-    data.normalized
   })
 
 	dataset <- reactive({
 	  dataNormalized()
 		id <- input$idSelect
 
-		if (is.null(data.normalized) || is.null(id))
+		if (!is.null(data.normalized) && !is.null(id))
 		{
-			return(NULL)
+		  data.normalized[[id]]
 		}
-		
-		data.normalized[[id]]
 	})
 	
 	output$x_axis <- renderUI({ 
@@ -76,14 +95,14 @@ server <- function(input, output) {
 	windowsCreated <- reactive({
 	  dataNormalized()
 	  windowSize <- input$windowSizeSlider
-	  horizon <- input$horizon
+	  horizon <- input$horizonSlider
 	  
 	  if (!is.null(data.normalized))
 	  {
 	    createWindows(windowSize, horizon)
+	    
+	    list(trainSets = data.trainSets, testSets = data.testSets)
 	  }
-	  
-	  list(trainset = data.trainSets, testset = data.testSets)
 	})
 	
 	windowSplit <- reactive({
@@ -96,71 +115,70 @@ server <- function(input, output) {
 	  }
 	})
 
-	neuralNetworksLearned <- reactive({
+	neuralNetworksTrained <- reactive({
 	  windowsCreated()
-
+	  
 		if (!is.null(data.trainSets))
 		{
-		  trainNeuralNetworks()
+		  trainNeuralNetworks(input$biasCheckbox)
+		  
+		  list(forEach = neuralNetwork.forEach, forAll = neuralNetwork.forAll)
 		}
-	  
-	  list(forEach = neuralNetwork.forEach, forAll = neuralNetwork.forAll)
 	})
 	
-	neuralNetworkTest <- reactive({
-	  database()
-	  db <- data.sets
-	  network <- neuralNetwork()
-	  windows = windowSplit()
-	  id <- input$idSelect
-	  normalization <- input$normalizationRadioButton
+	neuralNetworksTested <- reactive({
+	  neuralNetworksTrained()
 	  
-	  if (is.null(network))
+	  if (!is.null(neuralNetwork.forEach))
 	  {
-	    return(NULL)
-	  }
-	  
-	  scale <- 1
-	  offset <- 0
-	  if (normalization == 'zScore')
-	  {
-	    df <- db[[id]]
-	    scale <- sd(df$y)
-	    offset <- mean(df$y)
-	  }
-	  else if (normalization == 'minmax')
-	  {
-	    df <- db[[id]]
-	    maxs <- max(df$y)
-	    mins <- min(df$y)
+	    testNeuralNetworks()
 	    
-	    scale <- maxs - mins
-	    offset <- mins
+	    list(neuralNetwork.testResults.forEach, neuralNetwork.testRestlts.forEach.hiddenLayers,
+	      neuralNetwork.testResults.forAll, neuralNetwork.testRestlts.forAll.hiddenLayers)
 	  }
-	  
-	  testNeuralNetwork(network, windows$testset, scale, offset)
 	})
 
 	output$idSelectBox <- renderUI({
 	  database()
 
-		if (is.null(data.sets))
+		if (!is.null(data.sets))
 		{
-			return(NULL)
+		  selectInput("idSelect", "Dataset", names(data.sets))
 		}
-
-		selectInput("idSelect", "Dataset", names(data.sets))
+	})
+	
+	output$normalizationRadioButton <- renderUI({
+	  db <- database()
+	  
+	  if (!is.null(db))
+	  {
+	    radioButtons('normalizationRadioButton', 'Normalization',
+	      c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none')
+	  }
+	})	
+	
+	output$horizonSlider <- renderUI({
+	  db <- database()
+	  
+	  if (is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  
+	  sliderInput('horizonSlider', 'Predict Values', 1, 50, 10, step = 1)
+	  
 	})
 
 	output$dataChart <- renderPlotly({
-		df <- dataset()
+	  dataNormalized()
+		id <- input$idSelect
 
-		if (is.null(df))
+		if (is.null(data.normalized) || is.null(id))
 		{
-			return(NULL)
+		  return(NULL)
 		}
-
-		p <- plot_ly(df, x = df$x, y = df$y, type = 'scatter', mode = 'lines')
+		
+		p <- plot_ly(data.normalized[[id]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
 	})
@@ -172,7 +190,7 @@ server <- function(input, output) {
 	
 	
 	output$neuralNetworkChart <- renderPlot({
-	  neuralNetworksLearned()
+	  neuralNetworksTrained()
 	  id <- input$idSelect
 
 		if (!is.null(neuralNetwork.forEach) && !is.null(id))
@@ -181,18 +199,29 @@ server <- function(input, output) {
 		}
 	})
 	
-	output$neuralNetworkCrossValidationChart <- renderPlotly({
-	  mse <- neuralNetworkCrossValidation()
-	  
-	  if (is.null(mse))
-	  {
-	    return(NULL)
-	  }
-	  
-	  p <- plot_ly(x = mse, type = 'box', name = 'MSE')
-	  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
-	  p
+	output$neuralNetworkForecastForEachChart <- renderPlotly({
+	  neuralNetworksTested()
+	  getPredictionPlotly(neuralNetwork.testResults.forEach, input$idSelect)
 	})
+	output$neuralNetworkForecastForEachHiddenChart <- renderPlotly({
+	  neuralNetworksTested()
+	  getPredictionPlotly(neuralNetwork.testResults.forEach.hiddenLayers, input$idSelect)
+	})
+	output$neuralNetworkForecastForAllChart <- renderPlotly({
+	  neuralNetworksTested()
+	  getPredictionPlotly(neuralNetwork.testResults.forAll, input$idSelect)
+	})
+	output$neuralNetworkForecastForAllHiddenChart <- renderPlotly({
+	  neuralNetworksTested()
+	  getPredictionPlotly(neuralNetwork.testResults.forAll.hiddenLayers, input$idSelect)
+	})
+	
+	
+	
+	
+	
+	
+	
 
 	aRModel <- reactive({
 	    meterid <- input$idSelect
@@ -211,80 +240,66 @@ server <- function(input, output) {
 	    }
 	    
 	    
-	    
 	    df = db$y
 	    winSize = input$windowSizeSlider
-	    numPredictValues = input$horizon
+	    numPredictValues = input$horizonSlider
 	    browser()
 	    
 	    to = round(length(df) * dataSplitFactor)
 	    trainData = df[1: to]
 	    aRModel = arima(ts(trainData,start = 1, end = to), order= c(winSize,0,0))
 	    forecast(aRModel, h = numPredictValues)
-	  })
+	})
+	
 	
 	output$aRChart <- renderPlotly({
 	  
-	    fc = aRModel()
+	    db = dataset()
 	    
-	    if (is.null(fc))
+  	  aRMList = getARModelList(db$consumption, input$windowSizeSlider, input$dataPrediction)
+	    if (is.null(aRMList))
 	    {
 	      return(NULL)
 	    }
-	   
-	    df = data.frame(fitted = fc$fitted, act = fc$x)
-	    
-	    p <- plot_ly(df , y = ~fitted, type ="scatter", name= "fitted", mode= "lines+markers")%>%
-	      add_trace(y = ~act, name = 'actual', mode = 'lines+markers')
-	    p$elementId <- NULL
-	    p
-	    
+  	  
+  	  getPlotlyModel(aRMList, db$consumption, input$dataPrediction)
 	  })
 
-	output$ARResultsTable <- renderDataTable({
-	  
-	  fc = aRModel()
-	  data.frame(expected = fc$x , result = fc$fitted)
-	})
+	
 
-	output$aRCForecast <- renderPlotly({
+	output$arMLE <- renderDataTable({
 	  
-	  dataSplitFactor <- input$dataSplitSlider / 100;
-	  fc = aRModel()
-	  if (is.null(fc))
-	  {
-	    return(NULL)
-	  }
-	  
-	  db <- dataset()
-	  
+	  db = dataset()
 	  if(is.null(db))
 	  {
 	    return(NULL)
 	  }
-	  
-	  
-	  df = db$y
-	  
-	  act = 0
-	  numTrain = round(length(df) * dataSplitFactor)
-	  
-	  if((length(df) - numTrain) > input$dataPrediction)
-	  {
-	    act = db$consumption[numTrain+1 : input$dataPrediction]
-	  }
-	  else
-	  {
-	    act = rep(0, input$dataPrediction)
-	  }
-	  
-	  df = data.frame(actual = act, forecast = fc$mean)
-	  
-	  p <- plot_ly(df , y = ~forecast, type ="scatter", name= "Forecast Values", mode= "lines+markers")%>%
-	    add_trace(y = ~actual, name = 'Actual Values', mode = 'lines+markers')
-	  p$elementId <- NULL
-	  p
-	  
-	  
+	  data.frame( MSE = getMLE(db$consumption, input$windowSizeSlider, input$dataPrediction)$mse)
 	})
+	
+	output$arCoef <- renderDataTable({
+	  
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+
+	  data.frame(coef = getCoef(db$y, input$windowSizeSlider, input$dataPrediction)$coef)
+	})
+	
+
+	error_metric <- function(forecast_set, test_set, vergleich){
+	  #browser()
+	  rmse <- rmse(forecast_set, test_set)
+	  smape <- sMAPE(test_set, forecast_set)
+	  data.frame(rmse,smape, sqrt(vergleich))
+	}
+	
+	output$ErrorMetricTable <- renderDataTable({
+	  result <- neuralNetworkTest()
+	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
+	})
+
+	
 }

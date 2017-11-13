@@ -79,8 +79,10 @@ normalizeData <- function(method = 'none') {
     }
     
     # scale data and save scale information
-    data.normalized[[id]] <<- data.table(x = data.sets[[id]]$x, y = scale(data.sets[[id]]$y,
-      center = offset, scale = scale))
+    data.normalized[[id]] <<- data.table(x = data.sets[[id]]$x,
+      y = scale(data.sets[[id]]$y, center = offset, scale = scale))
+    names(data.normalized[[id]]) <<- c('x', 'y')
+    
     data.normalizationInfo[[id]]$scale <<- scale
     data.normalizationInfo[[id]]$offset <<- offset
   }
