@@ -43,7 +43,7 @@ trainNeuralNetwork <- function(trainset, excludeBias, hiddenLayers = c(0)) {
   }
 }
 
-trainNeuralNetworks <- function(excludeBias)
+trainNeuralNetworks <- function(excludeBias, hiddenLayers)
 {
   data.trainSets.ids <- names(data.trainSets)
   for (i in 1:length(data.trainSets.ids))
@@ -51,12 +51,12 @@ trainNeuralNetworks <- function(excludeBias)
     id <- data.trainSets.ids[i]
     
     neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias)
-    neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias, c(0))
+    neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias, hiddenLayers)
   }
   
   trainSetsCombined <- rbindlist(data.trainSets)
   neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined, excludeBias)
-  neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, excludeBias, c(0))
+  neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, excludeBias, hiddenLayers)
 }
 
 testNeuralNetwork <- function(neuralNetwork, testSetID) {
