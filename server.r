@@ -286,7 +286,7 @@ server <- function(input, output) {
 	  {
 	    return(NULL) 
 	  }
-	  data.frame(coef = model$coef)
+	  data.table(coef = model$coef)
 	})
 	
 	
