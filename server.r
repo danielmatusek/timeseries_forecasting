@@ -221,63 +221,97 @@ server <- function(input, output) {
 	
 
 	arModel <- reactive({
-	  db = dataset()
-	  if(is.null(db))
+	  dataset = database()
+	  
+	  if(is.null(dataset))
 	  {
 	    return(NULL)
 	  }
-	  ARModel(db$y, input$windowSizeSlider, input$horizonSlider)
+	  getARModel(dataset[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider)
 	  })
 	
 	output$aRChart <- renderPlotly({
-	    arModel()
+	    if(is.null(arModel()))
+	    {
+	        return(NULL) 
+	    }
   	  getPlotlyModel()
 	  })
 
 	
-
 	output$arMLE <- renderDataTable({
-	  arModel()
-	  error_metric_AR()
+	  if(is.null(arModel()))
+	  {
+	    return(NULL) 
+	  }
+	  error_metric(model$expected, model$result)
 	})
+	
 	
 	output$arCoef <- renderDataTable({
-	  
-	  db = dataset()
-	  if(is.null(db))
+	  if(is.null(arModel()))
 	  {
-	    return(NULL)
+	    return(NULL) 
 	  }
-	  arModel()
-	  data.frame(coef = getARCoef())
+	  data.frame(coef = model$coef)
 	})
 	
 	
-	output$compareBoxplot <- renderPlotly({
+	
+	
+	
+	compareError <- reactive({
+	  dataset = database()
 	  
-	  database = database()
-	  if(is.null(database))
+	  if(is.null(dataset))
 	  {
 	    return(NULL)
 	  }
-
-	  boxplotComarision(database, input$windowSizeSlider, input$horizonSlider)
+	  neuralNetworksTested()
+	  boxplotComarision(input$windowSizeSlider, input$horizonSlider)
 	})
 	
-	  output$compareError <- renderDataTable({
+	output$compareMSE <- renderPlotly({
+	  dataset = database()
+	  
+	  if(is.null(dataset))
+	  {
+	    return(NULL)
+	  }
+	  compareError()
+	  getBoxplot('MSE')
+	})
+	
+	output$compareRMSE <- renderPlotly({
+	  dataset = database()
+	  
+	  if(is.null(dataset))
+	  {
+	    return(NULL)
+	  }
+	  compareError()
+	  getBoxplot('RMSE')
+	})
+	
+	output$compareSMAPE <- renderPlotly({
+	  dataset = database()
+	  
+	  if(is.null(dataset))
+	  {
+	    return(NULL)
+	  }
+	  compareError()
+	  getBoxplot('SMAPE')
+	})
+	
+	
+	output$compareError <- renderDataTable({
 	  
 	    error_metric_compare()
 	})
 	
 	
 
-	error_metric <- function(forecast_set, test_set){
-	  mse <- mse(test_set, forecast_set)
-	  rmse <- rmse(test_set, forecast_set)
-	  smape <- sMAPE(test_set, forecast_set)
-	  data.frame(mse = mse,rmse = rmse, smape = smape)
-	}
-	
 	output$ErrorMetricTable <- renderDataTable({
 	  result <- neuralNetworkTest()
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
