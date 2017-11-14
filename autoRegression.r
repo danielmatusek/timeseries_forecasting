@@ -44,4 +44,14 @@ getPlotlyModel <- function()
 
 
 
+plotACF <- function(consumptionData){
+  data_acf <- acf(consumptionData)
+  data_acf
+}
+
+plotPACF <- function(consumptionData){
+  data_pacf <- pacf(consumptionData)
+  data_pacf
+}
+
 

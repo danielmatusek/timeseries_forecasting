@@ -1,7 +1,7 @@
 library(plotly)
 library(shinydashboard)
 
-ui <- dashboardPage(
+ui <- dashboardPage( skin = "purple",
 	dashboardHeader(title = "FPADB"),
 
 	dashboardSidebar(
@@ -26,6 +26,7 @@ ui <- dashboardPage(
 		            ),
 		            conditionalPanel("input.tabs === 'neuralNetwork'",
 		                             checkboxInput('biasCheckbox', 'Exclude Bias in ANN', TRUE),
+		                             uiOutput("hiddenSliderInput"),
 		                             hr()),
 		            uiOutput("idSelectBox"),
 		            uiOutput('normalizationRadioButton'),
@@ -55,19 +56,23 @@ ui <- dashboardPage(
 
 			tabItem(tabName = "neuralNetwork",
 				tabBox(width = NULL,
-					tabPanel("Chart",
-						plotOutput("neuralNetworkChart", height = "600px")
-					),
+					#tabPanel("Chart",
+					#	plotOutput("neuralNetworkChart", height = "600px")
+					#),
 				  tabPanel('Forecast /1',
+				    plotOutput("neuralNetworkChart", height = "600px"),
 				    plotlyOutput('neuralNetworkForecastForEachChart')
 				  ),
 				  tabPanel('Forecast /1 hidden',
+				    plotOutput("neuralNetworkHiddenChart", height = "600px"),       
 				    plotlyOutput('neuralNetworkForecastForEachHiddenChart')
 				  ),
 				  tabPanel('Forecast /n',
+				    plotOutput("neuralNetworkChartForAll", height = "600px"), 
 				    plotlyOutput('neuralNetworkForecastForAllChart')
 				  ),
 				  tabPanel('Forecast /n hidden',
+				    plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
 				    plotlyOutput('neuralNetworkForecastForAllHiddenChart')
 				  )
 				)
@@ -81,6 +86,10 @@ ui <- dashboardPage(
 			               tabPanel("Statistic",
 			                        dataTableOutput("arMLE"),
 			                        dataTableOutput("arCoef")
+			               ),
+			               tabPanel("Time Series Analysis",
+			                        plotOutput("arACF"),
+			                        plotOutput("arPACF")
 			               )
 			        )
 			),

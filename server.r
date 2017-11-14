@@ -80,6 +80,11 @@ server <- function(input, output) {
 	  selectInput("y_axis","y-Axis", data.names$orig, selected = data.names$orig[3])
 	})
 	
+	output$hiddenSliderInput <- renderUI({
+	  if (is.null(input$windowSizeSlider)) return()
+	  sliderInput("hiddenSliderInput","Number Hidden Neurons", 1, input$windowSizeSlider, 1,  step = 1)
+	})
+	
 	output$windowSizeSlider <- renderUI({
 	  database()
 	  id <- input$idSelect
@@ -120,7 +125,7 @@ server <- function(input, output) {
 	  
 		if (!is.null(data.trainSets))
 		{
-		  trainNeuralNetworks(input$biasCheckbox)
+		  trainNeuralNetworks(input$biasCheckbox, c(input$hiddenSliderInput))
 		  
 		  list(forEach = neuralNetwork.forEach, forAll = neuralNetwork.forAll)
 		}
@@ -153,7 +158,7 @@ server <- function(input, output) {
 	  if (!is.null(db))
 	  {
 	    radioButtons('normalizationRadioButton', 'Normalization',
-	      c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'none')
+	      c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'minmax')
 	  }
 	})	
 	
@@ -199,21 +204,49 @@ server <- function(input, output) {
 		}
 	})
 	
+	output$neuralNetworkHiddenChart <- renderPlot({
+	  neuralNetworksTrained()
+	  id <- input$idSelect
+	  
+	  if (!is.null(neuralNetwork.forEach.hiddenLayers) && !is.null(id))
+	  {
+	    plot(neuralNetwork.forEach.hiddenLayers[[id]], rep = "best")
+	  }
+	})
+	
+	output$neuralNetworkChartForAll <- renderPlot({
+	  neuralNetworksTrained()
+	  
+	  if (!is.null(neuralNetwork.forAll)) 
+	  {
+	    plot(neuralNetwork.forAll, rep = "best")
+	  }
+	})
+	
+	output$neuralNetworkHiddenChartForALL <- renderPlot({
+	  neuralNetworksTrained()
+	  
+	  if (!is.null(neuralNetwork.forAll.hiddenLayers))
+	  {
+	    plot(neuralNetwork.forAll.hiddenLayers, rep = "best")
+	  }
+	})
+	
 	output$neuralNetworkForecastForEachChart <- renderPlotly({
 	  neuralNetworksTested()
-	  getPredictionPlotly(neuralNetwork.testResults.forEach, input$idSelect)
+	  return (getPredictionPlotly(neuralNetwork.testResults.forEach, input$idSelect))
 	})
 	output$neuralNetworkForecastForEachHiddenChart <- renderPlotly({
 	  neuralNetworksTested()
-	  getPredictionPlotly(neuralNetwork.testResults.forEach.hiddenLayers, input$idSelect)
+	  return (getPredictionPlotly(neuralNetwork.testResults.forEach.hiddenLayers, input$idSelect))
 	})
 	output$neuralNetworkForecastForAllChart <- renderPlotly({
 	  neuralNetworksTested()
-	  getPredictionPlotly(neuralNetwork.testResults.forAll, input$idSelect)
+	  return (getPredictionPlotly(neuralNetwork.testResults.forAll, input$idSelect))
 	})
 	output$neuralNetworkForecastForAllHiddenChart <- renderPlotly({
 	  neuralNetworksTested()
-	  getPredictionPlotly(neuralNetwork.testResults.forAll.hiddenLayers, input$idSelect)
+	  return (getPredictionPlotly(neuralNetwork.testResults.forAll.hiddenLayers, input$idSelect))
 	})
 	
 	
@@ -317,5 +350,22 @@ server <- function(input, output) {
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
 
+	output$arACF <- renderPlot({
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  plotACF(db$y)
+	})
+	
+	output$arPACF <- renderPlot({
+	  db = dataset()
+	  if(is.null(db))
+	  {
+	    return(NULL)
+	  }
+	  plotPACF(db$y)
+	})
 	
 }
