@@ -28,7 +28,7 @@ nnhfa.MSES <<- vector()
 nnhfa.RMSES <<- vector()
 nnhfa.SMAPES <<- vector()
 
-boxplotComarision <- function(window, predValue)
+comarision <- function(window, predValue)
 {
   ids = names(data.sets)
   len = length(ids)
