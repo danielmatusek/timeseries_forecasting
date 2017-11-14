@@ -95,10 +95,16 @@ ui <- dashboardPage( skin = "purple",
 			),
 			tabItem(tabName = "comparision",
 			        tabBox(width = NULL,
-			               tabPanel("Boxplot",
-			                        plotlyOutput("compareBoxplot", height = "600px")
+			               tabPanel("MSE",
+			                        plotlyOutput("compareMSE", height = "600px")
 			               ),
-			               tabPanel("Error Metric",
+			               tabPanel("RMSE",
+			                        plotlyOutput("compareRMSE", height = "600px")
+			               ),
+			               tabPanel("SMAPE",
+			                        plotlyOutput("compareSMAPE", height = "600px")
+			               ),
+			               tabPanel("Mean Error",
 			                        dataTableOutput("compareError")
 			               )
 			        )

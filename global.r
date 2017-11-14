@@ -103,3 +103,16 @@ createWindows <- function(windowSize, numTestData) {
     data.testSets[[id]] <<- windows[-index, ]
   }
 }
+
+error_metric <- function(test_set, forecast_set){
+  df <- data.frame(test_set = test_set, forecast_set = forecast_set)
+  mse <- mse(df$test_set, df$forecast_set)
+  rmse <- rmse(df$test_set, df$forecast_set)
+  smape <- sMAPE(df$test_set, df$forecast_set)
+  data.frame(mse = mse,rmse = rmse, smape = smape)
+}
+
+getIDs <- function()
+{
+  
+}
