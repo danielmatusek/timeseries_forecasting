@@ -5,6 +5,9 @@ source('neuralNetwork.r')
 source('global.r')
 
 
+
+
+
 ar.MSES <<- vector()
 ar.RMSES <<- vector()
 ar.SMAPES <<- vector()
@@ -25,13 +28,10 @@ nnhfa.MSES <<- vector()
 nnhfa.RMSES <<- vector()
 nnhfa.SMAPES <<- vector()
 
-boxplotComarision <- function(window, predValue)
+comarision <- function(window, predValue)
 {
-
   ids = names(data.sets)
-  
   len = length(ids)
-
 
   for(i in 1 : len)
   {
@@ -64,8 +64,6 @@ boxplotComarision <- function(window, predValue)
     nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
     nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
   }
-  
-
 }
 
 getBoxplot <- function(errorName)
@@ -146,7 +144,6 @@ error_metric_compare <- function()
   SMAPES <- c(SMAPES, mean(nnfa.SMAPES))
   SMAPES <- c(SMAPES, mean(nnhfa.SMAPES))
   
-
-  data.frame(MSE = MSES, RMSE =  RMSES, SMAPE = SMAPES, row.names = c("AR", "NN", "NNH", "NNFA", "NNHFA"))
+  data.table(NAME = c("AR", "NN", "NNH", "NNFA", "NNHFA"), MSE = MSES, RMSE =  RMSES, SMAPE = SMAPES)
 }
 

@@ -291,7 +291,7 @@ server <- function(input, output) {
 	  {
 	    return(NULL) 
 	  }
-	  data.frame(coef = model$coef)
+	  data.table(coef = model$coef)
 	})
 	
 	
@@ -306,7 +306,7 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  neuralNetworksTested()
-	  boxplotComarision(input$windowSizeSlider, input$horizonSlider)
+	  comarision(input$windowSizeSlider, input$horizonSlider)
 	})
 	
 	output$compareMSE <- renderPlotly({
