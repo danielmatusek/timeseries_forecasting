@@ -105,13 +105,12 @@ createWindows <- function(windowSize, numTestData) {
 }
 
 error_metric <- function(test_set, forecast_set){
-  test_set = test_set[1 : (length(test_set) - 1)]
-  forecast_set = forecast_set[2 : (length(forecast_set))]
-  
-  df <- data.frame(test_set = test_set, forecast_set = forecast_set)
-  mse <- mse(df$test_set, df$forecast_set)
-  rmse <- rmse(df$test_set, df$forecast_set)
-  smape <- sMAPE(df$test_set, df$forecast_set)
+  #forecast_set ist von Datentyp matric, muss aber numeric sein
+  forecast_set <- as.numeric(forecast_set)
+  test_set <- as.numeric(test_set)
+  mse <- mse(test_set, forecast_set)
+  rmse <- rmse(test_set, forecast_set)
+  smape <- sMAPE(test_set, forecast_set)
   data.frame(mse = mse,rmse = rmse, smape = smape)
 }
 

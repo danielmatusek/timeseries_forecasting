@@ -73,7 +73,7 @@ server <- function(input, output) {
 		}
 	})
 	
-	output$x_axis <- renderUI({ 
+	output$x_axis <- renderUI(   { 
 	  df <- database()
 	  if (is.null(data.names)) return()
 	  selectInput("x_axis", "x-Axis", data.names$orig, selected = data.names$orig[2])
@@ -102,7 +102,7 @@ server <- function(input, output) {
 	  sliderInput('windowSizeSlider', 'Window Size', 1, max(numData)*0.1, max(numData)*0.05, step = 1)
 	})
 	
-	windowsCreated <- reactive({
+	windowsCreated <- eventReactive(input$ButtonClick, {
 	  dataNormalized()
 	  windowSize <- input$windowSizeSlider
 	  horizon <- input$horizonSlider
