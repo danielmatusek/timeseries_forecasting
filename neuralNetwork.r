@@ -14,6 +14,7 @@ trainNeuralNetwork <- function(trainset, excludeBias, hiddenLayers = c(0)) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   
+  
   if(excludeBias) {
     window_size <- length(trainset) - 1
     
@@ -70,14 +71,14 @@ testNeuralNetwork <- function(neuralNetwork, testSetID) {
   expected <- data.testSets[[testSetID]]$xt0
   testData <- data.testSets[[testSetID]]
   testData$xt0 <- NULL
-  
   scale <- data.normalizationInfo[[testSetID]]$scale
   offset <- data.normalizationInfo[[testSetID]]$offset
   
   n <- compute(neuralNetwork, testData)
-  
   n$net.result <- n$net.result * scale + offset
   n$net.expected <- expected * scale + offset
+  
+
   n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
   
   n
