@@ -130,9 +130,7 @@ server <- function(input, output) {
 	  
 		if (!is.null(data.trainSets))
 		{
-		  withProgress(message = 'Learning Neural Networks', value = 0, {
-		    trainNeuralNetworks(input$biasCheckbox, c(input$hiddenSliderInput))
-		  })
+		  trainNeuralNetworks(input$biasCheckbox, c(input$hiddenSliderInput))
 		  
 		  list(forEach = neuralNetwork.forEach, forAll = neuralNetwork.forAll)
 		}
