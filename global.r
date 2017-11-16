@@ -102,6 +102,8 @@ createWindows <- function(windowSize, numTestData) {
     data.trainSets[[id]] <<- windows[index, ]
     data.testSets[[id]] <<- windows[-index, ]
   }
+  
+  neuralNetwork.learnedWithoutHiddenLayers <<- FALSE
 }
 
 error_metric <- function(test_set, forecast_set){

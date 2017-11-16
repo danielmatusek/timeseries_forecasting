@@ -10,6 +10,8 @@ neuralNetwork.testResults.forEach.hiddenLayers <- NULL
 neuralNetwork.testResults.forAll <- NULL
 neuralNetwork.testResults.forAll.hiddenLayers <- NULL
 
+neuralNetwork.learnedWithoutHiddenLayers <- FALSE
+
 trainNeuralNetwork <- function(trainset, excludeBias, hiddenLayers = c(0)) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
@@ -47,24 +49,42 @@ trainNeuralNetwork <- function(trainset, excludeBias, hiddenLayers = c(0)) {
 trainNeuralNetworks <- function(excludeBias, hiddenLayers)
 {
   data.trainSets.ids <- names(data.trainSets)
-  
-  numNN <- 2 * length(data.trainSets.ids) + 2
-  
-  for (i in 1:length(data.trainSets.ids))
-  {
-    id <- data.trainSets.ids[i]
-    
-    incProgress(1/numNN, detail = paste('ID', id, '(without hidden layers)'))
-    neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias)
-    incProgress(1/numNN, detail = paste('ID', id, '(with hidden layers)'))
-    neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias, hiddenLayers)
-  }
-  
   trainSetsCombined <- rbindlist(data.trainSets)
-  incProgress(1/numNN, detail = 'General for all (without hidden layers)')
-  neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined, excludeBias)
-  incProgress(1/numNN, detail = 'General for all (with hidden layers)')
-  neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, excludeBias, hiddenLayers)
+  numNN <- length(data.trainSets.ids) + 1
+  
+  
+  withProgress(message = "Learning Neural Network", value = 0, {
+    # Learn neural networks without a hidden layer
+    if (!neuralNetwork.learnedWithoutHiddenLayers)
+    {
+      numNN <- 2 * numNN
+      
+      for (i in 1:length(data.trainSets.ids))
+      {
+        id <- data.trainSets.ids[i]
+        
+        incProgress(1/numNN, detail = paste('Without hidden layers: ID', id))
+        neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias)
+      }
+      
+      incProgress(1/numNN, detail = 'Without hidden layers: General for all')
+      neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined, excludeBias)
+      
+      neuralNetwork.learnedWithoutHiddenLayers <<- TRUE
+    }
+    
+    # Learn neural networks with hidden layer
+    for (i in 1:length(data.trainSets.ids))
+    {
+      id <- data.trainSets.ids[i]
+      
+      incProgress(1/numNN, detail = paste('With hidden layers: ID', id))
+      neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], excludeBias, hiddenLayers)
+    }
+    
+    incProgress(1/numNN, detail = 'With hidden layers: General for all')
+    neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, excludeBias, hiddenLayers)
+  })
 }
 
 testNeuralNetwork <- function(neuralNetwork, testSetID) {
