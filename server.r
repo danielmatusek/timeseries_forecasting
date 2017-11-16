@@ -99,7 +99,7 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  numData <- length(data.sets[[id]]$x)
-	  sliderInput('windowSizeSlider', 'Window Size', 1, max(numData)*0.1, max(numData)*0.05, step = 1)
+	  sliderInput('windowSizeSlider', 'Window Size', 1, value = 7,  max(numData)*0.1, max(numData)*0.05, step = 1)
 	})
 	
 	windowsCreated <- eventReactive(input$ButtonClick, {
@@ -130,9 +130,7 @@ server <- function(input, output) {
 	  
 		if (!is.null(data.trainSets))
 		{
-		  withProgress(message = 'Learning Neural Networks', value = 0, {
-		    trainNeuralNetworks(input$biasCheckbox, c(input$hiddenSliderInput))
-		  })
+		  trainNeuralNetworks(input$biasCheckbox, c(input$hiddenSliderInput))
 		  
 		  list(forEach = neuralNetwork.forEach, forAll = neuralNetwork.forAll)
 		}
@@ -261,38 +259,32 @@ server <- function(input, output) {
 	
 
 	arModel <- reactive({
-	  dataset = database()
+	  dataset = dataNormalized()
 	  
 	  if(is.null(dataset))
 	  {
 	    return(NULL)
 	  }
-	  getARModel(dataset[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider)
-	  })
+	  getARModel(input$idSelect, data.normalized[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider, input$aRModelName)
+	})
 	
 	output$aRChart <- renderPlotly({
-	    if(is.null(arModel()))
-	    {
-	        return(NULL) 
-	    }
+	    if(is.null(arModel())) return(NULL)
+
   	  getPlotlyModel()
 	  })
 
 	
 	output$arMLE <- renderDataTable({
-	  if(is.null(arModel()))
-	  {
-	    return(NULL) 
-	  }
+	  if(is.null(arModel())) return(NULL) 
+
 	  error_metric(model$expected, model$result)
 	})
 	
 	
 	output$arCoef <- renderDataTable({
-	  if(is.null(arModel()))
-	  {
-	    return(NULL) 
-	  }
+	  if(is.null(arModel())) return(NULL) 
+	  
 	  data.table(coef = model$coef)
 	})
 	
@@ -301,12 +293,7 @@ server <- function(input, output) {
 	
 	
 	compareError <- reactive({
-	  dataset = database()
-	  
-	  if(is.null(dataset))
-	  {
-	    return(NULL)
-	  }
+	  if(is.null(dataset())) return(NULL)
 	  neuralNetworksTested()
 	  comarision(input$windowSizeSlider, input$horizonSlider)
 	})
