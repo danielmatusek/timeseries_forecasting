@@ -79,7 +79,7 @@ server <- function(input, output) {
 		}
 	})
 	
-	output$x_axis <- renderUI({ 
+	output$x_axis <- renderUI(   { 
 	  df <- database()
 	  if (is.null(data.names)) return()
 	  selectInput("x_axis", "x-Axis", data.names$orig, selected = data.names$orig[2])
@@ -108,7 +108,7 @@ server <- function(input, output) {
 	  sliderInput('windowSizeSlider', 'Window Size', 1, 0.1*numData, 0.0175*numData, step = 1)
 	})
 	
-	windowsCreated <- reactive({
+	windowsCreated <- eventReactive(input$ButtonClick, {
 	  dataNormalized()
 	  windowSize <- input$windowSizeSlider
 	  horizon <- input$horizonSlider
@@ -277,38 +277,32 @@ server <- function(input, output) {
 	
 
 	arModel <- reactive({
-	  dataset = database()
+	  dataset = dataNormalized()
 	  
 	  if(is.null(dataset))
 	  {
 	    return(NULL)
 	  }
-	  getARModel(dataset[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider)
-	  })
+	  getARModel(input$idSelect, data.normalized[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider, input$aRModelName)
+	})
 	
 	output$aRChart <- renderPlotly({
-	    if(is.null(arModel()))
-	    {
-	        return(NULL) 
-	    }
+	    if(is.null(arModel())) return(NULL)
+
   	  getPlotlyModel()
 	  })
 
 	
 	output$arMLE <- renderDataTable({
-	  if(is.null(arModel()))
-	  {
-	    return(NULL) 
-	  }
+	  if(is.null(arModel())) return(NULL) 
+
 	  error_metric(model$expected, model$result)
 	})
 	
 	
 	output$arCoef <- renderDataTable({
-	  if(is.null(arModel()))
-	  {
-	    return(NULL) 
-	  }
+	  if(is.null(arModel())) return(NULL) 
+	  
 	  data.table(coef = model$coef)
 	})
 	
@@ -317,12 +311,7 @@ server <- function(input, output) {
 	
 	
 	compareError <- reactive({
-	  dataset = database()
-	  
-	  if(is.null(dataset))
-	  {
-	    return(NULL)
-	  }
+	  if(is.null(dataset())) return(NULL)
 	  neuralNetworksTested()
 	  comarision(input$windowSizeSlider, input$horizonSlider)
 	})

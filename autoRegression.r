@@ -2,30 +2,50 @@ library(plotly)
 library(forecast)
 library(stats)
 
-model <- NULL
-arima.foreach <- NULL
+ar.models <- NULL
 
-getARModel <- function(y, window, predValue)
+getARModel <- function(id, y, window, predValue, arModelName)
 {
+  predictValue <<- predValue
   if(is.null(y)  || is.null(window) || is.null(predValue))
   {
     return(NULL)
   }
   
-  predictValue <<- predValue
-  spl <<- length(y) - predictValue
-  trainData <<- y[1: spl]
-  testData <<- y[(spl+1): length(y)]
+  spl <<- length(y) - predValue
+  trainData <<- y[(1 : spl)]
+  testData <<- y[-(1 : spl)]
+  arModel <- NULL
+  coef <- NULL
+  if(arModelName == "AR")
+  {
+    arModel <- stats::ar(ts(trainData), aic = FALSE, window, method = "burg")
+    coef <- arModel$ar
+    
+  }
+  else if (arModelName == "AutoArima")
+  {
+    arModel <- auto.arima(ts(trainData), start.p = window, max.p = window, d = 0, max.q = 0)
+    coef <- arModel$coef[1 : (length(arModel$coef) - 1)]
+  } 
   
-  ar = stats::ar(ts(trainData), aic = FALSE, window, method = "burg")
-  tsPred = predict(ar, n.ahead = predictValue)
-  model <<- list(coef = ar$ar, result = tsPred$pred, expected = testData)
+  
+  tsPred = predict(arModel, n.ahead = predValue)
+  scale <- data.normalizationInfo[[id]]$scale
+  offset <- data.normalizationInfo[[id]]$offset
+ 
+  
+  model <<- list(coef = coef,trained = (trainData * scale + offset), result = (tsPred$pred * scale + offset), expected = (testData * scale + offset))
   model
 }
 
 getAllARModels <-function(window, predValue)
 {
-  
+    ids = names(data.sets)
+    for(id in 1 : length(ids))
+    {
+      ar.models[[id]] <<- getARModel(id, window, predValue)
+    }
 }
 
 getPlotlyModel <- function()
@@ -41,15 +61,16 @@ getPlotlyModel <- function()
     title = data.names$x,
     titlefont = f
   )
+  
   y <- list(
     title = data.names$y,
     titlefont = f
   )
   
   p <- plot_ly()%>%
-    add_lines(x = (1 : spl), y = trainData, color = I("blue"), name = "Original")%>%
-    add_lines(x = ((spl+1): (spl+predictValue)), y = testData, color = I("blue"), name = "Original FC")%>%
-    add_lines(x = ((spl+1): (spl+predictValue)), y = model$result, color = I("red"), name = "Prediction")%>%
+    add_lines(x = (1 : spl), y = model$trained, color = I("blue"), name = "Original")%>%
+    add_lines(x = ((spl + 1): (spl + predictValue)), y = model$expected, color = I("blue"), name = "Original FC")%>%
+    add_lines(x = ((spl + 1): (spl + predictValue)), y = model$result, color = I("red"), name = "Prediction")%>%
     layout(xaxis = x, yaxis = y)
    
   p$elementId <- NULL
