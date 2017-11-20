@@ -43,15 +43,24 @@ getPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
 }
 
 server <- function(input, output) {
+  rawData <- reactive({
+    file <- input$dataFile
+    
+    if (is.null(file))
+    {
+      return(NULL)
+    }
+    
+    #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+    read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+  })
 
   database <- reactive({
-    file <- input$dataFile
+    data <- rawData()
 
-    if (!is.null(file))
+    if (!is.null(data))
     {
-      #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-      data <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-      parseData(data, xName = input$x_axis, yName = input$y_axis)
+      parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
       
       data.sets
     }
@@ -79,35 +88,6 @@ server <- function(input, output) {
 		}
 	})
 	
-	output$x_axis <- renderUI(   { 
-	  df <- database()
-	  if (is.null(data.names)) return()
-	  selectInput("x_axis", "x-Axis", data.names$orig, selected = data.names$orig[2])
-	})
-	
-	output$y_axis <- renderUI({
-	  df <- database()
-	  if (is.null(data.names)) return()
-	  selectInput("y_axis","y-Axis", data.names$orig, selected = data.names$orig[3])
-	})
-	
-	output$hiddenSliderInput <- renderUI({
-	  if (is.null(input$windowSizeSlider)) return()
-	  sliderInput("hiddenSliderInput","Number Hidden Neurons", 1, input$windowSizeSlider, 3,  step = 1)
-	})
-	
-	output$windowSizeSlider <- renderUI({
-	  database()
-	  id <- input$idSelect
-	  
-	  if (is.null(data.sets) || is.null(id))
-	  {
-	    return(NULL)
-	  }
-	  numData <- length(data.sets[[id]]$x)
-	  sliderInput('windowSizeSlider', 'Window Size', 1, 0.1*numData, 0.0175*numData, step = 1)
-	})
-	
 	windowsCreated <- eventReactive(input$ButtonClick, {
 	  dataNormalized()
 	  windowSize <- input$windowSizeSlider
@@ -126,19 +106,11 @@ server <- function(input, output) {
 	  windowsCreated()
 	  id <- input$idSelect
 	  
-	  if (!is.null(data.testSets))
-	  {
-	    list(trainset = data.trainSets[[id]], testset = data.testSets[[id]])
-	  }
+	  list(trainset = data.trainSets[[id]], testset = data.testSets[[id]])
 	})
 
 	neuralNetworksTrained <- reactive({
 	  windowsCreated()
-	  
-		if (is.null(data.trainSets) || is.null(input$hiddenSliderInput))
-		{
-		  return(NULL)
-		}
 	  
 	  resetNeuralNetworks.hidden()
 	  trainNeuralNetworks(input$biasCheckbox, c(input$hiddenSliderInput))
@@ -149,44 +121,10 @@ server <- function(input, output) {
 	neuralNetworksTested <- reactive({
 	  neuralNetworksTrained()
 	  
-	  if (!is.null(neuralNetwork.forEach))
-	  {
-	    testNeuralNetworks()
-	    
-	    list(neuralNetwork.testResults.forEach, neuralNetwork.testResults.forEach.hiddenLayers,
-	      neuralNetwork.testResults.forAll, neuralNetwork.testResults.forAll.hiddenLayers)
-	  }
-	})
-
-	output$idSelectBox <- renderUI({
-	  database()
-
-		if (!is.null(data.sets))
-		{
-		  selectInput("idSelect", "Dataset", names(data.sets))
-		}
-	})
-	
-	output$normalizationRadioButton <- renderUI({
-	  db <- database()
+	  testNeuralNetworks()
 	  
-	  if (!is.null(db))
-	  {
-	    radioButtons('normalizationRadioButton', 'Normalization',
-	      c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'minmax')
-	  }
-	})	
-	
-	output$horizonSlider <- renderUI({
-	  db <- database()
-	  
-	  if (is.null(db))
-	  {
-	    return(NULL)
-	  }
-	  
-	  sliderInput('horizonSlider', 'Predict Values', 1, 50, 7, step = 1)
-	  
+	  list(neuralNetwork.testResults.forEach, neuralNetwork.testResults.forEach.hiddenLayers,
+	    neuralNetwork.testResults.forAll, neuralNetwork.testResults.forAll.hiddenLayers)
 	})
 
 	output$dataChart <- renderPlotly({
@@ -203,56 +141,45 @@ server <- function(input, output) {
 		p
 	})
 	
-	output$dataTable <- renderDataTable(dataset())
-	output$trainDataTable <- renderDataTable(windowSplit()$trainset)
-	output$testDataTable <- renderDataTable(windowSplit()$testset)
+	output$dataTable <- renderDataTable({
+	  databaseChanged()
+	  data.sets[[input$idSelect]]
+	})
+	output$trainDataTable <- renderDataTable({
+	  windowsChanged()
+	  getTrainSet(input$idSelect)
+	})
+	output$testDataTable <- renderDataTable({
+	  windowsChanged()
+	  getTestSet(input$idSelect)
+	})
   
 	
 	
 	output$neuralNetworkChart <- renderPlot({
-	  #neuralNetworksTrained()
-	  id <- input$idSelect
-
-		if (!is.null(id))
-		{
-		  nn <- getNeuralNetwork(id)
-		  if (!is.null(nn))
-		  {
-		    plot(nn, rep = "best")
-		  }
-		}
+	  windowsChanged()
+	  excludeBiasChanged()
+		plot(getNeuralNetwork(input$idSelect), rep = 'best')
 	})
 	
 	output$neuralNetworkHiddenChart <- renderPlot({
-	  #neuralNetworksTrained()
-	  id <- input$idSelect
-	  
-	  if (!is.null(id))
-	  {
-	    nn <- getNeuralNetwork(id, TRUE)
-	    if (!is.null(nn))
-	    {
-	      plot(nn, rep = "best")
-	    }
-	  }
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  plot(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE), rep = 'best')
 	})
 	
 	output$neuralNetworkChartForAll <- renderPlot({
-	  #neuralNetworksTrained()
-	  
-	  if (!is.null(neuralNetwork.forAll)) 
-	  {
-	    plot(neuralNetwork.forAll, rep = "best")
-	  }
+	  windowsChanged()
+	  excludeBiasChanged()
+	  plot(getNeuralNetwork(NULL), rep = 'best')
 	})
 	
 	output$neuralNetworkHiddenChartForALL <- renderPlot({
-	  #neuralNetworksTrained()
-	  
-	  if (!is.null(neuralNetwork.forAll.hiddenLayers))
-	  {
-	    plot(neuralNetwork.forAll.hiddenLayers, rep = "best")
-	  }
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  plot(getNeuralNetwork(NULL, hiddenLayers = TRUE), rep = 'best')
 	})
 	
 	output$neuralNetworkForecastForEachChart <- renderPlotly({
@@ -380,4 +307,109 @@ server <- function(input, output) {
 	  plotPACF(db$y)
 	})
 	
+	
+	
+	
+	
+	### Settings Changed Events
+	### Remember to set the output output option suspendwhenHidden to FALSE
+	
+	databaseChanged <- reactive({
+	  rawData()
+	  input$idColumnSelect
+	  input$x_axis
+	  input$y_axis
+	  
+	  resetNeuralNetworks()
+	})
+	output$databaseChanged <- reactive(databaseChanged())
+	outputOptions(output, 'databaseChanged', suspendWhenHidden = FALSE)
+	
+	windowsChanged <- reactive({
+	  data.windowSize <<- input$windowSizeSlider
+	  data.horizon <<- input$horizonSlider
+	  
+	  resetWindows()
+	  resetNeuralNetworks()
+	  setNeuralNetworkExcludeVector()
+	})
+	output$windowsChanged <- reactive(windowsChanged())
+	#outputOptions(output, 'windowsChanged', suspendWhenHidden = FALSE)
+	
+	excludeBiasChanged <- reactive({
+	  neuralNetwork.excludeBias <<- input$biasCheckbox
+	  
+	  resetNeuralNetworks()
+	})
+	output$excludeBiasChanged <- reactive(excludeBiasChanged())
+	
+	hiddenLayersChanged <- reactive({
+	  neuralNetwork.hiddenLayers <<- c(input$hiddenSliderInput)
+	  
+	  resetNeuralNetworks.hidden()
+	})
+	output$hiddenLayersChanged <- reactive(hiddenLayersChanged())
+	outputOptions(output, 'hiddenLayersChanged', suspendWhenHidden = FALSE)
+	
+	
+	
+	
+	
+	### UI elements
+	
+	output$idColumnSelect <- renderUI({
+	  df <- rawData()
+	  if (is.null(df)) return()
+	  columns <- names(df)
+	  selectInput('idColumnSelect', 'ID Name', columns, selected = columns[1])
+	})
+	
+	output$x_axis <- renderUI({
+	  df <- rawData()
+	  if (is.null(df)) return()
+	  columns <- names(df)
+	  selectInput("x_axis", "x-axis", columns, selected = columns[2])
+	})
+	
+	output$y_axis <- renderUI({
+	  df <- rawData()
+	  if (is.null(df)) return()
+	  columns <- names(df)
+	  selectInput("y_axis","y-axis", columns, selected = columns[3])
+	})
+	
+	output$idSelectBox <- renderUI({
+	  database()
+	  
+	  if (!is.null(data.sets))
+	  {
+	    selectInput("idSelect", "Dataset", names(data.sets))
+	  }
+	})
+	
+	output$windowSizeSlider <- renderUI({
+	  database()
+	  id <- input$idSelect
+	  
+	  if (is.null(data.sets) || is.null(id))
+	  {
+	    return(NULL)
+	  }
+	  numData <- length(data.sets[[id]]$x)
+	  sliderInput('windowSizeSlider', 'Window Size', 1, 0.05*numData, 0.0175*numData, step = 1)
+	})
+	
+	output$horizonSlider <- renderUI({
+	  windowSize <- input$windowSizeSlider
+	  
+	  if(!is.null(windowSize))
+	  {
+	    sliderInput('horizonSlider', 'Predict Values', 1, 2*windowSize, windowSize, step = 1)
+	  }
+	})
+	
+	output$hiddenSliderInput <- renderUI({
+	  if (is.null(input$windowSizeSlider)) return()
+	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, input$windowSizeSlider, 3, step = 1)
+	})
 }

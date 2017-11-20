@@ -6,6 +6,9 @@ data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
 
+data.windowSize <- NULL
+data.horizon <- NULL
+
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names
   if (length(data) >= 3)
@@ -88,26 +91,51 @@ normalizeData <- function(method = 'none') {
   }
 }
 
-createWindows <- function(windowSize, numTestData) {
-  data.normalized.ids <- names(data.normalized)
-  for (i in 1:length(data.normalized.ids))
+resetWindows <- function() {
+  data.trainSets <<- NULL
+  data.testSets <<- NULL
+}
+
+createWindows <- function(id) {
+  windows <- as.data.table(rollapply(data.sets[[id]]$y, width = data.windowSize+1, FUN = identity, by = 1),
+    by.column = TRUE)
+  names(windows) <- paste0('xt', data.windowSize:0)
+  
+  index <- 1:(nrow(windows) - data.horizon)
+  data.trainSets[[id]] <<- windows[index, ]
+  data.testSets[[id]] <<- windows[-index, ]
+}
+
+getTrainSet <- function(id) {
+  if (is.null(data.trainSets[[id]]))
   {
-    id <- data.normalized.ids[i]
-    
-    windows <- as.data.table(rollapply(data.normalized[[id]]$y, width = windowSize+1, FUN = identity, by = 1),
-      by.column = TRUE)
-    names(windows) <- paste0('xt', windowSize:0)
-    
-    index <- 1:(nrow(windows) - numTestData)
-    data.trainSets[[id]] <<- windows[index, ]
-    data.testSets[[id]] <<- windows[-index, ]
+    createWindows(id)
   }
   
-  neuralNetwork.learnedWithoutHiddenLayers <<- FALSE
+  return(data.trainSets[[id]])
+}
+
+getAllTrainSetsCombined <- function() {
+  ids <- names(data.sets)
+  for (i in 1:length(ids))
+  {
+    getTrainSet(ids[i])
+  }
+  
+  return(rbindlist(data.trainSets))
+}
+
+getTestSet <- function(id) {
+  if (is.null(data.testSets[[id]]))
+  {
+    createWindows(id)
+  }
+  
+  return(data.testSets[[id]])
 }
 
 error_metric <- function(test_set, forecast_set){
-  #forecast_set ist von Datentyp matric, muss aber numeric sein
+  #forecast_set ist von Datentyp matrix, muss aber numeric sein
   forecast_set <- as.numeric(forecast_set)
   test_set <- as.numeric(test_set)
   mse <- mse(test_set, forecast_set)

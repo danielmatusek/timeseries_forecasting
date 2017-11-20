@@ -24,13 +24,13 @@ resetNeuralNetworks <- function()
   neuralNetwork.testResults.forAll <<- NULL
 }
 
-setExcludeVector <- function(windowSize) {
+setNeuralNetworkExcludeVector <- function() {
   # Calculate Bias Neuron weights (see: https://stackoverflow.com/q/40633567)
   neuralNetwork.excludeVector <<- c(1) # first bias needs to be excluded every time
   if(neuralNetwork.hiddenLayers[1] > 0){ #only if hidden layer are present
     
     layer_vector <- NULL #we need the number of nodes in every vertical row (e.g. c(num(input_neuron), num(first_hiddenLayers)...))
-    layer_vector[1] <- windowSize #number of input neurons
+    layer_vector[1] <- data.windowSize #number of input neurons
     for(i in 1:length(neuralNetwork.hiddenLayers)){
       layer_vector[i+1] <- neuralNetwork.hiddenLayers[i] #create the layer vector
     }
@@ -51,7 +51,6 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   
   if(neuralNetwork.excludeBias) {
-    setExcludeVector(length(trainset) - 1)
     
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE,
       exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector))
@@ -66,7 +65,7 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
 getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
   if (is.null(id))
   {
-    trainSetsCombined <- rbindlist(data.trainSets)
+    trainSetsCombined <- getAllTrainSetsCombined()
     if (hiddenLayers)
     {
       if (is.null(neuralNetwork.forAll.hiddenLayers))
@@ -92,7 +91,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
     {
       if (is.null(neuralNetwork.forEach.hiddenLayers[[id]]))
       {
-        neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(data.trainSets[[id]], neuralNetwork.hiddenLayers)
+        neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
       }
       
       return(neuralNetwork.forEach.hiddenLayers[[id]])
@@ -101,7 +100,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
     {
       if (is.null(neuralNetwork.forEach[[id]]))
       {
-        neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(data.trainSets[[id]])
+        neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(getTrainSet(id))
       }
       
       return(neuralNetwork.forEach[[id]])
@@ -146,11 +145,13 @@ trainNeuralNetworks <- function(excludeBias, hiddenLayers)
 }
 
 testNeuralNetwork <- function(neuralNetwork, testSetID) {
-  expected <- data.testSets[[testSetID]]$xt0
-  testData <- data.testSets[[testSetID]]
+  expected <- getTestSet(testSetID)$xt0
+  testData <- getTestSet(testSetID)
   testData$xt0 <- NULL
-  scale <- data.normalizationInfo[[testSetID]]$scale
-  offset <- data.normalizationInfo[[testSetID]]$offset
+  #scale <- data.normalizationInfo[[testSetID]]$scale
+  #offset <- data.normalizationInfo[[testSetID]]$offset
+  scale <- 1
+  offset <- 0
   
   n <- compute(neuralNetwork, testData)
   n$net.result <- n$net.result * scale + offset
