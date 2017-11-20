@@ -1,8 +1,16 @@
 library(plotly)
 library(shinydashboard)
 
-ui <- dashboardPage( skin = "purple",
-	dashboardHeader(title = "FPADB"),
+ui <- dashboardPage(skin = 'purple',
+	dashboardHeader(title = 'FPADB',
+	  tags$li(a(
+	    conditionalPanel(
+	      condition = '$("html").hasClass("shiny-busy")',
+	      icon('circle-o-notch', 'fa-spin'),
+	      tags$span('loading...'))
+	    ),
+	    class = 'dropdown'
+	)),
 
 	dashboardSidebar(
 	  conditionalPanel('output.idColumnSelect != null',# cannot depend on input$dataFile directly.
@@ -72,9 +80,6 @@ ui <- dashboardPage( skin = "purple",
 
 			tabItem(tabName = "neuralNetwork",
 				tabBox(width = NULL,
-					#tabPanel("Chart",
-					#	plotOutput("neuralNetworkChart", height = "600px")
-					#),
 				  tabPanel('Forecast /1',
 				    plotOutput("neuralNetworkChart", height = "600px"),
 				    plotlyOutput('neuralNetworkForecastForEachChart')
@@ -125,9 +130,6 @@ ui <- dashboardPage( skin = "purple",
 			               )
 			        )
 			)
-			
-			
-			
 		)
 	)
 )

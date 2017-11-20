@@ -51,12 +51,11 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   
   if(neuralNetwork.excludeBias) {
-    
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE,
-      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector))
+      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector), threshold = 0.0001)
   }
   else {
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE)
+    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, threshold = 0.0001)
   }
 }
 
@@ -148,15 +147,9 @@ testNeuralNetwork <- function(neuralNetwork, testSetID) {
   expected <- getTestSet(testSetID)$xt0
   testData <- getTestSet(testSetID)
   testData$xt0 <- NULL
-  #scale <- data.normalizationInfo[[testSetID]]$scale
-  #offset <- data.normalizationInfo[[testSetID]]$offset
-  scale <- 1
-  offset <- 0
   
   n <- compute(neuralNetwork, testData)
-  n$net.result <- n$net.result * scale + offset
-  n$net.expected <- expected * scale + offset
-  
+  n$net.expected <- expected
 
   n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
   
@@ -220,4 +213,38 @@ testNeuralNetworks <- function() {
     getNeuralNetworkTestResults(id, forAll = TRUE)
     getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)
   }
+}
+
+getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
+  if (is.null(id))
+  {
+    return(NULL)
+  }
+  
+  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers)
+  if (is.null(testResults))
+  {
+    return(NULL)
+  }
+  
+  data.length <- length(data.sets[[id]]$y)
+  numTestResults <- length(testResults$net.result)
+  startRealData <- max(1, data.length - 2 * numTestResults + 1)
+  
+  prediction <- rbindlist(list(
+    as.data.table(rep(NA, numTestResults)),
+    as.data.table(testResults$net.result)
+  ))
+  names(prediction) <- c('prediction')
+  
+  prediction$x <- data.sets[[id]]$x[startRealData:data.length]
+  prediction$y <- data.sets[[id]]$y[startRealData:data.length]
+  
+  startIndex = data.length - startRealData - numTestResults + 1
+  prediction$prediction[[startIndex]] <- prediction$y[[startIndex]]
+  
+  p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
+    add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
+  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
+  p
 }

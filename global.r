@@ -1,7 +1,5 @@
 data.names <- NULL
 data.sets <- NULL
-data.normalized <- NULL
-data.normalizationInfo <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
@@ -55,39 +53,6 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
     
     # split data into sets with the same id
     data.sets <<- split(data, by = 'id')
-  }
-}
-
-normalizeData <- function(method = 'none') {
-  data.sets.ids <- names(data.sets)
-  for (i in 1:length(data.sets.ids))
-  {
-    id <- data.sets.ids[i]
-    
-    # calculate scale and offset
-    scale <- 1
-    offset <- 0
-    if (method == 'zScore')
-    {
-      scale <- sd(data.sets[[id]]$y)
-      offset <- mean(data.sets[[id]]$y)
-    }
-    else if (method == 'minmax')
-    {
-      minValue <- min(data.sets[[id]]$y)
-      maxValue <- max(data.sets[[id]]$y)
-      
-      scale <- maxValue - minValue
-      offset <- minValue
-    }
-    
-    # scale data and save scale information
-    data.normalized[[id]] <<- data.table(x = data.sets[[id]]$x,
-      y = scale(data.sets[[id]]$y, center = offset, scale = scale))
-    names(data.normalized[[id]]) <<- c('x', 'y')
-    
-    data.normalizationInfo[[id]]$scale <<- scale
-    data.normalizationInfo[[id]]$offset <<- offset
   }
 }
 
