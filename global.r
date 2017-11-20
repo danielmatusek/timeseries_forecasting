@@ -1,10 +1,11 @@
 data.names <- NULL
 data.sets <- NULL
-data.normalized <- NULL
-data.normalizationInfo <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
+
+data.windowSize <- NULL
+data.horizon <- NULL
 
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names
@@ -55,63 +56,56 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   }
 }
 
-normalizeData <- function(method = 'none') {
-  data.sets.ids <- names(data.sets)
-  for (i in 1:length(data.sets.ids))
-  {
-    id <- data.sets.ids[i]
-    
-    # calculate scale and offset
-    scale <- 1
-    offset <- 0
-    if (method == 'zScore')
-    {
-      scale <- sd(data.sets[[id]]$y)
-      offset <- mean(data.sets[[id]]$y)
-    }
-    else if (method == 'minmax')
-    {
-      minValue <- min(data.sets[[id]]$y)
-      maxValue <- max(data.sets[[id]]$y)
-      
-      scale <- maxValue - minValue
-      offset <- minValue
-    }
-    
-    # scale data and save scale information
-    data.normalized[[id]] <<- data.table(x = data.sets[[id]]$x,
-      y = scale(data.sets[[id]]$y, center = offset, scale = scale))
-    names(data.normalized[[id]]) <<- c('x', 'y')
-    
-    data.normalizationInfo[[id]]$scale <<- scale
-    data.normalizationInfo[[id]]$offset <<- offset
-  }
+resetWindows <- function() {
+  data.trainSets <<- NULL
+  data.testSets <<- NULL
 }
 
-createWindows <- function(windowSize, numTestData) {
-  data.normalized.ids <- names(data.normalized)
-  for (i in 1:length(data.normalized.ids))
+createWindows <- function(id) {
+  windows <- as.data.table(rollapply(data.sets[[id]]$y, width = data.windowSize+1, FUN = identity, by = 1),
+    by.column = TRUE)
+  names(windows) <- paste0('xt', data.windowSize:0)
+  
+  index <- 1:(nrow(windows) - data.horizon)
+  data.trainSets[[id]] <<- windows[index, ]
+  data.testSets[[id]] <<- windows[-index, ]
+}
+
+getTrainSet <- function(id) {
+  if (is.null(data.trainSets[[id]]))
   {
-    id <- data.normalized.ids[i]
-    
-    windows <- as.data.table(rollapply(data.normalized[[id]]$y, width = windowSize+1, FUN = identity, by = 1),
-      by.column = TRUE)
-    names(windows) <- paste0('xt', windowSize:0)
-    
-    index <- 1:(nrow(windows) - numTestData)
-    data.trainSets[[id]] <<- windows[index, ]
-    data.testSets[[id]] <<- windows[-index, ]
+    createWindows(id)
   }
   
-  neuralNetwork.learnedWithoutHiddenLayers <<- FALSE
+  return(data.trainSets[[id]])
+}
+
+getAllTrainSetsCombined <- function() {
+  ids <- names(data.sets)
+  for (i in 1:length(ids))
+  {
+    getTrainSet(ids[i])
+  }
+  
+  return(rbindlist(data.trainSets))
+}
+
+getTestSet <- function(id) {
+  if (is.null(data.testSets[[id]]))
+  {
+    createWindows(id)
+  }
+  
+  return(data.testSets[[id]])
 }
 
 error_metric <- function(test_set, forecast_set){
-
-  df <- data.frame(test_set = test_set, forecast_set = forecast_set)
-  mse <- mse(df$test_set, df$forecast_set)
-  rmse <- rmse(df$test_set, df$forecast_set)
-  smape <- sMAPE(df$test_set, df$forecast_set)
+  #forecast_set ist von Datentyp matrix, muss aber numeric sein
+  forecast_set <- as.numeric(forecast_set)
+  test_set <- as.numeric(test_set)
+  mse <- mse(test_set, forecast_set)
+  rmse <- rmse(test_set, forecast_set)
+  smape <- sMAPE(test_set, forecast_set)
   data.frame(mse = mse,rmse = rmse, smape = smape)
 }
 

@@ -31,11 +31,9 @@ getARModel <- function(id, y, window, predValue, arModelName)
   
   
   tsPred = predict(arModel, n.ahead = predValue)
-  scale <- data.normalizationInfo[[id]]$scale
-  offset <- data.normalizationInfo[[id]]$offset
  
   
-  model <<- list(coef = coef,trained = (trainData * scale + offset), result = (tsPred$pred * scale + offset), expected = (testData * scale + offset))
+  model <<- list(coef = coef,trained = trainData, result = tsPred$pred, expected = testData)
   model
 }
 

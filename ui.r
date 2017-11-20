@@ -1,46 +1,66 @@
 library(plotly)
 library(shinydashboard)
 
-ui <- dashboardPage( skin = "purple",
-	dashboardHeader(title = "FPADB"),
+ui <- dashboardPage(skin = 'purple',
+	dashboardHeader(title = 'FPADB',
+	  tags$li(a(
+	    conditionalPanel(
+	      condition = '$("html").hasClass("shiny-busy")',
+	      icon('circle-o-notch', 'fa-spin'),
+	      tags$span('loading...'))
+	    ),
+	    class = 'dropdown'
+	)),
 
 	dashboardSidebar(
-	  sidebarMenu(id="tabs",
+	  conditionalPanel('output.idColumnSelect != null',# cannot depend on input$dataFile directly.
+	    sidebarMenu(id="tabs",
+	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("table")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("table")),
-		            hr(),
-                
-		            conditionalPanel("input.tabs === 'data'",
-		                             checkboxInput('headerCheckbox', 'Header', TRUE),
-		                             radioButtons('separatorRadioButton', 'Separator',
-		                                          c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),
-		                             uiOutput("x_axis"),
-		                             uiOutput("y_axis"),
-		                             uiOutput("z_axis"),		
-		                             fileInput('dataFile', NULL,
-		                                       accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
-		                             ),
-		                             hr()
-		            ),
-		            conditionalPanel("input.tabs === 'neuralNetwork'",
-		                             checkboxInput('biasCheckbox', 'Exclude Bias in ANN', TRUE),
-		                             uiOutput("hiddenSliderInput"),
-		                             hr()),
-		            conditionalPanel("input.tabs === 'aRModel'",
-		                             radioButtons('aRModelName', 'Arima Models',
-		                                          c(AR='AR', AutoArima='AutoArima'), 'AR'),
-		                             hr()),
-		            uiOutput("idSelectBox"),
-		            uiOutput('normalizationRadioButton'),
-		    		    uiOutput('windowSizeSlider'),
-		    		    uiOutput('horizonSlider')
-		)
+	      hr(),
+		            uiOutput("idSelectBox")
+		  )
+	  )
 	),
 
 	dashboardBody(
 		tabItems(
+		  tabItem(tabName = 'settings',
+		    fluidRow(style = 'background-color: #fff; margin: 0;',
+		      column(3,
+		        h3('Data Input', style = 'margin-bottom: 20px;'),
+		        checkboxInput('headerCheckbox', 'Header', TRUE),
+		        radioButtons('separatorRadioButton', 'Separator',
+		          c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),	
+		        fileInput('dataFile', NULL,
+		          accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
+		        ),
+		        uiOutput('idColumnSelect'),
+		        uiOutput("x_axis"),
+		        uiOutput("y_axis")
+		      ),
+		      column(3,
+		        h3('General', style = 'margin-bottom: 20px;'),
+		        uiOutput('windowSizeSlider'),
+		        uiOutput('horizonSlider')
+		      ),
+		      column(3,
+		        h3('Neural Network', style = 'margin-bottom: 20px;'),
+		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
+		        radioButtons('normalizationRadioButton', 'Normalization',
+		          c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'minmax'),
+		        uiOutput('hiddenSliderInput')
+		      ),
+		      column(3,
+		        h3('Autoregression', style = 'margin-bottom: 20px;'),
+		        radioButtons('aRModelName', 'Arima Models',
+		          c(AR='AR', AutoArima='AutoArima'), 'AR')
+		      )
+		    )
+		  ),
 			tabItem(tabName = "data",
 				tabBox(width = NULL,
 					tabPanel("Chart",
@@ -60,9 +80,6 @@ ui <- dashboardPage( skin = "purple",
 
 			tabItem(tabName = "neuralNetwork",
 				tabBox(width = NULL,
-					#tabPanel("Chart",
-					#	plotOutput("neuralNetworkChart", height = "600px")
-					#),
 				  tabPanel('Forecast /1',
 				    plotOutput("neuralNetworkChart", height = "600px"),
 				    plotlyOutput('neuralNetworkForecastForEachChart')
@@ -114,9 +131,6 @@ ui <- dashboardPage( skin = "purple",
 			               )
 			        )
 			)
-			
-			
-			
 		)
 	)
 )
