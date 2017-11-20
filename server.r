@@ -58,6 +58,7 @@ server <- function(input, output) {
 	  neuralNetwork.hiddenLayers <<- c(input$hiddenSliderInput)
 	  
 	  resetNeuralNetworks.hidden()
+	  setNeuralNetworkExcludeVector()
 	})
 	
 	
