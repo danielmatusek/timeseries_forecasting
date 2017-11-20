@@ -255,7 +255,7 @@ server <- function(input, output) {
 	})
 	
 	
-	
+
 	
 
 	arModel <- reactive({
@@ -343,7 +343,7 @@ server <- function(input, output) {
 	  result <- neuralNetworkTest()
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
-
+  
 	output$arACF <- renderPlot({
 	  db = dataset()
 	  if(is.null(db))
@@ -351,6 +351,8 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  plotACF(db$y)
+	  
+	  
 	})
 	
 	output$arPACF <- renderPlot({

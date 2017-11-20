@@ -39,7 +39,7 @@ trainNeuralNetwork <- function(trainset, excludeBias, hiddenLayers = c(0)) {
         }
       }
     }
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, exclude = excluded_weights)
+    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, exclude = excluded_weights, algorithm = "rprop+")
   }
   else {
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE)

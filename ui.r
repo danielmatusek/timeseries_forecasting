@@ -78,7 +78,8 @@ ui <- dashboardPage( skin = "purple",
 				  tabPanel('Forecast /n hidden',
 				    plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
 				    plotlyOutput('neuralNetworkForecastForAllHiddenChart')
-				  )
+				  
+					)
 				)
 			),
 			

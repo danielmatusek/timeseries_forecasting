@@ -96,23 +96,23 @@ getBoxplot <- function(errorName)
   }
   
   p <- plot_ly(type='box')%>%
-    add_boxplot(x = errorModel.ar, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+    add_boxplot(y = errorModel.ar, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,0,0)'),
                 name = " AR")%>%
-    add_boxplot(x = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+    add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,0)'),
                 name = " NN")%>%
-    add_boxplot(x = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+    add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,0,200)'),
                 name = " NNH")%>%
-    add_boxplot(x = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+    add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,200,0)'),
                 name = " NNFA")%>%
-    add_boxplot(x = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+    add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,200)'),
                 name = " NNHFA")
