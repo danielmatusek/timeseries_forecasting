@@ -51,11 +51,11 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   
   if(neuralNetwork.excludeBias) {
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE,
-      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector), threshold = 0.0001)
+    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
+      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector))
   }
   else {
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, threshold = 0.0001)
+    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity)
   }
 }
 
@@ -200,19 +200,6 @@ getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE
       
       return(neuralNetwork.testResults.forEach[[id]])
     }
-  }
-}
-
-testNeuralNetworks <- function() {
-  neuralNetwork.forEach.ids <- names(neuralNetwork.forEach)
-  for (i in 1:length(neuralNetwork.forEach.ids))
-  {
-    id <- neuralNetwork.forEach.ids[i]
-    
-    getNeuralNetworkTestResults(id)
-    getNeuralNetworkTestResults(id, hiddenLayers = TRUE)
-    getNeuralNetworkTestResults(id, forAll = TRUE)
-    getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)
   }
 }
 
