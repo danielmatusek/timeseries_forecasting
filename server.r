@@ -24,16 +24,20 @@ getPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
     return(NULL)
   }
   
+  data.length <- length(data.sets[[id]]$y)
+  numTestResults <- length(testResults$net.result)
+  startRealData <- max(1, data.length - 2 * numTestResults + 1)
+  
   prediction <- rbindlist(list(
-    as.data.table(rep(NA, length(data.sets[[id]]$y) - length(testResults[[id]]$net.result))),
-    as.data.table(testResults[[id]]$net.result)
+    as.data.table(rep(NA, numTestResults)),
+    as.data.table(testResults$net.result)
   ))
   names(prediction) <- c('prediction')
   
-  prediction$x <- data.sets[[id]]$x
-  prediction$y <- data.sets[[id]]$y
+  prediction$x <- data.sets[[id]]$x[startRealData:data.length]
+  prediction$y <- data.sets[[id]]$y[startRealData:data.length]
   
-  startIndex = length(data.sets[[id]]$y) - length(testResults[[id]]$net.result)
+  startIndex = data.length - startRealData - numTestResults + 1
   prediction$prediction[[startIndex]] <- prediction$y[[startIndex]]
   
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
@@ -69,11 +73,11 @@ server <- function(input, output) {
   dataNormalized <- reactive({
     database()
     normalizationMethod <- input$normalizationRadioButton
-    
+
     if (!is.null(data.sets) && !is.null(normalizationMethod))
     {
       normalizeData(normalizationMethod)
-      
+
       data.normalized
     }
   })
@@ -245,7 +249,7 @@ server <- function(input, output) {
 	
 	output$compareMSE <- renderPlotly({
 	  dataset = database()
-	  
+
 	  if(is.null(dataset))
 	  {
 	    return(NULL)
