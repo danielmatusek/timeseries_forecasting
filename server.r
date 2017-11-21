@@ -280,7 +280,7 @@ server <- function(input, output) {
 	})
 	
 	output$compareCoefficient <- renderDataTable({
-	  getCoef(input$idSelect,data.normalized[[input$idSelect]]$y,input$windowSizeSlider, input$horizonSlider )
+	  getCoef(input$idSelect, data.sets[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider)
 	})
 	
 	

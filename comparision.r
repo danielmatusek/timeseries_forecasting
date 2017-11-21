@@ -37,7 +37,7 @@ comarision <- function(window, predValue)
   {
     id = ids[i]
     
-    cdata = data.normalized[[id]]$y
+    cdata = data.sets[[id]]$y
     getARModel(id, cdata, window, predValue, "AR")
     error  = error_metric(model$expected, model$result)
     ar.MSES <<- c(ar.MSES, error$mse)
@@ -150,8 +150,8 @@ error_metric_compare <- function()
 getCoef <- function(id, data, window, predValue)
 {
   getARModel(id, data, window, predValue, "AR")
-  n1 = neuralNetwork.forEach[[id]]$weights[[1]][[1]][,1]
-  n2 = neuralNetwork.forAll$weights[[1]][[1]][,1]
+  n1 = getNeuralNetwork(id)$weights[[1]][[1]][,1]
+  n2 = getNeuralNetwork(NULL)$weights[[1]][[1]][,1]
   n1 <- n1[!is.na(n1)] # remove bias
   n2 <- n2[!is.na(n2)]
   arc =  model$coef[1 : (length(model$coef)-1)] # remove error value
