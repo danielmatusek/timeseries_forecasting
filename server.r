@@ -278,6 +278,10 @@ server <- function(input, output) {
 	  getBoxplot('SMAPE')
 	})
 	
+	output$compareCoefficient <- renderDataTable({
+	  getCoef(input$idSelect,data.normalized[[input$idSelect]]$y,input$windowSizeSlider, input$horizonSlider )
+	})
+	
 	
 	output$compareError <- renderDataTable({
 	    error_metric_compare()

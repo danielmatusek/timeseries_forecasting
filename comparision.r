@@ -147,3 +147,16 @@ error_metric_compare <- function()
   data.table(NAME = c("AR", "NN", "NNH", "NNFA", "NNHFA"), MSE = MSES, RMSE =  RMSES, SMAPE = SMAPES)
 }
 
+getCoef <- function(id, data, window, predValue)
+{
+  getARModel(id, data, window, predValue, "AR")
+  n1 = neuralNetwork.forEach[[id]]$weights[[1]][[1]][,1]
+  n2 = neuralNetwork.forAll$weights[[1]][[1]][,1]
+  n1 <- n1[!is.na(n1)] # remove bias
+  n2 <- n2[!is.na(n2)]
+  arc =  model$coef[1 : (length(model$coef)-1)] # remove error value
+  data.table(ar = arc, nfe = n1 , nfa = n2)
+}
+
+
+

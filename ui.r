@@ -128,6 +128,9 @@ ui <- dashboardPage(skin = 'purple',
 			               ),
 			               tabPanel("Mean Error",
 			                        dataTableOutput("compareError")
+			               ),
+			               tabPanel("coefficient",
+			                        dataTableOutput("compareCoefficient")
 			               )
 			        )
 			)

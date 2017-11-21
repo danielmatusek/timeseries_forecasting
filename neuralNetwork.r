@@ -52,10 +52,10 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   
   if(neuralNetwork.excludeBias) {
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE,
-      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector), threshold = 0.0001)
+      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector))
   }
   else {
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, threshold = 0.0001)
+    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE)
   }
 }
 
