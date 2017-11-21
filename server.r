@@ -35,7 +35,7 @@ server <- function(input, output) {
     {
       parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
     }
-    
+    #resetARModel()
     resetNeuralNetworks()
   })
 	
@@ -45,6 +45,8 @@ server <- function(input, output) {
 	  
 	  resetWindows()
 	  resetNeuralNetworks()
+	  resetARModel(input$idSelect, input$aRModelName)
+	  comparison()
 	  setNeuralNetworkExcludeVector()
 	})
 	
@@ -210,15 +212,11 @@ server <- function(input, output) {
 	
 	### UI elements: Auto Regression
 	
-	arModel <- reactive({
-	  databaseChanged()
-	  
-	  getARModel(input$idSelect, data.sets[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider, input$aRModelName)
-	})
 	
 	output$aRChart <- renderPlotly({
 	  windowsChanged()
-	  
+	  databaseChanged()
+	  getARModel(input$idSelect, input$aRModelName)
 	  getPlotlyModel()
 	})
 	
@@ -255,7 +253,7 @@ server <- function(input, output) {
 	compareError <- reactive({
 	  windowsChanged()
 	  
-	  comarision(input$windowSizeSlider, input$horizonSlider)
+	  comparison()
 	})
 	
 	output$compareMSE <- renderPlotly({
@@ -280,11 +278,13 @@ server <- function(input, output) {
 	})
 	
 	output$compareCoefficient <- renderDataTable({
-	  getCoef(input$idSelect,data.normalized[[input$idSelect]]$y,input$windowSizeSlider, input$horizonSlider )
+	  windowsChanged()
+	  getCoef(input$idSelect)
 	})
 	
 	
 	output$compareError <- renderDataTable({
+	    windowsChanged()
 	    error_metric_compare()
 	})
 	

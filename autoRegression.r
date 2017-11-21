@@ -3,51 +3,57 @@ library(forecast)
 library(stats)
 
 ar.models <- NULL
+spl <- NULL
 
-getARModel <- function(id, y, window, predValue, arModelName)
+getARModel <- function(id, arModelName)
 {
-  predictValue <<- predValue
-  if(is.null(y)  || is.null(window) || is.null(predValue))
+
+  y <- data.sets[[id]]$y
+  
+  if(is.null(y)  || is.null(data.windowSize) || is.null(data.horizon))
   {
     return(NULL)
   }
   
-  spl <<- length(y) - predValue
+  spl <<- length(y) - data.horizon
   trainData <<- y[(1 : spl)]
   testData <<- y[-(1 : spl)]
   arModel <- NULL
   coef <- NULL
   if(arModelName == "AR")
   {
-    arModel <- stats::ar(ts(trainData), aic = FALSE, window, method = "burg")
+    arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg")
     coef <- arModel$ar
-    
   }
   else if (arModelName == "AutoArima")
   {
-    arModel <- auto.arima(ts(trainData), start.p = window, max.p = window, d = 0, max.q = 0)
+    arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     coef <- arModel$coef[1 : (length(arModel$coef) - 1)]
   } 
   
-  
-  tsPred = predict(arModel, n.ahead = predValue)
- 
-  
-  model <<- list(coef = coef,trained = trainData, result = tsPred$pred, expected = testData)
+  tsPred = predict(arModel, n.ahead = data.horizon)
+  model <<- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
   model
 }
 
-getAllARModels <-function(window, predValue)
+
+getAllARModels <-function()
 {
     ids = names(data.sets)
     for(id in 1 : length(ids))
     {
-      ar.models[[id]] <<- getARModel(id, window, predValue)
+      ar.models[[id]] <<- getARModel(id, "AR")
     }
+}
+
+resetARModel <- function(id, aRModelName)
+{
+  getARModel(id, aRModelName)
 }
 
 getPlotlyModel <- function()
 {
+  
   f <- list(
     family = "Courier New, monospace",
     size = 18,
@@ -66,8 +72,8 @@ getPlotlyModel <- function()
   
   p <- plot_ly()%>%
     add_lines(x = (1 : spl), y = model$trained, color = I("blue"), name = "Original")%>%
-    add_lines(x = ((spl + 1): (spl + predictValue)), y = model$expected, color = I("blue"), name = "Original FC")%>%
-    add_lines(x = ((spl + 1): (spl + predictValue)), y = model$result, color = I("red"), name = "Prediction")%>%
+    add_lines(x = ((spl + 1): (spl + data.horizon)), y = model$expected, color = I("blue"), name = "Original FC")%>%
+    add_lines(x = ((spl + 1): (spl + data.horizon)), y = model$result, color = I("red"), name = "Prediction")%>%
     layout(xaxis = x, yaxis = y)
    
   p$elementId <- NULL
