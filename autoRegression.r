@@ -48,7 +48,6 @@ getAllARModels <-function(window, predValue)
 
 getPlotlyModel <- function()
 {
-  
   f <- list(
     family = "Courier New, monospace",
     size = 18,
@@ -74,19 +73,3 @@ getPlotlyModel <- function()
   p$elementId <- NULL
   p
 }
-
-
-
-
-
-plotACF <- function(consumptionData){
-  data_acf <- acf(consumptionData, main = "ACF")
-  data_acf
-}
-
-plotPACF <- function(consumptionData){
-  data_pacf <- pacf(consumptionData, main = "PACF")
-  data_pacf
-}
-
-

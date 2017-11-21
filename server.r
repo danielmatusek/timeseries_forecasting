@@ -58,6 +58,7 @@ server <- function(input, output) {
 	  neuralNetwork.hiddenLayers <<- c(input$hiddenSliderInput)
 	  
 	  resetNeuralNetworks.hidden()
+	  setNeuralNetworkExcludeVector()
 	})
 	
 	
@@ -236,13 +237,13 @@ server <- function(input, output) {
 	output$arACF <- renderPlot({
 	  databaseChanged()
 	  
-	  plotACF(data.sets[[input$idSelect]]$y)
+	  acf(data.sets[[input$idSelect]]$y, main = "ACF")
 	})
 	
 	output$arPACF <- renderPlot({
 	  databaseChanged()
 	  
-	  plotPACF(data.sets[[input$idSelect]]$y)
+	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
 	})
 	
 	
