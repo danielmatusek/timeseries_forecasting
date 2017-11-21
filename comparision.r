@@ -60,10 +60,10 @@ comparison <- function()
     nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
     nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
     
-    error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-    nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
-    nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
-    nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
+    #error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+    #nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
+    #nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
+    #nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
   }
 }
 
@@ -77,7 +77,7 @@ getBoxplot <- function(errorName)
     errorModel.nn <<- nn.MSES
     errorModel.nnh <<- nnh.MSES
     errorModel.nnfa <<- nnfa.MSES
-    errorModel.nnhfa <<- nnhfa.MSES
+    #errorModel.nnhfa <<- nnhfa.MSES
   }
   else if( errorName == 'RMSE')
   {
@@ -85,7 +85,7 @@ getBoxplot <- function(errorName)
     errorModel.nn <<- nn.RMSES
     errorModel.nnh <<- nnh.RMSES
     errorModel.nnfa <<- nnfa.RMSES
-    errorModel.nnhfa <<- nnhfa.RMSES
+    #errorModel.nnhfa <<- nnhfa.RMSES
   }
   else if(errorName == 'SMAPE')
   {
@@ -93,7 +93,7 @@ getBoxplot <- function(errorName)
     errorModel.nn <<- nn.SMAPES
     errorModel.nnh <<- nnh.SMAPES
     errorModel.nnfa <<- nnfa.SMAPES
-    errorModel.nnhfa <<- nnhfa.SMAPES
+    #errorModel.nnhfa <<- nnhfa.SMAPES
   }
   
   p <- plot_ly(type='box')%>%
@@ -112,11 +112,11 @@ getBoxplot <- function(errorName)
     add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,200,0)'),
-                name = " NNFA")%>%
-    add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
-                marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(0,200,200)'),
-                name = " NNHFA")
+                name = " NNFA")#%>%
+    #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+    #            marker = list(color = 'rgb(7,40,89)'),
+    #            line = list(color = 'rgb(0,200,200)'),
+    #            name = " NNHFA")
   p$elementId <- NULL
   p
 }
@@ -199,17 +199,17 @@ getForecastComparisionPlot <- function(id) {
   prediction$nnfa[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Auto Regression for all with hidden layers
-  prediction$nnfah <- append(rep(NA, data.horizon),
-    getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-  prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  #prediction$nnfah <- append(rep(NA, data.horizon),
+  #  getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+  #prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Plot the data
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
     add_trace(y = ~ar, name = 'Auto Regression', line = list(color = 'rgb(255, 0, 0)')) %>%
     add_trace(y = ~nnfe, name = 'Neural Network /1', line = list(color = 'rgb(255, 150, 0)')) %>%
     add_trace(y = ~nnfeh, name = 'Neural Network /1 hidden', line = list(color = 'rgb(0, 255, 255)')) %>%
-    add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(0, 0, 255)')) %>%
-    add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
+    add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(0, 0, 255)')) #%>%
+    #add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }

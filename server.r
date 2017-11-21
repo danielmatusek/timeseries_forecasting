@@ -46,7 +46,6 @@ server <- function(input, output) {
 	  resetWindows()
 	  resetNeuralNetworks()
 	  resetARModel(input$idSelect, input$aRModelName)
-	  comparison()
 	  setNeuralNetworkExcludeVector()
 	})
 	

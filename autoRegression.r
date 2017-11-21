@@ -22,7 +22,7 @@ getARModel <- function(id, arModelName)
   coef <- NULL
   if(arModelName == "AR")
   {
-    arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg")
+    arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = FALSE)
     coef <- arModel$ar
   }
   else if (arModelName == "AutoArima")

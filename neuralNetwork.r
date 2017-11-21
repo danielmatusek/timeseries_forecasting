@@ -49,7 +49,7 @@ setNeuralNetworkExcludeVector <- function() {
 trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
-  set.seed(1)
+
   if(neuralNetwork.excludeBias) {
 
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
@@ -70,6 +70,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
     {
       if (is.null(neuralNetwork.forAll.hiddenLayers))
       {
+        print('train for all with hidden layers')
         neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
       }
       
@@ -79,6 +80,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
     {
       if (is.null(neuralNetwork.forAll))
       {
+        print('train for all without hidden layers')
         neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined)
       }
       
@@ -92,6 +94,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
     {
       if (is.null(neuralNetwork.forEach.hiddenLayers[[id]]))
       {
+        print(paste('train for id', id ,'with hidden layers'))
         neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
       }
       
@@ -101,6 +104,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
     {
       if (is.null(neuralNetwork.forEach[[id]]))
       {
+        print(paste('train for id', id ,'without hidden layers'))
         neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(getTrainSet(id))
       }
       
