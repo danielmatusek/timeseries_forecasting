@@ -180,6 +180,7 @@ getForecastComparisionPlot <- function(id) {
     y = data.sets[[id]]$y[startRealData:data.length])
   
   # Add Auto Regression
+  getARModel(id,"AR")
   prediction$ar <- append(rep(NA, data.horizon), model$result)
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
