@@ -117,6 +117,9 @@ ui <- dashboardPage(skin = 'purple',
 			),
 			tabItem(tabName = "comparision",
 			        tabBox(width = NULL,
+			          tabPanel('Result',
+			            plotlyOutput('forecastComparisionPlot', height = '600px')
+			         ),
 			               tabPanel("MSE",
 			                        plotlyOutput("compareMSE", height = "600px")
 			               ),

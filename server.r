@@ -258,6 +258,14 @@ server <- function(input, output) {
 	  comarision(input$windowSizeSlider, input$horizonSlider)
 	})
 	
+	output$forecastComparisionPlot <- renderPlotly({
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  
+	  getForecastComparisionPlot(input$idSelect)
+	})
+	
 	output$compareMSE <- renderPlotly({
 	  databaseChanged()
 	  
@@ -282,7 +290,6 @@ server <- function(input, output) {
 	output$compareCoefficient <- renderDataTable({
 	  getCoef(input$idSelect, data.sets[[input$idSelect]]$y, input$windowSizeSlider, input$horizonSlider)
 	})
-	
 	
 	output$compareError <- renderDataTable({
 	    error_metric_compare()
