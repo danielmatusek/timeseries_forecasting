@@ -166,7 +166,7 @@ getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE
     {
       if (is.null(neuralNetwork.testResults.forAll.hiddenLayers[[id]]))
       {
-        neuralNetwork.testResults.forAll.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(NULL, TRUE), id)
+        neuralNetwork.testResults.forAll.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(NULL, hiddenLayers = TRUE), id)
       }
       
       return(neuralNetwork.testResults.forAll.hiddenLayers[[id]])
@@ -187,7 +187,7 @@ getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE
     {
       if (is.null(neuralNetwork.testResults.forEach.hiddenLayers[[id]]))
       {
-        neuralNetwork.testResults.forEach.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, TRUE), id)
+        neuralNetwork.testResults.forEach.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hiddenLayers = TRUE), id)
       }
       
       return(neuralNetwork.testResults.forEach.hiddenLayers[[id]])

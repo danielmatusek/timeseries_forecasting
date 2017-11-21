@@ -168,6 +168,7 @@ getCoef <- function(id)
   data.table(Variables = names, AutoRegression = arc, "NN for each" = n1 , "NN for all" = n2)
 }
 
+<<<<<<< HEAD
 
 getComparisonFCPlot <- function(id)
 {
@@ -184,3 +185,48 @@ getComparisonFCPlot <- function(id)
 
 
 
+=======
+getForecastComparisionPlot <- function(id) {
+  data.length <- length(data.sets[[id]]$y)
+  startRealData <- max(1, data.length - 2 * data.horizon + 1)
+  startPredictionIndex = data.length - startRealData - data.horizon + 1
+  
+  # Start with original data
+  prediction <- data.table(x = data.sets[[id]]$x[startRealData:data.length],
+    y = data.sets[[id]]$y[startRealData:data.length])
+  
+  # Add Auto Regression
+  prediction$ar <- append(rep(NA, data.horizon), model$result)
+  prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  
+  # Add Neural Network for each
+  prediction$nnfe <- append(rep(NA, data.horizon),
+    getNeuralNetworkTestResults(id)$net.result)
+  prediction$nnfe[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  
+  # Add Auto Regression for each with hidden layers
+  prediction$nnfeh <- append(rep(NA, data.horizon),
+    getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
+  prediction$nnfeh[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  
+  # Add Auto Regression for all
+  prediction$nnfa <- append(rep(NA, data.horizon),
+    getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
+  prediction$nnfa[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  
+  # Add Auto Regression for all with hidden layers
+  prediction$nnfah <- append(rep(NA, data.horizon),
+    getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+  prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  
+  # Plot the data
+  p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
+    add_trace(y = ~ar, name = 'Auto Regression', line = list(color = 'rgb(255, 0, 0)')) %>%
+    add_trace(y = ~nnfe, name = 'Neural Network /1', line = list(color = 'rgb(255, 150, 0)')) %>%
+    add_trace(y = ~nnfeh, name = 'Neural Network /1 hidden', line = list(color = 'rgb(0, 255, 255)')) %>%
+    add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(0, 0, 255)')) %>%
+    add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
+  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
+  p
+}
+>>>>>>> 6367f4e48364238e2a64b204e6f73fe47e794c78

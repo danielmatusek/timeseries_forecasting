@@ -256,6 +256,14 @@ server <- function(input, output) {
 	  comparison()
 	})
 	
+	output$forecastComparisionPlot <- renderPlotly({
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  
+	  getForecastComparisionPlot(input$idSelect)
+	})
+	
 	output$compareMSE <- renderPlotly({
 	  databaseChanged()
 	  
@@ -282,7 +290,6 @@ server <- function(input, output) {
 	  getCoef(input$idSelect)
 
 	})
-	
 	
 	output$compareError <- renderDataTable({
 	    windowsChanged()
