@@ -293,4 +293,11 @@ server <- function(input, output) {
 	  result <- neuralNetworkTest()
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
+	
+	output$compareForecast <- renderPlotly({
+	  
+	  #getComparisonFCPlot(input$idSelect)
+	  return(NULL)
+	})
+	
 }

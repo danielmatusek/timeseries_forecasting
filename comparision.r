@@ -7,9 +7,6 @@ source('global.r')
 
 
 
-
-
-
 comparison <- function()
 {
   ar.MSES <<- vector()
@@ -169,6 +166,20 @@ getCoef <- function(id)
   }
   
   data.table(Variables = names, AutoRegression = arc, "NN for each" = n1 , "NN for all" = n2)
+}
+
+
+getComparisonFCPlot <- function(id)
+{
+  browser()
+  
+  nnData = getNeuralNetworkTestResults(id)$net.result
+  p <- plot_ly()%>%
+  add_lines(x = (1 : data.horizon), y = model$result, color = I("red"), name = "AutoRegression")%>%
+  add_lines(x = (1 : data.horizon), y = nnData, color = I("blue"), name = "Neural Network")
+  
+  p$elementId <- NULL
+  p
 }
 
 
