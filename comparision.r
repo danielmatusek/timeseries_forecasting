@@ -168,24 +168,8 @@ getCoef <- function(id)
   data.table(Variables = names, AutoRegression = arc, "NN for each" = n1 , "NN for all" = n2)
 }
 
-<<<<<<< HEAD
-
-getComparisonFCPlot <- function(id)
-{
-  browser()
-  
-  nnData = getNeuralNetworkTestResults(id)$net.result
-  p <- plot_ly()%>%
-  add_lines(x = (1 : data.horizon), y = model$result, color = I("red"), name = "AutoRegression")%>%
-  add_lines(x = (1 : data.horizon), y = nnData, color = I("blue"), name = "Neural Network")
-  
-  p$elementId <- NULL
-  p
-}
 
 
-
-=======
 getForecastComparisionPlot <- function(id) {
   data.length <- length(data.sets[[id]]$y)
   startRealData <- max(1, data.length - 2 * data.horizon + 1)
@@ -229,4 +213,4 @@ getForecastComparisionPlot <- function(id) {
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }
->>>>>>> 6367f4e48364238e2a64b204e6f73fe47e794c78
+

@@ -301,10 +301,6 @@ server <- function(input, output) {
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
 	
-	output$compareForecast <- renderPlotly({
-	  
-	  #getComparisonFCPlot(input$idSelect)
-	  return(NULL)
-	})
+
 	
 }

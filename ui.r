@@ -134,9 +134,6 @@ ui <- dashboardPage(skin = 'purple',
 			               ),
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
-			               ),
-			               tabPanel("Forecast",
-			                        plotlyOutput("compareForecast", height = "600px")
 			               )
 			        )
 			)
