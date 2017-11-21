@@ -280,6 +280,7 @@ server <- function(input, output) {
 	output$compareCoefficient <- renderDataTable({
 	  windowsChanged()
 	  getCoef(input$idSelect)
+
 	})
 	
 	

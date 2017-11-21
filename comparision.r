@@ -41,6 +41,8 @@ comparison <- function()
     
     cdata = data.sets[[id]]$y
     getARModel(id, "AR")
+
+
     error  = error_metric(model$expected, model$result)
     ar.MSES <<- c(ar.MSES, error$mse)
     ar.RMSES <<- c(ar.RMSES, error$rmse)
@@ -151,10 +153,11 @@ error_metric_compare <- function()
 
 getCoef <- function(id)
 {
-  
+
   getARModel(id, "AR")
-  n1 = neuralNetwork.forEach[[id]]$weights[[1]][[1]][,1]
-  n2 = neuralNetwork.forAll$weights[[1]][[1]][,1]
+  n1 = getNeuralNetwork(id)$weights[[1]][[1]][,1]
+  n2 = getNeuralNetwork(NULL)$weights[[1]][[1]][,1]
+
   n1 <- n1[!is.na(n1)] # remove bias
   n2 <- n2[!is.na(n2)]
   arc =  model$coef[1 : data.windowSize] # remove error value
