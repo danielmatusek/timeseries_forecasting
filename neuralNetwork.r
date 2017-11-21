@@ -49,7 +49,7 @@ setNeuralNetworkExcludeVector <- function() {
 trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
-  
+  set.seed(1)
   if(neuralNetwork.excludeBias) {
 
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,

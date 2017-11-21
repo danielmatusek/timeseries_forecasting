@@ -129,10 +129,10 @@ ui <- dashboardPage(skin = 'purple',
 			               tabPanel("SMAPE",
 			                        plotlyOutput("compareSMAPE", height = "600px")
 			               ),
-			               tabPanel("Mean Error",
+			               tabPanel("Average Error",
 			                        dataTableOutput("compareError")
 			               ),
-			               tabPanel("coefficient",
+			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
 			               )
 			        )

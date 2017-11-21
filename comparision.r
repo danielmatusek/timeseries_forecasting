@@ -8,28 +8,30 @@ source('global.r')
 
 
 
-ar.MSES <<- vector()
-ar.RMSES <<- vector()
-ar.SMAPES <<- vector()
 
-nn.MSES <<- vector()
-nn.RMSES <<- vector()
-nn.SMAPES <<- vector()
 
-nnh.MSES <<- vector()
-nnh.RMSES <<- vector()
-nnh.SMAPES <<- vector()
-
-nnfa.MSES <<- vector()
-nnfa.RMSES <<- vector()
-nnfa.SMAPES <<- vector()
-
-nnhfa.MSES <<- vector()
-nnhfa.RMSES <<- vector()
-nnhfa.SMAPES <<- vector()
-
-comarision <- function(window, predValue)
+comparison <- function()
 {
+  ar.MSES <<- vector()
+  ar.RMSES <<- vector()
+  ar.SMAPES <<- vector()
+  
+  nn.MSES <<- vector()
+  nn.RMSES <<- vector()
+  nn.SMAPES <<- vector()
+  
+  nnh.MSES <<- vector()
+  nnh.RMSES <<- vector()
+  nnh.SMAPES <<- vector()
+  
+  nnfa.MSES <<- vector()
+  nnfa.RMSES <<- vector()
+  nnfa.SMAPES <<- vector()
+  
+  nnhfa.MSES <<- vector()
+  nnhfa.RMSES <<- vector()
+  nnhfa.SMAPES <<- vector()
+  
   ids = names(data.sets)
   len = length(ids)
 
@@ -38,7 +40,9 @@ comarision <- function(window, predValue)
     id = ids[i]
     
     cdata = data.sets[[id]]$y
-    getARModel(id, cdata, window, predValue, "AR")
+    getARModel(id, "AR")
+
+
     error  = error_metric(model$expected, model$result)
     ar.MSES <<- c(ar.MSES, error$mse)
     ar.RMSES <<- c(ar.RMSES, error$rmse)
@@ -147,15 +151,24 @@ error_metric_compare <- function()
   data.table(NAME = c("AR", "NN", "NNH", "NNFA", "NNHFA"), MSE = MSES, RMSE =  RMSES, SMAPE = SMAPES)
 }
 
-getCoef <- function(id, data, window, predValue)
+getCoef <- function(id)
 {
-  getARModel(id, data, window, predValue, "AR")
+
+  getARModel(id, "AR")
   n1 = getNeuralNetwork(id)$weights[[1]][[1]][,1]
   n2 = getNeuralNetwork(NULL)$weights[[1]][[1]][,1]
+
   n1 <- n1[!is.na(n1)] # remove bias
   n2 <- n2[!is.na(n2)]
-  arc =  model$coef[1 : (length(model$coef)-1)] # remove error value
-  data.table(ar = arc, nfe = n1 , nfa = n2)
+  arc =  model$coef[1 : data.windowSize] # remove error value
+  
+  names = NULL
+  for(i in 1 : data.windowSize)
+  {
+    names = c(names,paste(c("x", i), collapse = ""))
+  }
+  
+  data.table(Variables = names, AutoRegression = arc, "NN for each" = n1 , "NN for all" = n2)
 }
 
 getForecastComparisionPlot <- function(id) {
