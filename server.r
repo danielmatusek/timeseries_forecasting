@@ -35,23 +35,26 @@ server <- function(input, output) {
     {
       parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
     }
-    #resetARModel()
     resetNeuralNetworks()
   })
 	
 	windowsChanged <- reactive({
+	  
 	  data.windowSize <<- input$windowSizeSlider
 	  data.horizon <<- input$horizonSlider
-	  
+	  aRModelName <<- input$aRModelName
+    
 	  resetWindows()
+	  resetARModels()
+	  resetComparison()
 	  resetNeuralNetworks()
-	  resetARModel(input$idSelect, input$aRModelName)
 	  setNeuralNetworkExcludeVector()
 	})
 	
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
-	  
+
+	  resetARModels()
 	  resetNeuralNetworks()
 	})
 	
@@ -129,7 +132,7 @@ server <- function(input, output) {
 	
 	
 	### UI elements: Data
-
+	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
 		
@@ -215,20 +218,19 @@ server <- function(input, output) {
 	output$aRChart <- renderPlotly({
 	  windowsChanged()
 	  databaseChanged()
-	  getARModel(input$idSelect, input$aRModelName)
-	  getPlotlyModel()
+	  getPlotlyModel(input$idSelect)
 	})
 	
 	output$arMLE <- renderDataTable({
 	  windowsChanged()
-	  
-	  error_metric(model$expected, model$result)
+	  databaseChanged()
+	  error_metric(autoRegressiveModels[[input$idSelect]]$expected, autoRegressiveModels[[input$idSelect]]$result)
 	})
 	
 	output$arCoef <- renderDataTable({
 	  windowsChanged()
-	  
-	  data.table(coef = model$coef)
+	  databaseChanged()
+	  data.table(coef = autoRegressiveModels[[input$idSelect]]$coef)
 	})
 	
 	output$arACF <- renderPlot({
@@ -239,7 +241,6 @@ server <- function(input, output) {
 	
 	output$arPACF <- renderPlot({
 	  databaseChanged()
-	  
 	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
 	})
 	
@@ -249,51 +250,48 @@ server <- function(input, output) {
 	
 	### UI elements: Comparision
 	
-	compareError <- reactive({
-	  windowsChanged()
-	  
-	  comparison()
-	})
 	
 	output$forecastComparisionPlot <- renderPlotly({
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
-	  
+	  comparison()
 	  getForecastComparisionPlot(input$idSelect)
 	})
 	
 	output$compareMSE <- renderPlotly({
-	  databaseChanged()
-	  
-	  compareError()
+	  windowsChanged()
+	  comparison()
 	  getBoxplot('MSE')
 	})
 	
 	output$compareRMSE <- renderPlotly({
-	  databaseChanged()
-	  
-	  compareError()
+	  windowsChanged()
+	  comparison()
 	  getBoxplot('RMSE')
 	})
 	
 	output$compareSMAPE <- renderPlotly({
-	  databaseChanged()
-	  
-	  compareError()
+	  windowsChanged()
+	  comparison()
 	  getBoxplot('SMAPE')
 	})
 	
-	output$compareCoefficient <- renderDataTable({
+	output$compareError <- renderDataTable({
 	  windowsChanged()
-	  getCoef(input$idSelect)
-
+	  comparison()
+	  error_metric_compare()
 	})
 	
-	output$compareError <- renderDataTable({
-	    windowsChanged()
-	    error_metric_compare()
+	output$compareCoefficient <- renderDataTable({
+	  databaseChanged()
+	  windowsChanged()
+	  excludeBiasChanged()
+	  comparison()
+	  getCoef(input$idSelect)
 	})
+	
+	
 	
 	output$ErrorMetricTable <- renderDataTable({
 	  result <- neuralNetworkTest()

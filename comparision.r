@@ -5,66 +5,48 @@ source('neuralNetwork.r')
 source('global.r')
 
 
-
+ar.MSES <- NULL
 
 comparison <- function()
 {
-  ar.MSES <<- vector()
-  ar.RMSES <<- vector()
-  ar.SMAPES <<- vector()
   
-  nn.MSES <<- vector()
-  nn.RMSES <<- vector()
-  nn.SMAPES <<- vector()
-  
-  nnh.MSES <<- vector()
-  nnh.RMSES <<- vector()
-  nnh.SMAPES <<- vector()
-  
-  nnfa.MSES <<- vector()
-  nnfa.RMSES <<- vector()
-  nnfa.SMAPES <<- vector()
-  
-  nnhfa.MSES <<- vector()
-  nnhfa.RMSES <<- vector()
-  nnhfa.SMAPES <<- vector()
-  
-  ids = names(data.sets)
-  len = length(ids)
-
-  for(i in 1 : len)
+  if(is.null(ar.MSES))
   {
-    id = ids[i]
+    resetComparison()
     
-    cdata = data.sets[[id]]$y
-    getARModel(id, "AR")
-
-
-    error  = error_metric(model$expected, model$result)
-    ar.MSES <<- c(ar.MSES, error$mse)
-    ar.RMSES <<- c(ar.RMSES, error$rmse)
-    ar.SMAPES <<- c(ar.SMAPES, error$smape)
+    ids = names(data.sets)
+    len = length(ids)
     
-    error = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
-    nn.MSES <<- c(nn.MSES, error$mse)
-    nn.RMSES <<- c(nn.RMSES, error$rmse)
-    nn.SMAPES <<- c(nn.SMAPES, error$smape)
-    
-    error = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
-    nnh.MSES <<- c(nnh.MSES, error$mse)
-    nnh.RMSES <<- c(nnh.RMSES, error$rmse)
-    nnh.SMAPES <<- c(nnh.SMAPES, error$smape)
-    
-    error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
-    nnfa.MSES <<- c(nnfa.MSES, error$mse)
-    nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
-    nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
-    
-    #error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-    #nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
-    #nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
-    #nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
+    for(i in 1 : len)
+    {
+      id = ids[i]
+      error  = error_metric(autoRegressiveModels[[id]]$expected, autoRegressiveModels[[id]]$result)
+      ar.MSES <<- c(ar.MSES, error$mse)
+      ar.RMSES <<- c(ar.RMSES, error$rmse)
+      ar.SMAPES <<- c(ar.SMAPES, error$smape)
+      
+      error = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
+      nn.MSES <<- c(nn.MSES, error$mse)
+      nn.RMSES <<- c(nn.RMSES, error$rmse)
+      nn.SMAPES <<- c(nn.SMAPES, error$smape)
+      
+      error = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
+      nnh.MSES <<- c(nnh.MSES, error$mse)
+      nnh.RMSES <<- c(nnh.RMSES, error$rmse)
+      nnh.SMAPES <<- c(nnh.SMAPES, error$smape)
+      
+      error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
+      nnfa.MSES <<- c(nnfa.MSES, error$mse)
+      nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
+      nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
+      
+      #error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+      #nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
+      #nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
+      #nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
+    }
   }
+  
 }
 
 getBoxplot <- function(errorName)
@@ -150,21 +132,18 @@ error_metric_compare <- function()
 
 getCoef <- function(id)
 {
-
-  getARModel(id, "AR")
-  n1 = getNeuralNetwork(id)$weights[[1]][[1]][,1]
-  n2 = getNeuralNetwork(NULL)$weights[[1]][[1]][,1]
+  n1 = rev(getNeuralNetwork(id)$weights[[1]][[1]][,1])
+  n2 = rev(getNeuralNetwork(NULL)$weights[[1]][[1]][,1])
 
   n1 <- n1[!is.na(n1)] # remove bias
   n2 <- n2[!is.na(n2)]
-  arc =  model$coef[1 : data.windowSize] # remove error value
+  arc =  autoRegressiveModels[[id]]$coef #[1 : data.windowSize] # remove error bias
   
   names = NULL
-  for(i in 1 : data.windowSize)
+  for(i in 1 : length(arc))
   {
     names = c(names,paste(c("x", i), collapse = ""))
   }
-  
   data.table(Variables = names, AutoRegression = arc, "NN for each" = n1 , "NN for all" = n2)
 }
 
@@ -180,8 +159,7 @@ getForecastComparisionPlot <- function(id) {
     y = data.sets[[id]]$y[startRealData:data.length])
   
   # Add Auto Regression
-  getARModel(id,"AR")
-  prediction$ar <- append(rep(NA, data.horizon), model$result)
+  prediction$ar <- append(rep(NA, data.horizon), autoRegressiveModels[[id]]$result)
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Neural Network for each
@@ -215,3 +193,25 @@ getForecastComparisionPlot <- function(id) {
   p
 }
 
+resetComparison <-function()
+{
+  ar.MSES <<- NULL
+  ar.RMSES <<- vector()
+  ar.SMAPES <<- vector()
+  
+  nn.MSES <<- vector()
+  nn.RMSES <<- vector()
+  nn.SMAPES <<- vector()
+  
+  nnh.MSES <<- vector()
+  nnh.RMSES <<- vector()
+  nnh.SMAPES <<- vector()
+  
+  nnfa.MSES <<- vector()
+  nnfa.RMSES <<- vector()
+  nnfa.SMAPES <<- vector()
+  
+  nnhfa.MSES <<- vector()
+  nnhfa.RMSES <<- vector()
+  nnhfa.SMAPES <<- vector()
+}
