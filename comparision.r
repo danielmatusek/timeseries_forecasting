@@ -82,19 +82,19 @@ getBoxplot <- function(errorName)
     add_boxplot(y = errorModel.ar, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,0,0)'),
-                name = " AR")%>%
+                name = " AR", boxmean=TRUE)%>%
     add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,0)'),
-                name = " NN")%>%
+                name = " NN", boxmean=TRUE)%>%
     add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,0,200)'),
-                name = " NNH")%>%
+                name = " NNH", boxmean=TRUE)%>%
     add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,200,0)'),
-                name = " NNFA")#%>%
+                name = " NNFA", boxmean=TRUE)#%>%
     #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
     #            marker = list(color = 'rgb(7,40,89)'),
     #            line = list(color = 'rgb(0,200,200)'),
