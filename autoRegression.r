@@ -1,6 +1,7 @@
 library(plotly)
 library(forecast)
 library(stats)
+library(data.table)
 
 autoRegressiveModels <- NULL
 spl <- NULL
@@ -27,12 +28,39 @@ getARModel <- function(id)
   }
   else if (aRModelName == "AutoArima")
   {
+    #arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
+    #coef <- arModel$coef
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     coef <- arModel$coef
+    #create output datatable
+    ar_manual_result <- data.table(V0 = 0)
+    #offset for forecast to use whole input data.table
+    ar_offset <- length(trainData) + 1
+    for(i in 1:length(testData)){
+      ar_forecast_result <- 0
+      for(j in 1:length(coef - 1)){
+        ar_forecast_result <- ar_forecast_result + coef[j] * y[ar_offset - j]
+      }
+      ar_forecast_result <- ar_forecast_result + coef[length(coef)]
+      ar_manual_result[i] <- ar_forecast_result
+      ar_offset <- ar_offset + 1
+    }
+    print(ar_manual_result)
   } 
+  else if (aRModelName == "ManualForecast")
+  {
+    #get coefficients
+    
+  }
   #print(coef)
-  tsPred <- predict(arModel, n.ahead = data.horizon)
-  model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
+  if(aRModelName == "AR"){
+    tsPred <- predict(arModel, n.ahead = data.horizon)
+    model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
+    print(tsPred$pred)
+  }
+  else {
+    model <- list(coef = coef, trained = trainData, result = ar_manual_result, expected = testData)
+  }
   model
 }
 
