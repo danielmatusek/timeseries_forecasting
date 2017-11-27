@@ -40,24 +40,24 @@ getARModel <- function(id)
     ar_manual_result <- data.frame(V0 = double())
     #offset for forecast to use whole input data.table
     ar_offset <- length(trainData) + 1
-    print(coef)
-    print(testData)
+    #print(coef)
+    #print(testData)
     for(i in 1:length(testData)){
       y_t_before <- 0
       for(j in 1:(length(coef)-1)){
         y_t <- y_t_before + (coef[j] * y[ar_offset - j])
-        cat("calculating ", y_t, " = ", y_t_before, "+ ", "(", coef[j], "*", y[ar_offset-j], ")", fill=TRUE)
+        #cat("calculating ", y_t, " = ", y_t_before, "+ ", "(", coef[j], "*", y[ar_offset-j], ")", fill=TRUE)
         y_t_before <- y_t
       }
-     # y_t <- y_t_before + coef[length(coef)]
-     # cat(y_t, "=", y_t_before, "+", coef[length(coef)], fill=TRUE)
-      print("-------------------------------------")
+      #y_t <- y_t_before + coef[length(coef)]
+      #cat(y_t, "=", y_t_before, "+", coef[length(coef)], fill=TRUE)
+      #print("-------------------------------------")
       temp_df <- data.frame(y_t)
       names(temp_df) <- c("V0")
       ar_manual_result <- rbind(ar_manual_result, temp_df)
       ar_offset <- ar_offset + 1
     }
-    print(ar_manual_result)
+    #print(ar_manual_result)
   }
   #print(coef)
   if(aRModelName == "AutoArima" | aRModelName == "AR"){
