@@ -22,30 +22,33 @@ comparison <- function()
     for(i in 1 : len)
     {
       id = ids[i]
+
       error  = error_metric(autoRegressiveModels[[id]]$expected, autoRegressiveModels[[id]]$result)
       ar.MSES <<- c(ar.MSES, error$mse)
       ar.RMSES <<- c(ar.RMSES, error$rmse)
       ar.SMAPES <<- c(ar.SMAPES, error$smape)
       
-      error = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
-      nn.MSES <<- c(nn.MSES, error$mse)
-      nn.RMSES <<- c(nn.RMSES, error$rmse)
-      nn.SMAPES <<- c(nn.SMAPES, error$smape)
-      
-      error = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
-      nnh.MSES <<- c(nnh.MSES, error$mse)
-      nnh.RMSES <<- c(nnh.RMSES, error$rmse)
-      nnh.SMAPES <<- c(nnh.SMAPES, error$smape)
-      
-      error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
-      nnfa.MSES <<- c(nnfa.MSES, error$mse)
-      nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
-      nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
-      
-      #error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-      #nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
-      #nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
-      #nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
+      typ <- neuralNetwork.type
+            
+          error = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
+          nn.MSES <<- c(nn.MSES, error$mse)
+          nn.RMSES <<- c(nn.RMSES, error$rmse)
+          nn.SMAPES <<- c(nn.SMAPES, error$smape)
+
+          error = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
+          nnh.MSES <<- c(nnh.MSES, error$mse)
+          nnh.RMSES <<- c(nnh.RMSES, error$rmse)
+          nnh.SMAPES <<- c(nnh.SMAPES, error$smape)
+
+          error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
+          nnfa.MSES <<- c(nnfa.MSES, error$mse)
+          nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
+          nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
+
+        #  error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+        #  nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
+        #  nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
+        #  nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
     }
   }
   
@@ -54,6 +57,8 @@ comparison <- function()
 getBoxplot <- function(errorName)
 {
   errorModel <<-  NULL
+  typ <- neuralNetwork.type
+  
   if(errorName == 'MSE')
   {
     errorModel.ar <<- ar.MSES
@@ -78,6 +83,7 @@ getBoxplot <- function(errorName)
     errorModel.nnfa <<- nnfa.SMAPES
     #errorModel.nnhfa <<- nnhfa.SMAPES
   }
+
   
   
   p <- plot_ly(type="box")%>%

@@ -67,7 +67,9 @@ server <- function(input, output) {
 	})
 	
 	
-	
+	nnTypChanged <- reactive({
+	  neuralNetwork.type <<- input$variable_nn
+	})
 	
 	
 	### UI elements: General
@@ -163,6 +165,39 @@ server <- function(input, output) {
 	
 	### UI elements: Neural Network
 	
+	output$neuralNetwork_tabs <- renderUI({
+	  panels <- list()
+	  myTabs <- lapply(input$variable_nn, function(x){
+	    #tabPanel("Tab3", p("C phrase"), br(""), p("I can place a chart here"))
+	    if(x == "forecast_one"){
+	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
+	                                             plotOutput("neuralNetworkChart", height = "600px"),
+	                                             plotlyOutput('neuralNetworkForecastForEachChart')
+	      )
+	    }
+	    else if(x == "forecast_one_hidden"){
+	      panels[[length(panels)+1]] <- tabPanel('Forecast /1 hidden', 
+	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"),       
+	                                             plotlyOutput('neuralNetworkForecastForEachHiddenChart')
+	      )
+	    }
+	    else if(x == "forecast_all" ){
+	      panels[[length(panels)+1]] <- tabPanel('Forecast /n', 
+	                                             plotOutput("neuralNetworkChartForAll", height = "600px"), 
+	                                             plotlyOutput('neuralNetworkForecastForAllChart')
+	      )
+	    } 
+	    else if(x == "forecast_all_hidden" ){
+	      panels[[length(panels)+1]] <- tabPanel('Forecast /n hidden',
+	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
+	                                             plotlyOutput('neuralNetworkForecastForAllHiddenChart')
+	      )
+	    } 
+	  })
+	  myTabs$width = "100%"
+	  do.call(tabBox, myTabs)
+	})
+	
 	output$neuralNetworkChart <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
@@ -256,30 +291,35 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  nnTypChanged()
 	  comparison()
 	  getForecastComparisionPlot(input$idSelect)
 	})
 	
 	output$compareMSE <- renderPlotly({
 	  windowsChanged()
+	  nnTypChanged()
 	  comparison()
 	  getBoxplot('MSE')
 	})
 	
 	output$compareRMSE <- renderPlotly({
 	  windowsChanged()
+	  nnTypChanged()
 	  comparison()
 	  getBoxplot('RMSE')
 	})
 	
 	output$compareSMAPE <- renderPlotly({
 	  windowsChanged()
+	  nnTypChanged()
 	  comparison()
 	  getBoxplot('SMAPE')
 	})
 	
 	output$compareError <- renderDataTable({
 	  windowsChanged()
+	  nnTypChanged()
 	  comparison()
 	  error_metric_compare()
 	})
@@ -288,6 +328,7 @@ server <- function(input, output) {
 	  databaseChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
+	  nnTypChanged()
 	  comparison()
 	  getCoef(input$idSelect)
 	})
