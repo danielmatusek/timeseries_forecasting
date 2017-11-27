@@ -5,7 +5,7 @@ source('neuralNetwork.r')
 source('global.r')
 
 
-ar.MSES <- NULL
+
 
 comparison <- function()
 {
@@ -51,7 +51,6 @@ comparison <- function()
 
 getBoxplot <- function(errorName)
 {
-  
   errorModel <<-  NULL
   if(errorName == 'MSE')
   {
@@ -78,24 +77,25 @@ getBoxplot <- function(errorName)
     #errorModel.nnhfa <<- nnhfa.SMAPES
   }
   
-  p <- plot_ly(type='box')%>%
-    add_boxplot(y = errorModel.ar, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+  
+  p <- plot_ly(type="box")%>%
+    add_boxplot(y = errorModel.ar,  jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,0,0)'),
-                name = " AR")%>%
-    add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "AR")%>%
+    add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,0)'),
-                name = " NN")%>%
-    add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "NN")%>%
+    add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,0,200)'),
-                name = " NNH")%>%
-    add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "NNH")%>%
+    add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,200,0)'),
-                name = " NNFA")#%>%
-    #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "NNFA")#%>%
+    #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
     #            marker = list(color = 'rgb(7,40,89)'),
     #            line = list(color = 'rgb(0,200,200)'),
     #            name = " NNHFA")
