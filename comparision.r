@@ -42,14 +42,11 @@ comparison <- function()
           nnfa.MSES <<- c(nnfa.MSES, error$mse)
           nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
           nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
-#        }
-        #else if(typ[[j]] == "forecast_all_hidden"){
+
         #  error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
         #  nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
         #  nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
         #  nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
-        #}
-#      }
     }
   }
   
