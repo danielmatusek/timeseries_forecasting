@@ -28,38 +28,44 @@ getARModel <- function(id)
   }
   else if (aRModelName == "AutoArima")
   {
-    #arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
-    #coef <- arModel$coef
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     coef <- arModel$coef
-    #create output datatable
-    ar_manual_result <- data.table(V0 = 0)
-    #offset for forecast to use whole input data.table
-    ar_offset <- length(trainData) + 1
-    for(i in 1:length(testData)){
-      ar_forecast_result <- 0
-      for(j in 1:length(coef - 1)){
-        ar_forecast_result <- ar_forecast_result + coef[j] * y[ar_offset - j]
-      }
-      ar_forecast_result <- ar_forecast_result + coef[length(coef)]
-      ar_manual_result[i] <- ar_forecast_result
-      ar_offset <- ar_offset + 1
-    }
-    print(ar_manual_result)
   } 
   else if (aRModelName == "ManualForecast")
   {
     #get coefficients
-    
+    arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
+    coef <- arModel$coef
+    #create output datatable
+    ar_manual_result <- data.frame(V0 = double())
+    #offset for forecast to use whole input data.table
+    ar_offset <- length(trainData) + 1
+    print(coef)
+    print(testData)
+    for(i in 1:length(testData)){
+      y_t_before <- 0
+      for(j in 1:(length(coef)-1)){
+        y_t <- y_t_before + (coef[j] * y[ar_offset - j])
+        cat("calculating ", y_t, " = ", y_t_before, "+ ", "(", coef[j], "*", y[ar_offset-j], ")", fill=TRUE)
+        y_t_before <- y_t
+      }
+     # y_t <- y_t_before + coef[length(coef)]
+     # cat(y_t, "=", y_t_before, "+", coef[length(coef)], fill=TRUE)
+      print("-------------------------------------")
+      temp_df <- data.frame(y_t)
+      names(temp_df) <- c("V0")
+      ar_manual_result <- rbind(ar_manual_result, temp_df)
+      ar_offset <- ar_offset + 1
+    }
+    print(ar_manual_result)
   }
   #print(coef)
-  if(aRModelName == "AR"){
+  if(aRModelName == "AutoArima" | aRModelName == "AR"){
     tsPred <- predict(arModel, n.ahead = data.horizon)
     model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
-    print(tsPred$pred)
   }
   else {
-    model <- list(coef = coef, trained = trainData, result = ar_manual_result, expected = testData)
+    model <- list(coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
   }
   model
 }
