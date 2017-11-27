@@ -63,7 +63,7 @@ ui <- dashboardPage(skin = 'purple',
 		      column(3,
 		        h3('Autoregression', style = 'margin-bottom: 20px;'),
 		        radioButtons('aRModelName', 'Arima Models',
-		          c(AR='AR', AutoArima='AutoArima'), 'AR')
+		          c(AR='AR', AutoArima='AutoArima', ManualAutoArima='ManualAutoArima', ManualAR='ManualAR'), 'AR')
 		      )
 		    )
 		  ),
