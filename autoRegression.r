@@ -8,7 +8,7 @@ aRModelName <- NULL
 
 getARModel <- function(id)
 {
-  print(paste("AR", id, sep=" "))
+  #print(paste("AR", id, sep=" "))
   y <- data.sets[[id]]$y
   
   if(is.null(y)  || is.null(data.windowSize) || is.null(data.horizon))
@@ -30,7 +30,7 @@ getARModel <- function(id)
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     coef <- arModel$coef
   } 
-  print(coef)
+  #print(coef)
   tsPred <- predict(arModel, n.ahead = data.horizon)
   model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
   model

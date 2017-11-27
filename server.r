@@ -53,7 +53,8 @@ server <- function(input, output) {
 	
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
-
+	  
+	  
 	  resetARModels()
 	  resetNeuralNetworks()
 	})

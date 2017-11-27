@@ -5,7 +5,7 @@ source('neuralNetwork.r')
 source('global.r')
 
 
-ar.MSES <- NULL
+
 
 comparison <- function()
 {
@@ -26,24 +26,18 @@ comparison <- function()
       ar.RMSES <<- c(ar.RMSES, error$rmse)
       ar.SMAPES <<- c(ar.SMAPES, error$smape)
       
-      #browser()
       typ <- neuralNetwork.type
             
- #     for(j in 1 : length(typ)){
-#        if(typ[[j]] == "forecast_one"){
           error = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
           nn.MSES <<- c(nn.MSES, error$mse)
           nn.RMSES <<- c(nn.RMSES, error$rmse)
           nn.SMAPES <<- c(nn.SMAPES, error$smape)
-#        }
-        
-#        else if(typ[[j]] == "forecast_one_hidden"){
+
           error = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
           nnh.MSES <<- c(nnh.MSES, error$mse)
           nnh.RMSES <<- c(nnh.RMSES, error$rmse)
           nnh.SMAPES <<- c(nnh.SMAPES, error$smape)
-#        }
-#        else if(typ[[j]] == "forecast_all"){
+
           error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
           nnfa.MSES <<- c(nnfa.MSES, error$mse)
           nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
@@ -63,20 +57,14 @@ comparison <- function()
 
 getBoxplot <- function(errorName)
 {
-  
   errorModel <<-  NULL
   typ <- neuralNetwork.type
   
-#  for(j in 1 : length(typ)){
   if(errorName == 'MSE')
   {
     errorModel.ar <<- ar.MSES
-    #browser()
- #   if(typ[[j]] == "forecast_one") 
     errorModel.nn <<- nn.MSES
-#    else if(typ[[j]] == "forecast_one_hidden") 
     errorModel.nnh <<- nnh.MSES
- #   else if(typ[[j]] == "forecast_all") 
     errorModel.nnfa <<- nnfa.MSES
     #errorModel.nnhfa <<- nnhfa.MSES
   }
@@ -96,46 +84,27 @@ getBoxplot <- function(errorName)
     errorModel.nnfa <<- nnfa.SMAPES
     #errorModel.nnhfa <<- nnhfa.SMAPES
   }
-#  }
-#  for (i in 1:length(typ)){
-#  if(typ[[i]] == "forecast_one"){
-#    pnn <- add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
-#                marker = list(color = 'rgb(7,40,89)'),
-#                line = list(color = 'rgb(0,200,0)'),
-#                name = " NN", boxmean=TRUE)
-#    }
-#  else if(typ[[i]] == "forecast_one_hidden"){
-#    pnnh <- add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
-#                marker = list(color = 'rgb(7,40,89)'),
-#                line = list(color = 'rgb(0,0,200)'),
-#                name = " NNH", boxmean=TRUE)
-#  }
-#  else if(typ[[i]] == "forecast_all"){
-#    pnnfa <- add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
-#                marker = list(color = 'rgb(7,40,89)'),
-#                line = list(color = 'rgb(200,200,0)'),
-#                name = " NNFA", boxmean=TRUE)
-#  }
-#}
-  p <- plot_ly(type='box')%>%
-    add_boxplot(y = errorModel.ar, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+
+  
+  
+  p <- plot_ly(type="box")%>%
+    add_boxplot(y = errorModel.ar,  jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,0,0)'),
-                name = " AR", boxmean=TRUE)%>%
-    add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "AR", boxmean = TRUE)%>%
+    add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,0)'),
-                name = " NN", boxmean=TRUE)%>%
-    add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "NN", boxmean = TRUE)%>%
+    add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,0,200)'),
-                name = " NNH", boxmean=TRUE)
-    #pnn%>%
-    #pnnh%>%
-    #ppfa
-    
-  #%>%
-    #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = 'all',
+                name = "NNH", boxmean = TRUE)%>%
+    add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
+                marker = list(color = 'rgb(7,40,89)'),
+                line = list(color = 'rgb(200,200,0)'),
+                name = "NNFA", boxmean = TRUE)#%>%
+    #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
     #            marker = list(color = 'rgb(7,40,89)'),
     #            line = list(color = 'rgb(0,200,200)'),
     #            name = " NNHFA")
