@@ -52,7 +52,13 @@ ui <- dashboardPage(skin = 'purple',
 		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
 		        radioButtons('normalizationRadioButton', 'Normalization',
 		          c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'minmax'),
-		        uiOutput('hiddenSliderInput')
+		        uiOutput('hiddenSliderInput'),
+		        checkboxGroupInput("variable_nn", "neural network forecast for",
+		                           c("one Time Series" = "forecast_one",
+		                             "one TS with hidden" = "forecast_one_hidden",
+		                             "all Time Series" = "forecast_all",
+		                             "all TS with hidden" = "forecast_all_hidden"),
+		                           selected= c("forecast_one","forecast_one_hidden"))
 		      ),
 		      column(3,
 		        h3('Autoregression', style = 'margin-bottom: 20px;'),
@@ -79,25 +85,9 @@ ui <- dashboardPage(skin = 'purple',
 			),
 
 			tabItem(tabName = "neuralNetwork",
-				tabBox(width = NULL,
-				  tabPanel('Forecast /1',
-				    plotOutput("neuralNetworkChart", height = "600px"),
-				    plotlyOutput('neuralNetworkForecastForEachChart')
-				  ),
-				  tabPanel('Forecast /1 hidden',
-				    plotOutput("neuralNetworkHiddenChart", height = "600px"),       
-				    plotlyOutput('neuralNetworkForecastForEachHiddenChart')
-				  ),
-				  tabPanel('Forecast /n',
-				    plotOutput("neuralNetworkChartForAll", height = "600px"), 
-				    plotlyOutput('neuralNetworkForecastForAllChart')
-				  ),
-				  tabPanel('Forecast /n hidden',
-				    plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
-				    plotlyOutput('neuralNetworkForecastForAllHiddenChart')
-				  
-					)
-				)
+			      #  fluidPage( #fluidRow(
+			        uiOutput("neuralNetwork_tabs")
+			       # )
 			),
 			
 			tabItem(tabName = "aRModel",
