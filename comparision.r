@@ -4,140 +4,205 @@ source('autoRegression.r')
 source('neuralNetwork.r')
 source('global.r')
 
+errorTable <- NULL
+
+errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA")
+#lockBinding("errorModelNames", globalenv())
+
+choosenModelNames <<- NULL
+
+getkInputNNTypes <- function(types)
+{
+  i = 1
+  
+  isChecked = vector()
+  NNtypeVector = c("AR")
+  
+  for(type in types)
+  {
+    if(type == "forecast_one")
+    {
+      NNtypeVector <- c(NNtypeVector, "NN")
+    }
+    else if(type == "forecast_one_hidden")
+    {
+      NNtypeVector <- c(NNtypeVector, "NNH")
+    }
+    else if(type == "forecast_all")
+    {
+      NNtypeVector <- c(NNtypeVector, "NNFA")
+    }
+    else if(type == "forecast_all_hidden")
+    {
+      NNtypeVector <- c(NNtypeVector, "NNHFA")
+    }
+  }
+  
+  for(i in 1 : length(errorModelNames))
+  {
+    isChecked = c(isChecked, errorModelNames[i] %in% NNtypeVector)
+  }
+  return(isChecked)
+}
+
 
 
 
 comparison <- function()
 {
   
-  if(is.null(ar.MSES))
+  if(is.null(errorTable))
   {
-    resetComparison()
+    choosenModelNames <<- getkInputNNTypes(neuralNetwork.type)
     
     ids = names(data.sets)
     len = length(ids)
     
+    errorListAR <- list()
+    errorListNN <- list()
+    errorListNNH <- list()
+    errorListNNFA <- list()
+    errorListNNHFA <- list()
+    
+    
     for(i in 1 : len)
     {
       id = ids[i]
+      if(choosenModelNames[1] == TRUE) errorListAR[[i]] = error_metric(autoRegressiveModels[[id]]$expected, autoRegressiveModels[[id]]$result)
+      if(choosenModelNames[2] == TRUE) errorListNN[[i]] = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
+      if(choosenModelNames[3] == TRUE) errorListNNH[[i]] = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
+      if(choosenModelNames[4] == TRUE) errorListNNFA[[i]] = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
+      if(choosenModelNames[5] == TRUE) errorListNNHFA[[i]] =  error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+    }
+    
+    errorTable <<- data.table(AR = errorListAR, NN = errorListNN, NNH = errorListNNH, NNFA = errorListNNFA, NNHFA = errorListNNHFA)
+    return(errorTable)
+  }
+}
 
-      error  = error_metric(autoRegressiveModels[[id]]$expected, autoRegressiveModels[[id]]$result)
-      ar.MSES <<- c(ar.MSES, error$mse)
-      ar.RMSES <<- c(ar.RMSES, error$rmse)
-      ar.SMAPES <<- c(ar.SMAPES, error$smape)
-      
-      typ <- neuralNetwork.type
-            
-          error = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
-          nn.MSES <<- c(nn.MSES, error$mse)
-          nn.RMSES <<- c(nn.RMSES, error$rmse)
-          nn.SMAPES <<- c(nn.SMAPES, error$smape)
 
-          error = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
-          nnh.MSES <<- c(nnh.MSES, error$mse)
-          nnh.RMSES <<- c(nnh.RMSES, error$rmse)
-          nnh.SMAPES <<- c(nnh.SMAPES, error$smape)
+getErrorNameValue <- function(errorName)
+{
+  if(errorName == "mse")
+  {
+    return(1)
+  }
+  else if(errorName == "rmse")
+  {
+    return(2)
+  } 
+  else if(errorName == "smape")
+  {
+    return(3)
+  }
+  return(NULL)
+}
 
-          error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
-          nnfa.MSES <<- c(nnfa.MSES, error$mse)
-          nnfa.RMSES <<- c(nnfa.RMSES, error$rmse)
-          nnfa.SMAPES <<- c(nnfa.SMAPES, error$smape)
 
-        #  error = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-        #  nnhfa.MSES <<- c(nnhfa.MSES, error$mse)
-        #  nnhfa.RMSES <<- c(nnhfa.RMSES, error$rmse)
-        #  nnhfa.SMAPES <<- c(nnhfa.SMAPES, error$smape)
+getListOfErrorFromModel <-  function(modelName, errorName)
+{
+  error <- vector()
+  for(i in 1 : length(errorTable))
+  {
+    eName = names(errorTable)[i]
+    if(eName == modelName)
+    {
+      for(j in 1 : length(errorTable[[i]]))
+      {
+        error = c(error, errorTable[[i]][[j]][getErrorNameValue(errorName)][[1]])
+      }
+      return(error)
     }
   }
-  
 }
+
+
+
+
 
 getBoxplot <- function(errorName)
 {
-  errorModel <<-  NULL
-  typ <- neuralNetwork.type
-  
-  if(errorName == 'MSE')
+  comparison()
+  p <- plot_ly(type = "box")
+    
+  if(choosenModelNames[1] == TRUE) 
   {
-    errorModel.ar <<- ar.MSES
-    errorModel.nn <<- nn.MSES
-    errorModel.nnh <<- nnh.MSES
-    errorModel.nnfa <<- nnfa.MSES
-    #errorModel.nnhfa <<- nnhfa.MSES
+   
+    p <- p %>% add_boxplot(y = getListOfErrorFromModel("AR", errorName),  jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+              marker = list(color = 'rgb(7,40,89)'),
+              line = list(color = 'rgb(200,0,0)'),
+              name = "AR", boxmean = TRUE)
   }
-  else if( errorName == 'RMSE')
-  {
-    errorModel.ar <<- ar.RMSES
-    errorModel.nn <<- nn.RMSES
-    errorModel.nnh <<- nnh.RMSES
-    errorModel.nnfa <<- nnfa.RMSES
-    #errorModel.nnhfa <<- nnhfa.RMSES
-  }
-  else if(errorName == 'SMAPE')
-  {
-    errorModel.ar <<- ar.SMAPES
-    errorModel.nn <<- nn.SMAPES
-    errorModel.nnh <<- nnh.SMAPES
-    errorModel.nnfa <<- nnfa.SMAPES
-    #errorModel.nnhfa <<- nnhfa.SMAPES
-  }
-
   
-  
-  p <- plot_ly(type="box")%>%
-    add_boxplot(y = errorModel.ar,  jitter = 0.3, pointpos = -1.8, boxpoints = "all",
-                marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(200,0,0)'),
-                name = "AR", boxmean = TRUE)%>%
-    add_boxplot(y = errorModel.nn, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
+  if(choosenModelNames[2] == TRUE)
+  {
+    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NN", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,0)'),
-                name = "NN", boxmean = TRUE)%>%
-    add_boxplot(y = errorModel.nnh, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
+                name = "NN", boxmean = TRUE)
+  }
+  
+  if(choosenModelNames[3] == TRUE)
+  {
+    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NNH", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,0,200)'),
-                name = "NNH", boxmean = TRUE)%>%
-    add_boxplot(y = errorModel.nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
+                name = "NNH", boxmean = TRUE)
+  }
+  
+  if(choosenModelNames[4] == TRUE)
+  {
+    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NNFA", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,200,0)'),
-                name = "NNFA", boxmean = TRUE)#%>%
-    #add_boxplot(y = errorModel.nnhfa, jitter = 0.3, pointpos = -1.8, boxpoints = "all",
-    #            marker = list(color = 'rgb(7,40,89)'),
-    #            line = list(color = 'rgb(0,200,200)'),
-    #            name = " NNHFA")
+                name = "NNFA", boxmean = TRUE)
+  }
+    
+  if(choosenModelNames[5] == TRUE)
+  {
+    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NNHFA", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                marker = list(color = 'rgb(7,40,89)'),
+                line = list(color = 'rgb(0,200,200)'),
+                name = " NNHFA")
+  }
+    
+    
   p$elementId <- NULL
   p
 }
 
-error_metric_compare <- function()
-{
-  MSES <-vector()
-  RMSES <-vector()
-  SMAPES <-vector()
 
-  MSES <- c(MSES, mean(ar.MSES))
-  MSES <- c(MSES, mean(nn.MSES))
-  MSES <- c(MSES, mean(nnh.MSES))
-  MSES <- c(MSES, mean(nnfa.MSES))
-  MSES <- c(MSES, mean(nnhfa.MSES))
+getMeanErrorVectorFromModels <- function(errorName)
+{
+  comparison()
   
-  RMSES <- c(RMSES, mean(ar.RMSES))
-  RMSES <- c(RMSES, mean(nn.RMSES))
-  RMSES <- c(RMSES, mean(nnh.RMSES))
-  RMSES <- c(RMSES, mean(nnfa.RMSES))
-  RMSES <- c(RMSES, mean(nnhfa.RMSES))
-  
-  SMAPES <- c(SMAPES, mean(ar.SMAPES))
-  SMAPES <- c(SMAPES, mean(nn.SMAPES))
-  SMAPES <- c(SMAPES, mean(nnh.SMAPES))
-  SMAPES <- c(SMAPES, mean(nnfa.SMAPES))
-  SMAPES <- c(SMAPES, mean(nnhfa.SMAPES))
-  
-  data.table(NAME = c("AR", "NN", "NNH", "NNFA", "NNHFA"), MSE = MSES, RMSE =  RMSES, SMAPE = SMAPES)
+  errorMean <- vector()
+  for(i in 1 : length(errorModelNames))
+  {
+    if(choosenModelNames[i] == TRUE) errorMean = c(errorMean, mean(getListOfErrorFromModel(errorModelNames[i], errorName)))
+  }
+  errorMean
 }
+
+
+getErrorMetricCompare <- function()
+{
+  comparison()
+  
+  names = vector()
+  for(i in 1 : length(errorModelNames))
+  {
+     if(choosenModelNames[i] == TRUE) names = c(names, errorModelNames[i])
+  }
+  
+  data.table(NAME = names, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
+}
+
 
 getCoef <- function(id)
 {
+  comparison()
+  
   n1 = rev(getNeuralNetwork(id)$weights[[1]][[1]][,1])
   n2 = rev(getNeuralNetwork(NULL)$weights[[1]][[1]][,1])
 
@@ -150,7 +215,7 @@ getCoef <- function(id)
   {
     names = c(names,paste(c("x", i), collapse = ""))
   }
-  data.table(Variables = names, AutoRegression = arc, "NN for each" = n1 , "NN for all" = n2)
+  data.table(Variables = names, AutoRegression = arc, "NN for each" = n1, "NN for all" = n2)
 }
 
 
@@ -184,40 +249,25 @@ getForecastComparisionPlot <- function(id) {
   prediction$nnfa[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Auto Regression for all with hidden layers
-  #prediction$nnfah <- append(rep(NA, data.horizon),
-  #  getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-  #prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  prediction$nnfah <- append(rep(NA, data.horizon),
+    getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+  prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Plot the data
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
     add_trace(y = ~ar, name = 'Auto Regression', line = list(color = 'rgb(255, 0, 0)')) %>%
     add_trace(y = ~nnfe, name = 'Neural Network /1', line = list(color = 'rgb(255, 150, 0)')) %>%
     add_trace(y = ~nnfeh, name = 'Neural Network /1 hidden', line = list(color = 'rgb(0, 255, 255)')) %>%
-    add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(0, 0, 255)')) #%>%
-    #add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
+    add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(0, 0, 255)')) %>%
+    add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }
 
-resetComparison <-function()
+resetComparison <- function()
 {
-  ar.MSES <<- NULL
-  ar.RMSES <<- vector()
-  ar.SMAPES <<- vector()
-  
-  nn.MSES <<- vector()
-  nn.RMSES <<- vector()
-  nn.SMAPES <<- vector()
-  
-  nnh.MSES <<- vector()
-  nnh.RMSES <<- vector()
-  nnh.SMAPES <<- vector()
-  
-  nnfa.MSES <<- vector()
-  nnfa.RMSES <<- vector()
-  nnfa.SMAPES <<- vector()
-  
-  nnhfa.MSES <<- vector()
-  nnhfa.RMSES <<- vector()
-  nnhfa.SMAPES <<- vector()
+  errorTable <<- NULL
 }
+
+
+

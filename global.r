@@ -106,7 +106,8 @@ error_metric <- function(test_set, forecast_set){
   mse <- mse(test_set, forecast_set)
   rmse <- rmse(test_set, forecast_set)
   smape <- sMAPE(test_set, forecast_set)
-  data.frame(mse = mse,rmse = rmse, smape = smape)
+  diff <- test_set - forecast_set
+  data.frame(mse = mse,rmse = rmse, smape = smape, diff = diff)
 }
 
 convertCheckbox <- function(checklist){
