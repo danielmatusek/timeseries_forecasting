@@ -49,7 +49,7 @@ setNeuralNetworkExcludeVector <- function() {
 trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
-
+  set.seed(1)
   if(neuralNetwork.excludeBias) {
 
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
@@ -113,42 +113,6 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
   }
 }
 
-trainNeuralNetworks <- function(excludeBias, hiddenLayers)
-{
-  neuralNetwork.excludeBias <<- excludeBias
-  neuralNetwork.hiddenLayers <<- hiddenLayers
-  data.trainSets.ids <- names(data.trainSets)
-  trainSetsCombined <- rbindlist(data.trainSets)
-  numNN <- 2 * length(data.trainSets.ids) + 2
-  
-  
-  withProgress(message = "Learning Neural Network", value = 0, {
-  # Learn neural networks without a hidden layer
-    for (i in 1:length(data.trainSets.ids))
-    {
-      id <- data.trainSets.ids[i]
-      
-      incProgress(1/numNN, detail = paste('Without hidden layers: ID', id))
-      getNeuralNetwork(id)
-    }
-    
-    incProgress(1/numNN, detail = 'Without hidden layers: General for all')
-    getNeuralNetwork(NULL)
-    
-    # Learn neural networks with hidden layer
-    for (i in 1:length(data.trainSets.ids))
-    {
-      id <- data.trainSets.ids[i]
-      
-      incProgress(1/numNN, detail = paste('With hidden layers: ID', id))
-      getNeuralNetwork(id, hiddenLayers = TRUE)
-    }
-    
-    incProgress(1/numNN, detail = 'With hidden layers: General for all')
-    getNeuralNetwork(NULL, hiddenLayers = TRUE)
-  })
-}
-
 testNeuralNetwork <- function(neuralNetwork, testSetID) {
   expected <- getTestSet(testSetID)$xt0
   testData <- getTestSet(testSetID)
@@ -206,6 +170,40 @@ getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE
       return(neuralNetwork.testResults.forEach[[id]])
     }
   }
+}
+
+findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
+  ids <- names(data.trainSets)
+  numHiddenNeurons <- neuralNetwork.hiddenLayers[1]
+  tolerance <- 1e-5
+  
+  idsNNsDiffer <- NULL
+  
+  for (i in 1:length(ids))
+  {
+    id <- ids[i]
+    
+    nn <- getNeuralNetwork(id)
+    nnh <- getNeuralNetwork(id, TRUE)
+    
+    for (j in 1:data.windowSize)
+    {
+      sum <- 0
+      for (k in 1:numHiddenNeurons)
+      {
+        sum <- sum + nnh$weights[[1]][[1]][j+1, k] * nnh$weights[[1]][[2]][k+1, 1]
+      }
+      
+      if (abs(sum - nn$weights[[1]][[1]][j+1, 1]) > tolerance)
+      {
+        idsNNsDiffer <- c(idsNNsDiffer, id)
+        print(paste('difference', id, j, sum, nn$weights[[1]][[1]][j+1, 1]))
+        break
+      }
+    }
+  }
+  
+  data.table(ids = idsNNsDiffer)
 }
 
 getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {

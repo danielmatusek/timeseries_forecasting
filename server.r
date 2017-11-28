@@ -280,6 +280,15 @@ server <- function(input, output) {
 	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
 	})
 	
+	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  nnTypChanged()
+	  
+	  findDifferenceInNeuralNetworksWrtHiddenLayers()
+	})
+	
 	
 	
 	
