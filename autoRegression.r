@@ -25,11 +25,13 @@ getARModel <- function(id)
   {
     arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
     coef <- arModel$ar
+    print(arModel)
   }
   else if (aRModelName == "AutoArima")
   {
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     coef <- arModel$coef
+    print(arModel)
   } 
   else if (aRModelName == "ManualAutoArima" | aRModelName == "ManualAR")
   {
@@ -45,13 +47,18 @@ getARModel <- function(id)
     ar_manual_result <- data.frame(V0 = double())
     #offset for forecast to use whole input data.table
     ar_offset <- length(trainData) + 1
+    
+    if(aRModelName== "ManualAutoArima"){
+      timesSum <- (length(coef)-1)
+    } else timesSum <- (length(coef))
+    
     for(i in 1:length(testData)){
       y_t_before <- 0
-      for(j in 1:(length(coef)-1)){
+      for(j in 1:timesSum){
         y_t <- y_t_before + (coef[j] * y[ar_offset - j])
         y_t_before <- y_t
       }
-      #y_t <- y_t_before + coef[length(coef)] ## -----> Error value for Auto.Arima
+      #y_t <- y_t_before + coef[length(coef)] ## -----> Error value for Auto.Arima)
       temp_df <- data.frame(y_t)
       names(temp_df) <- c("V0")
       #append new forecasted value to table
