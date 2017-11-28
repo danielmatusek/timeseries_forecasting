@@ -16,6 +16,7 @@ server <- function(input, output) {
   
   ### Settings Changed Events
   
+  
   rawData <- reactive({
     file <- input$dataFile
     
@@ -39,7 +40,6 @@ server <- function(input, output) {
   })
 	
 	windowsChanged <- reactive({
-	  
 	  data.windowSize <<- input$windowSizeSlider
 	  data.horizon <<- input$horizonSlider
 	  aRModelName <<- input$aRModelName
@@ -54,7 +54,6 @@ server <- function(input, output) {
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
 	  
-	  
 	  resetARModels()
 	  resetNeuralNetworks()
 	})
@@ -66,13 +65,16 @@ server <- function(input, output) {
 	  setNeuralNetworkExcludeVector()
 	})
 	
-	
 	nnTypChanged <- reactive({
 	  neuralNetwork.type <<- input$variable_nn
 	})
 	
 	
+	
+	
+	
 	### UI elements: General
+	
 	
 	output$idColumnSelect <- renderUI({
 	  df <- rawData()
@@ -136,6 +138,7 @@ server <- function(input, output) {
 	
 	### UI elements: Data
 	
+	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
 		
@@ -164,6 +167,7 @@ server <- function(input, output) {
 	
 	
 	### UI elements: Neural Network
+	
 	
 	output$neuralNetwork_tabs <- renderUI({
 	  panels <- list()
@@ -254,19 +258,22 @@ server <- function(input, output) {
 	output$aRChart <- renderPlotly({
 	  windowsChanged()
 	  databaseChanged()
+	  
 	  getPlotlyModel(input$idSelect)
 	})
 	
 	output$arMLE <- renderDataTable({
 	  windowsChanged()
 	  databaseChanged()
-	  error_metric(autoRegressiveModels[[input$idSelect]]$expected, autoRegressiveModels[[input$idSelect]]$result)
+	  
+	  error_metric(getARModel(input$idSelect)$expected, getARModel(input$idSelect)$result)
 	})
 	
 	output$arCoef <- renderDataTable({
 	  windowsChanged()
 	  databaseChanged()
-	  data.table(coef = autoRegressiveModels[[input$idSelect]]$coef)
+	  
+	  data.table(coef = getARModel(input$idSelect)$coef)
 	})
 	
 	output$arACF <- renderPlot({
@@ -277,6 +284,7 @@ server <- function(input, output) {
 	
 	output$arPACF <- renderPlot({
 	  databaseChanged()
+	  
 	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
 	})
 	
@@ -301,7 +309,7 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  nnTypChanged()
-	  comparison()
+	  
 	  getForecastComparisionPlot(input$idSelect)
 	})
 	

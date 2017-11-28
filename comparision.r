@@ -1,15 +1,8 @@
 library(ggplot2)
 library(plotly)
-source('autoRegression.r')
-source('neuralNetwork.r')
-source('global.r')
-
-
-
 
 comparison <- function()
 {
-  
   if(is.null(ar.MSES))
   {
     resetComparison()
@@ -21,7 +14,7 @@ comparison <- function()
     {
       id = ids[i]
 
-      error  = error_metric(autoRegressiveModels[[id]]$expected, autoRegressiveModels[[id]]$result)
+      error  = error_metric(getARModel(id)$expected, getARModel(id)$result)
       ar.MSES <<- c(ar.MSES, error$mse)
       ar.RMSES <<- c(ar.RMSES, error$rmse)
       ar.SMAPES <<- c(ar.SMAPES, error$smape)
@@ -143,7 +136,7 @@ getCoef <- function(id)
 
   n1 <- n1[!is.na(n1)] # remove bias
   n2 <- n2[!is.na(n2)]
-  arc =  autoRegressiveModels[[id]]$coef #[1 : data.windowSize] # remove error bias
+  arc =  getARModel(id)$coef #[1 : data.windowSize] # remove error bias
   
   names = NULL
   for(i in 1 : length(arc))
@@ -165,7 +158,7 @@ getForecastComparisionPlot <- function(id) {
     y = data.sets[[id]]$y[startRealData:data.length])
   
   # Add Auto Regression
-  prediction$ar <- append(rep(NA, data.horizon), autoRegressiveModels[[id]]$result)
+  prediction$ar <- append(rep(NA, data.horizon), getARModel(id)$result)
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Neural Network for each

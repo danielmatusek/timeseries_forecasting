@@ -108,5 +108,3 @@ error_metric <- function(test_set, forecast_set){
   smape <- sMAPE(test_set, forecast_set)
   data.frame(mse = mse,rmse = rmse, smape = smape)
 }
-
-
