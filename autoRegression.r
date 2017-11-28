@@ -3,23 +3,16 @@ library(forecast)
 library(stats)
 library(data.table)
 
-autoRegressiveModels <- NULL
-spl <- NULL
 aRModelName <- NULL
 
-getARModel <- function(id)
+learnARModel <- function(id)
 {
   #print(paste("AR", id, sep=" "))
   y <- data.sets[[id]]$y
   
-  if(is.null(y)  || is.null(data.windowSize) || is.null(data.horizon))
-  {
-    return(NULL)
-  }
-  
   spl <<- length(y) - data.horizon
-  trainData <<- y[(1 : spl)]
-  testData <<- y[-(1 : spl)]
+  trainData <- y[(1 : spl)]
+  testData <- y[-(1 : spl)]
 
   if(aRModelName == "AR")
   {
@@ -75,28 +68,22 @@ getARModel <- function(id)
   else {
     model <- list(coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
   }
-  model
+  
+  autoRegressiveModels[[id]] <<- model
 }
 
-
-getAllARModels <-function()
-{
-    if(is.null(autoRegressiveModels))
-    {
-      ids = names(data.sets)
-      for(id in  ids)
-      {
-        autoRegressiveModels[[id]] <<- getARModel(id)
-      }
-    }
-  return(autoRegressiveModels)
-    
+getARModel <- function(id) {
+  if (is.null(autoRegressiveModels[[id]]))
+  {
+    learnARModel(id)
+  }
+  
+  return (autoRegressiveModels[[id]])
 }
 
 resetARModels <- function()
 {
   autoRegressiveModels <<- NULL
-  getAllARModels()
 }
 
 getPlotlyModel <- function(id)
@@ -119,9 +106,9 @@ getPlotlyModel <- function(id)
   )
   
   p <- plot_ly()%>%
-    add_lines(x = (1 : spl), y = autoRegressiveModels[[id]]$trained, color = I("blue"), name = "Original")%>%
-    add_lines(x = ((spl + 1): (spl + data.horizon)), y = autoRegressiveModels[[id]]$expected, color = I("blue"), name = "Original FC")%>%
-    add_lines(x = ((spl + 1): (spl + data.horizon)), y = autoRegressiveModels[[id]]$result, color = I("red"), name = "Prediction")%>%
+    add_lines(x = (1 : spl), y = getARModel(id)$trained, color = I("blue"), name = "Original")%>%
+    add_lines(x = ((spl + 1): (spl + data.horizon)), y = getARModel(id)$expected, color = I("blue"), name = "Original FC")%>%
+    add_lines(x = ((spl + 1): (spl + data.horizon)), y = getARModel(id)$result, color = I("red"), name = "Prediction")%>%
     layout(xaxis = x, yaxis = y)
    
   p$elementId <- NULL

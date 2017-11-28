@@ -16,6 +16,7 @@ server <- function(input, output) {
   
   ### Settings Changed Events
   
+  
   rawData <- reactive({
     file <- input$dataFile
     
@@ -39,10 +40,8 @@ server <- function(input, output) {
   })
 	
 	windowsChanged <- reactive({
-	  
 	  data.windowSize <<- input$windowSizeSlider
 	  data.horizon <<- input$horizonSlider
-	  aRModelName <<- input$aRModelName
     
 	  resetWindows()
 	  resetARModels()
@@ -53,7 +52,6 @@ server <- function(input, output) {
 	
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
-	  
 	  
 	  resetARModels()
 	  resetNeuralNetworks()
@@ -66,15 +64,27 @@ server <- function(input, output) {
 	  setNeuralNetworkExcludeVector()
 	})
 	
-	
 	nnTypChanged <- reactive({
-	  neuralNetwork.type <<- input$variable_nn
+	  neuralNetwork.enableForEach <<- 'forecast_one' %in% input$variable_nn
+	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
+	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
+	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
 	  
 	  resetComparison()
 	})
 	
+	arModelBaseChanged <- reactive({
+	  aRModelName <<- input$aRModelName
+	  
+	  resetARModels()
+	})
+	
+	
+	
+	
 	
 	### UI elements: General
+	
 	
 	output$idColumnSelect <- renderUI({
 	  df <- rawData()
@@ -138,6 +148,7 @@ server <- function(input, output) {
 	
 	### UI elements: Data
 	
+	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
 		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
@@ -165,6 +176,7 @@ server <- function(input, output) {
 	
 	
 	### UI elements: Neural Network
+	
 	
 	output$neuralNetwork_tabs <- renderUI({
 	  panels <- list()
@@ -254,20 +266,23 @@ server <- function(input, output) {
 	
 	output$aRChart <- renderPlotly({
 	  windowsChanged()
-	  databaseChanged()
+	  arModelBaseChanged()
+	  
 	  getPlotlyModel(input$idSelect)
 	})
 	
 	output$arMLE <- renderDataTable({
 	  windowsChanged()
-	  databaseChanged()
-	  error_metric(autoRegressiveModels[[input$idSelect]]$expected, autoRegressiveModels[[input$idSelect]]$result)
+	  arModelBaseChanged()
+	  
+	  error_metric(getARModel(input$idSelect)$expected, getARModel(input$idSelect)$result)
 	})
 	
 	output$arCoef <- renderDataTable({
 	  windowsChanged()
-	  databaseChanged()
-	  data.table(coef = autoRegressiveModels[[input$idSelect]]$coef)
+	  arModelBaseChanged()
+	  
+	  data.table(coef = getARModel(input$idSelect)$coef)
 	})
 	
 	output$arACF <- renderPlot({
@@ -278,6 +293,7 @@ server <- function(input, output) {
 	
 	output$arPACF <- renderPlot({
 	  databaseChanged()
+	  
 	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
 	})
 	
@@ -293,30 +309,40 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
+	  
 	  getForecastComparisionPlot(input$idSelect)
 	})
 	
 	output$compareMSE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
+	  
 	  getBoxplot('mse')
 	})
 	
 	output$compareRMSE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
+	  
 	  getBoxplot('rmse')
 	})
 	
 	output$compareSMAPE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
+	  
 	  getBoxplot('smape')
 	})
 	
 	output$compareError <- renderDataTable({
 	  windowsChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
+	  
 	  getErrorMetricCompare()
 	})
 	
@@ -325,24 +351,22 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
+	  
 	  getCoef(input$idSelect)
 	})
-	
-	
 	
 	output$ErrorMetricTable <- renderDataTable({
 	  result <- neuralNetworkTest()
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
 	
-	output$compareDifference <- renderPlotly({
-	  databaseChanged()
+	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
 	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  nnTypChanged()
 	  
-	  return(NULL)
+	  findDifferenceInNeuralNetworksWrtHiddenLayers()
 	})
-	
-	
-
-	
 }

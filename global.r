@@ -109,5 +109,3 @@ error_metric <- function(test_set, forecast_set){
   diff <- test_set - forecast_set
   data.frame(mse = mse,rmse = rmse, smape = smape, diff = diff)
 }
-
-
