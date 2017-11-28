@@ -68,7 +68,7 @@ server <- function(input, output) {
 	
 	
 	nnTypChanged <- reactive({
-	  neuralNetwork.type <<- input$variable_nn
+	  neuralNetwork.type <<- convertCheckbox(input$variable_nn)
 	})
 	
 	
@@ -167,8 +167,7 @@ server <- function(input, output) {
 	
 	output$neuralNetwork_tabs <- renderUI({
 	  panels <- list()
-	  myTabs <- lapply(input$variable_nn, function(x){
-	    #tabPanel("Tab3", p("C phrase"), br(""), p("I can place a chart here"))
+	 myTabs <- lapply(input$variable_nn, function(x){
 	    if(x == "forecast_one"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
 	                                             plotOutput("neuralNetworkChart", height = "600px"),
@@ -181,13 +180,13 @@ server <- function(input, output) {
 	                                             plotlyOutput('neuralNetworkForecastForEachHiddenChart')
 	      )
 	    }
-	    else if(x == "forecast_all" ){
+	    else if(x == "forecast_all"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n', 
 	                                             plotOutput("neuralNetworkChartForAll", height = "600px"), 
 	                                             plotlyOutput('neuralNetworkForecastForAllChart')
 	      )
 	    } 
-	    else if(x == "forecast_all_hidden" ){
+	    else if(x == "forecast_all_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n hidden',
 	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
 	                                             plotlyOutput('neuralNetworkForecastForAllHiddenChart')

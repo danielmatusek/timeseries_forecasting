@@ -109,4 +109,25 @@ error_metric <- function(test_set, forecast_set){
   data.frame(mse = mse,rmse = rmse, smape = smape)
 }
 
+convertCheckbox <- function(checklist){
+  result <- c(FALSE, FALSE, FALSE, FALSE)
+if (length(checklist)>0){
+  for (i in 1 : length(checklist)){
+    if(checklist[[i]] == "forecast_one"){
+      result[1] <- TRUE
+    }
+    else if(checklist[[i]] == "forecast_one_hidden"){
+      result[2] <- TRUE
+    }
+    else if(checklist[[i]] == "forecast_all" ){
+      result[3] <- TRUE
+    }
+    else if(checklist[[i]] == "forecast_all_hidden" ){
+      result[4] <- TRUE
+    }
+  }
+}
+  result
+}
+
 
