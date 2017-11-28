@@ -124,7 +124,10 @@ ui <- dashboardPage(skin = 'purple',
 			               ),
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
-			               )
+			               ),
+			               tabPanel("AR vs NN",
+			                        plotlyOutput("compareDifference")
+			         )
 			        )
 			)
 		)

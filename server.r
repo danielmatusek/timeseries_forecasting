@@ -69,6 +69,8 @@ server <- function(input, output) {
 	
 	nnTypChanged <- reactive({
 	  neuralNetwork.type <<- input$variable_nn
+	  
+	  resetComparison()
 	})
 	
 	
@@ -138,7 +140,6 @@ server <- function(input, output) {
 	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
-		
 		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
@@ -292,36 +293,31 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  nnTypChanged()
-	  comparison()
 	  getForecastComparisionPlot(input$idSelect)
 	})
 	
 	output$compareMSE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  getBoxplot('MSE')
+	  getBoxplot('mse')
 	})
 	
 	output$compareRMSE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  getBoxplot('RMSE')
+	  getBoxplot('rmse')
 	})
 	
 	output$compareSMAPE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  getBoxplot('SMAPE')
+	  getBoxplot('smape')
 	})
 	
 	output$compareError <- renderDataTable({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  error_metric_compare()
+	  getErrorMetricCompare()
 	})
 	
 	output$compareCoefficient <- renderDataTable({
@@ -329,7 +325,6 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  nnTypChanged()
-	  comparison()
 	  getCoef(input$idSelect)
 	})
 	
@@ -339,6 +334,14 @@ server <- function(input, output) {
 	  result <- neuralNetworkTest()
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
+	
+	output$compareDifference <- renderPlotly({
+	  databaseChanged()
+	  windowsChanged()
+	  
+	  return(NULL)
+	})
+	
 	
 
 	
