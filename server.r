@@ -42,7 +42,6 @@ server <- function(input, output) {
 	windowsChanged <- reactive({
 	  data.windowSize <<- input$windowSizeSlider
 	  data.horizon <<- input$horizonSlider
-	  aRModelName <<- input$aRModelName
     
 	  resetWindows()
 	  resetARModels()
@@ -66,7 +65,18 @@ server <- function(input, output) {
 	})
 	
 	nnTypChanged <- reactive({
-	  neuralNetwork.type <<- input$variable_nn
+	  neuralNetwork.enableForEach <<- 'forecast_one' %in% input$variable_nn
+	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
+	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
+	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
+	  
+	  resetComparison()
+	})
+	
+	arModelBaseChanged <- reactive({
+	  aRModelName <<- input$aRModelName
+	  
+	  resetARModels()
 	})
 	
 	
@@ -141,7 +151,6 @@ server <- function(input, output) {
 	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
-		
 		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
@@ -257,21 +266,21 @@ server <- function(input, output) {
 	
 	output$aRChart <- renderPlotly({
 	  windowsChanged()
-	  databaseChanged()
+	  arModelBaseChanged()
 	  
 	  getPlotlyModel(input$idSelect)
 	})
 	
 	output$arMLE <- renderDataTable({
 	  windowsChanged()
-	  databaseChanged()
+	  arModelBaseChanged()
 	  
 	  error_metric(getARModel(input$idSelect)$expected, getARModel(input$idSelect)$result)
 	})
 	
 	output$arCoef <- renderDataTable({
 	  windowsChanged()
-	  databaseChanged()
+	  arModelBaseChanged()
 	  
 	  data.table(coef = getARModel(input$idSelect)$coef)
 	})
@@ -288,15 +297,6 @@ server <- function(input, output) {
 	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
 	})
 	
-	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  hiddenLayersChanged()
-	  nnTypChanged()
-	  
-	  findDifferenceInNeuralNetworksWrtHiddenLayers()
-	})
-	
 	
 	
 	
@@ -309,6 +309,7 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  nnTypChanged()
+	  arModelBaseChanged()
 	  
 	  getForecastComparisionPlot(input$idSelect)
 	})
@@ -316,29 +317,33 @@ server <- function(input, output) {
 	output$compareMSE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  getBoxplot('MSE')
+	  arModelBaseChanged()
+	  
+	  getBoxplot('mse')
 	})
 	
 	output$compareRMSE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  getBoxplot('RMSE')
+	  arModelBaseChanged()
+	  
+	  getBoxplot('rmse')
 	})
 	
 	output$compareSMAPE <- renderPlotly({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  getBoxplot('SMAPE')
+	  arModelBaseChanged()
+	  
+	  getBoxplot('smape')
 	})
 	
 	output$compareError <- renderDataTable({
 	  windowsChanged()
 	  nnTypChanged()
-	  comparison()
-	  error_metric_compare()
+	  arModelBaseChanged()
+	  
+	  getErrorMetricCompare()
 	})
 	
 	output$compareCoefficient <- renderDataTable({
@@ -346,17 +351,22 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  nnTypChanged()
-	  comparison()
+	  arModelBaseChanged()
+	  
 	  getCoef(input$idSelect)
 	})
-	
-	
 	
 	output$ErrorMetricTable <- renderDataTable({
 	  result <- neuralNetworkTest()
 	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
 	
-
-	
+	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  nnTypChanged()
+	  
+	  findDifferenceInNeuralNetworksWrtHiddenLayers()
+	})
 }

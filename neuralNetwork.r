@@ -4,6 +4,11 @@ neuralNetwork.excludeBias <<- TRUE
 neuralNetwork.hiddenLayers <<- c(0)
 neuralNetwork.excludeVector <<- NULL
 
+neuralNetwork.enableForEach <<- TRUE
+neuralNetwork.enableForEach.hidden <<- TRUE
+neuralNetwork.enableForAll <<- FALSE
+neuralNetwork.enableForAll.hidden <<- FALSE
+
 resetNeuralNetworks.hidden <- function()
 {
   neuralNetwork.forEach.hiddenLayers <<- NULL

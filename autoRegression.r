@@ -10,7 +10,7 @@ learnARModel <- function(id)
   #print(paste("AR", id, sep=" "))
   y <- data.sets[[id]]$y
   
-  spl <- length(y) - data.horizon
+  spl <<- length(y) - data.horizon
   trainData <- y[(1 : spl)]
   testData <- y[-(1 : spl)]
 
