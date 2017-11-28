@@ -1,6 +1,7 @@
 library(plotly)
 library(forecast)
 library(stats)
+library(data.table)
 
 autoRegressiveModels <- NULL
 spl <- NULL
@@ -30,9 +31,43 @@ getARModel <- function(id)
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     coef <- arModel$coef
   } 
-  #print(coef)
-  tsPred <- predict(arModel, n.ahead = data.horizon)
-  model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
+  else if (aRModelName == "ManualAutoArima" | aRModelName == "ManualAR")
+  {
+    #get coefficients
+    if(aRModelName == "ManualAutoArima"){
+      arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
+      coef <- arModel$coef
+    } else {
+      arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
+      coef <- arModel$ar
+    } 
+    #create output datatable
+    ar_manual_result <- data.frame(V0 = double())
+    #offset for forecast to use whole input data.table
+    ar_offset <- length(trainData) + 1
+    for(i in 1:length(testData)){
+      y_t_before <- 0
+      for(j in 1:(length(coef)-1)){
+        y_t <- y_t_before + (coef[j] * y[ar_offset - j])
+        y_t_before <- y_t
+      }
+      #y_t <- y_t_before + coef[length(coef)] ## -----> Error value for Auto.Arima
+      temp_df <- data.frame(y_t)
+      names(temp_df) <- c("V0")
+      #append new forecasted value to table
+      ar_manual_result <- rbind(ar_manual_result, temp_df)
+      #move window one to the right, old y_t will be y_t-1
+      ar_offset <- ar_offset + 1
+    }
+  }
+
+  if(aRModelName == "AutoArima" | aRModelName == "AR"){
+    tsPred <- predict(arModel, n.ahead = data.horizon)
+    model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
+  }
+  else {
+    model <- list(coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
+  }
   model
 }
 
