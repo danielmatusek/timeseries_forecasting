@@ -50,8 +50,6 @@ ui <- dashboardPage(skin = 'purple',
 		      column(3,
 		        h3('Neural Network', style = 'margin-bottom: 20px;'),
 		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
-		        radioButtons('normalizationRadioButton', 'Normalization',
-		          c('None' = 'none', 'Z-Normalization' = 'zScore', 'Min-Max Scale' = 'minmax'), 'minmax'),
 		        uiOutput('hiddenSliderInput'),
 		        checkboxGroupInput("variable_nn", "neural network forecast for",
 		                           c("one Time Series" = "forecast_one",
@@ -125,9 +123,9 @@ ui <- dashboardPage(skin = 'purple',
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
 			               ),
-			               tabPanel("AR vs NN",
-			                        plotlyOutput("compareDifference")
-			         )
+			          tabPanel('NN Dif. wrt HL',
+			            dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
+                )
 			        )
 			)
 		)
