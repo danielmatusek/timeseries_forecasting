@@ -10,6 +10,7 @@ neuralNetwork.enableForAll <<- FALSE
 neuralNetwork.enableForAll.hidden <<- FALSE
 
 neuralNetwork.enableHiddenSandbox <<- FALSE
+neuralNetwork.hiddenLayersOptimization <<- c(0)
 
 resetNeuralNetworks.hidden <- function()
 {
@@ -23,12 +24,19 @@ resetNeuralNetworks.hidden <- function()
 resetNeuralNetworks <- function()
 {
   resetNeuralNetworks.hidden()
+  resetNeuralNetworks.hiddenSandbox()
   
   neuralNetwork.forEach <<- NULL
   neuralNetwork.forAll <<- NULL
   
   neuralNetwork.testResults.forEach <<- NULL
   neuralNetwork.testResults.forAll <<- NULL
+}
+
+resetNeuralNetworks.hiddenSandbox <- function()
+{
+  neuralNetwork.hiddenSandbox <<- NULL
+  neuralNetwork.testResults.hiddenSandbox <<- NULL
 }
 
 setNeuralNetworkExcludeVector <- function() {
@@ -69,7 +77,11 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
-getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
+getNeuralNetwork <- function(id, hiddenLayers = FALSE, sandbox = FALSE) {
+  if(sandbox)
+  {
+    neuralNetwork.hiddenSandbox <<- optimizeNeuralNetworkHiddenLayer(id, hiddenLayers, sandbox)
+  }
   if (is.null(id))
   {
     trainSetsCombined <- getAllTrainSetsCombined()
@@ -134,7 +146,16 @@ testNeuralNetwork <- function(neuralNetwork, testSetID) {
 }
 
 # Get test result of the neural network for the given parameters
-getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
+getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE, sandbox = FALSE) {
+  if(sandbox)
+  {
+    if (is.null(neuralNetwork.testResults.hiddenSandbox[[id]]))
+      {
+        neuralNetwork.testResults.hiddenSandbox[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hiddenLayers = TRUE, sandbox = TRUE), id)
+      }
+      
+      return(neuralNetwork.testResults.hiddenSandbox[[id]])
+  }
   if (forAll)
   {
     if (hiddenLayers)
@@ -213,13 +234,13 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
   data.table(ids = idsNNsDiffer)
 }
 
-getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
+getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE, sandbox = FALSE) {
   if (is.null(id))
   {
     return(NULL)
   }
   
-  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers)
+  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers, sandbox)
   if (is.null(testResults))
   {
     return(NULL)
@@ -245,4 +266,20 @@ getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = 
     add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
+}
+
+optimizeNeuralNetworkHiddenLayer <- function(id, hiddenLayers = FALSE, sandbox = FALSE)
+{
+  if (is.null(neuralNetwork.hiddenSandbox[[id]]))
+      {
+        neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
+        last_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix$current
+        for(i in 1:length(data.windowSize)){
+          print(paste('optimise hidden layer for id', id ,'with hidden layers'))
+          current_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix$error
+          if(current_error > last_error) return(neuralNetwork.hiddenSandbox[[id]])
+          #TODO abbruchbedingung
+        }
+      }      
+      return(neuralNetwork.hiddenSandbox[[id]])
 }

@@ -214,17 +214,17 @@ server <- function(input, output) {
 	  do.call(tabBox, myTabs)
 	})
 	
-	output$neuralNetwork_tabs <- renderUI({
+	output$neuralNetwork_sandbox <- renderUI({
 	  panels <- list()
-	  myTabs <- lapply(input$variable_nn, function(x){
+	  mySandboxTabs <- lapply(input$variable_nn, function(x){
 	    if(x == "forecast_hiddenSandbox"){
 	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
 	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
 	                                             plotlyOutput('neuralNetworkForecastForTrialError')
 	      )
 	    }
-	  myTabs$width = "100%"
-	  do.call(tabBox, myTabs)
+	  mySandboxTabs$width = "100%"
+	  do.call(tabBox, mySandboxTabs)
 	})})
 	
 	output$neuralNetworkChart <- renderPlot({
@@ -252,6 +252,12 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  plot(getNeuralNetwork(NULL, hiddenLayers = TRUE), rep = 'best')
 	})
+
+	output$neuralNetworkChartHiddenTrialError <- renderPlot({
+	  windowsChanged()
+	  excludeBiasChanged()
+	  plot(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE, sandbox = TRUE), rep = 'best')
+	})
 	
 	output$neuralNetworkForecastForEachChart <- renderPlotly({
 	  windowsChanged()
@@ -271,6 +277,11 @@ server <- function(input, output) {
 	output$neuralNetworkForecastForAllHiddenChart <- renderPlotly({
 	  windowsChanged()
 	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE, hiddenLayers = FALSE))
+	})
+
+	output$neuralNetworkForecastForTrialError <- renderPlotly({
+	  windowsChanged()
+	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE, hiddenLayers = FALSE, sandbox = TRUE))
 	})
 	
 	
