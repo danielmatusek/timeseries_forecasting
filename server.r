@@ -69,12 +69,8 @@ server <- function(input, output) {
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
-	  resetComparison()
-	})
-	
-	sandboxHidden <- reactive({
 	  neuralNetwork.enableHiddenSandbox <<- 'forecast_hiddenSandbox' %in% input$variable_nn
-	  #TODO resetComparison()
+		resetComparison()
 	})
 	
 	arModelBaseChanged <- reactive({
@@ -184,7 +180,7 @@ server <- function(input, output) {
 	
 	output$neuralNetwork_tabs <- renderUI({
 	  panels <- list()
-	 myTabs <- lapply(input$variable_nn, function(x){
+	 	myTabs <- lapply(input$variable_nn, function(x){
 	    if(x == "forecast_one"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
 	                                             plotOutput("neuralNetworkChart", height = "600px"),
@@ -208,7 +204,7 @@ server <- function(input, output) {
 	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
 	                                             plotlyOutput('neuralNetworkForecastForAllHiddenChart')
 	      )
-	    } 
+	    }
 	  })
 	  myTabs$width = "100%"
 	  do.call(tabBox, myTabs)
@@ -216,8 +212,9 @@ server <- function(input, output) {
 	
 	output$neuralNetwork_sandbox <- renderUI({
 	  panels <- list()
+		print(input$variable_nn)
 	  mySandboxTabs <- lapply(input$variable_nn, function(x){
-	    if(x == "forecast_hiddenSandbox"){
+	    if(1 == 1){
 	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
 	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
 	                                             plotlyOutput('neuralNetworkForecastForTrialError')
@@ -257,7 +254,7 @@ server <- function(input, output) {
 	output$neuralNetworkChartHiddenTrialError <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
-	  plot(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE, sandbox = TRUE), rep = 'best')
+	  plot(getNeuralNetwork(input$idSelect, sandbox = TRUE), rep = 'best')
 	})
 	
 	output$neuralNetworkForecastForEachChart <- renderPlotly({
@@ -282,7 +279,7 @@ server <- function(input, output) {
 
 	output$neuralNetworkForecastForTrialError <- renderPlotly({
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE, hiddenLayers = FALSE, sandbox = TRUE))
+	  return (getNeuralNetworkPredictionPlotly(input$idSelect, sandbox = TRUE))
 	})
 	
 	

@@ -271,15 +271,26 @@ getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = 
 optimizeNeuralNetworkHiddenLayer <- function(id, hiddenLayers = FALSE, sandbox = FALSE)
 {
   if (is.null(neuralNetwork.hiddenSandbox[[id]]))
-      {
+    {
+      neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
+      last_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix["error", 1]
+      print(data.windowSize)
+      for(i in 1:length(data.windowSize)){
+        cat("hidden layer vector", c(i))
+        neuralNetwork.hiddenLayersOptimization <<- c(i)
         neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
-        last_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix$current
-        for(i in 1:length(data.windowSize)){
-          print(paste('optimise hidden layer for id', id ,'with hidden layers'))
-          current_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix$error
-          if(current_error > last_error) return(neuralNetwork.hiddenSandbox[[id]])
-          #TODO abbruchbedingung
+        current_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix["error", 1]
+
+        if(last_error > current_error)
+        {
+          cat("current error", current_error)
+          cat("last error", last_error)
+          print("found local minimum for hidden layer optimization")
+          #return(neuralNetwork.hiddenSandbox[[id]])
         }
-      }      
-      return(neuralNetwork.hiddenSandbox[[id]])
+        #TODO abbruchbedingung
+      }
+    }      
+    print("no local optimisation")
+    return(neuralNetwork.hiddenSandbox[[id]])
 }
