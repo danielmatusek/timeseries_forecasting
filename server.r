@@ -72,6 +72,11 @@ server <- function(input, output) {
 	  resetComparison()
 	})
 	
+	sandboxHidden <- reactive({
+	  neuralNetwork.enableHiddenSandbox <<- 'forecast_hiddenSandbox' %in% input$variable_nn
+	  #TODO resetComparison()
+	})
+	
 	arModelBaseChanged <- reactive({
 	  aRModelName <<- input$aRModelName
 	  
@@ -208,6 +213,19 @@ server <- function(input, output) {
 	  myTabs$width = "100%"
 	  do.call(tabBox, myTabs)
 	})
+	
+	output$neuralNetwork_tabs <- renderUI({
+	  panels <- list()
+	  myTabs <- lapply(input$variable_nn, function(x){
+	    if(x == "forecast_hiddenSandbox"){
+	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
+	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
+	                                             plotlyOutput('neuralNetworkForecastForTrialError')
+	      )
+	    }
+	  myTabs$width = "100%"
+	  do.call(tabBox, myTabs)
+	})})
 	
 	output$neuralNetworkChart <- renderPlot({
 	  windowsChanged()

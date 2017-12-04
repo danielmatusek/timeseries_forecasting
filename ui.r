@@ -20,6 +20,7 @@ ui <- dashboardPage(skin = 'purple',
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
+	              menuItem("Sandbox", tabName = "sandbox", icon = icon("stethoscope")),
 	      hr(),
 		            uiOutput("idSelectBox")
 		  )
@@ -127,6 +128,9 @@ ui <- dashboardPage(skin = 'purple',
 			            dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
                 )
 			        )
+			),
+			tabItem(tabName="sandbox",
+			        uiOutput("neuralNetwork_sandbox")
 			)
 		)
 	)

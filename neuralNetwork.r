@@ -9,6 +9,8 @@ neuralNetwork.enableForEach.hidden <<- TRUE
 neuralNetwork.enableForAll <<- FALSE
 neuralNetwork.enableForAll.hidden <<- FALSE
 
+neuralNetwork.enableHiddenSandbox <<- FALSE
+
 resetNeuralNetworks.hidden <- function()
 {
   neuralNetwork.forEach.hiddenLayers <<- NULL
