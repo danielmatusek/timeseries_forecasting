@@ -270,16 +270,20 @@ getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = 
 
 optimizeNeuralNetworkHiddenLayer <- function(id, hiddenLayers = FALSE, sandbox = FALSE)
 {
+  errorvector <- c(0)
   if (is.null(neuralNetwork.hiddenSandbox[[id]]))
     {
       neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
       last_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix["error", 1]
+      errorvector[1] <- last_error
       print(data.windowSize)
       for(i in 1:length(data.windowSize)){
+        print(i)
         cat("hidden layer vector", c(i))
         neuralNetwork.hiddenLayersOptimization <<- c(i)
         neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
         current_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix["error", 1]
+        errorvector[i+1] <- current_error
 
         if(last_error > current_error)
         {
@@ -290,7 +294,8 @@ optimizeNeuralNetworkHiddenLayer <- function(id, hiddenLayers = FALSE, sandbox =
         }
         #TODO abbruchbedingung
       }
-    }      
+    }  
+    print(errorvector)    
     print("no local optimisation")
     return(neuralNetwork.hiddenSandbox[[id]])
 }
