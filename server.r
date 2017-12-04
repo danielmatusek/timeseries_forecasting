@@ -223,9 +223,10 @@ server <- function(input, output) {
 	                                             plotlyOutput('neuralNetworkForecastForTrialError')
 	      )
 	    }
+		})
 	  mySandboxTabs$width = "100%"
 	  do.call(tabBox, mySandboxTabs)
-	})})
+	})
 	
 	output$neuralNetworkChart <- renderPlot({
 	  windowsChanged()
