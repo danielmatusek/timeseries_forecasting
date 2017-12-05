@@ -7,6 +7,9 @@ aRModelName <- NULL
 
 learnARModel <- function(id)
 {
+
+  #print(paste("AR", id, sep=" "))
+  start.time <- Sys.time()
   print(paste('train ar for id', id))
   
   y <- data.sets[[id]]$y
@@ -18,11 +21,13 @@ learnARModel <- function(id)
   if(aRModelName == "AR")
   {
     arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
+    end.time <- Sys.time()
     coef <- arModel$ar
   }
   else if (aRModelName == "AutoArima")
   {
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
+    end.time <- Sys.time()
     coef <- arModel$coef
   } 
   else if (aRModelName == "ManualAutoArima" || aRModelName == "ManualAR")
@@ -37,13 +42,14 @@ learnARModel <- function(id)
     }
     #create output datatable
     ar_manual_result <- data.frame(V0 = double())
+    end.time <- Sys.time()
     #offset for forecast to use whole input data.table
     ar_offset <- length(trainData) + 1
     
     if(aRModelName== "ManualAutoArima"){
       timesSum <- (length(coef)-1)
     } else timesSum <- (length(coef))
-    
+    end.time <- Sys.time()
     for(i in 1:length(testData)){
       y_t_before <- 0
       for(j in 1:timesSum){
@@ -62,19 +68,23 @@ learnARModel <- function(id)
 
   if(aRModelName == "AutoArima" | aRModelName == "AR"){
     tsPred <- predict(arModel, n.ahead = data.horizon)
+    end.time <- Sys.time()
     model <- list(model = arModel, coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
   }
   else {
     model <- list(model = arModel, coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
+    end.time <- Sys.time(Sys.time())
   }
   
   autoRegressiveModels[[id]] <<- model
+  function.time <<- end.time - start.time
 }
 
 getARModel <- function(id) {
   if (is.null(autoRegressiveModels[[id]]))
   {
     learnARModel(id)
+    
   }
   
   return (autoRegressiveModels[[id]])
