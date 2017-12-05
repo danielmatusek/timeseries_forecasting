@@ -279,7 +279,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  return (getNeuralNetworkPredictionPlotly(input$idSelect, hNodesOptimization = TRUE))
 	})
-	
+
 	
 
 	
