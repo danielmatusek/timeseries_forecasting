@@ -182,26 +182,22 @@ server <- function(input, output) {
 	 myTabs <- lapply(input$variable_nn, function(x){
 	    if(x == "forecast_one"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
-	                                             plotOutput("neuralNetworkChart", height = "600px"),
-	                                             plotlyOutput('neuralNetworkForecastForEachChart')
+	                                             plotOutput("neuralNetworkChart", height = "600px")
 	      )
 	    }
 	    else if(x == "forecast_one_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1 hidden', 
-	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"),       
-	                                             plotlyOutput('neuralNetworkForecastForEachHiddenChart')
+	                                             plotOutput("neuralNetworkHiddenChart", height = "600px")
 	      )
 	    }
 	    else if(x == "forecast_all"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n', 
-	                                             plotOutput("neuralNetworkChartForAll", height = "600px"), 
-	                                             plotlyOutput('neuralNetworkForecastForAllChart')
+	                                             plotOutput("neuralNetworkChartForAll", height = "600px")
 	      )
 	    } 
 	    else if(x == "forecast_all_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n hidden',
-	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
-	                                             plotlyOutput('neuralNetworkForecastForAllHiddenChart')
+	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px")
 	      )
 	    } 
 	  })
@@ -235,39 +231,12 @@ server <- function(input, output) {
 	  plot(getNeuralNetwork(NULL, hiddenLayers = TRUE), rep = 'best')
 	})
 	
-	output$neuralNetworkForecastForEachChart <- renderPlotly({
-	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect))
-	})
-	
-	output$neuralNetworkForecastForEachHiddenChart <- renderPlotly({
-	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, hiddenLayers = TRUE))
-	})
-	
-	output$neuralNetworkForecastForAllChart <- renderPlotly({
-	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE))
-	})
-	
-	output$neuralNetworkForecastForAllHiddenChart <- renderPlotly({
-	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE, hiddenLayers = FALSE))
-	})
-	
 	
 
 	
 	
 	### UI elements: Auto Regression
 	
-	
-	output$aRChart <- renderPlotly({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  getPlotlyModel(input$idSelect)
-	})
 	
 	output$arMLE <- renderDataTable({
 	  windowsChanged()

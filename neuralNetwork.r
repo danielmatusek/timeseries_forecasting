@@ -177,6 +177,38 @@ getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE
   }
 }
 
+getReducedNeuralNetworkWeights <- function(nn) {
+  lapply(nn$weights, function(repetition) {
+    repetition <- lapply(repetition, function(layer) {
+      # Change all NA weights to 0
+      matrixData <- unlist(lapply(layer, function(weight) {
+        if (is.na(weight))
+        {
+          return (0)
+        }
+        else
+        {
+          return (weight)
+        }
+      }))
+      
+      # Extend the matrix data with a bias column to be able to use simple matrix multiplication
+      matrixData <- c(1, rep(0, NROW(layer) - 1), matrixData)
+      
+      matrix(matrixData, ncol = NCOL(layer) + 1)
+    })
+    
+    while (length(repetition) > 1)
+    {
+      repetition[[1]] <- repetition[[1]] %*% repetition[[2]]
+      repetition[[2]] <- NULL
+    }
+      
+    # Remove added bias column
+    list(matrix(repetition[[1]][, -1], ncol = NCOL(repetition[[1]]) - 1))
+  })
+}
+
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
   ids <- names(data.trainSets)
   numHiddenNeurons <- neuralNetwork.hiddenLayers[1]
@@ -190,6 +222,8 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
     
     nn <- getNeuralNetwork(id)
     nnh <- getNeuralNetwork(id, TRUE)
+    
+    reducedWeightsNNH <- getReducedNeuralNetworkWeights(nnh)
     
     for (j in 1:data.windowSize)
     {

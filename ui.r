@@ -90,9 +90,6 @@ ui <- dashboardPage(skin = 'purple',
 			
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,
-			               tabPanel("Chart",
-			                        plotlyOutput("aRChart", height = "600px")
-			               ),
 			               tabPanel("Statistic",
 			                        dataTableOutput("arMLE"),
 			                        dataTableOutput("arCoef")
@@ -120,6 +117,7 @@ ui <- dashboardPage(skin = 'purple',
 			               tabPanel("Average Error",
 			                        dataTableOutput("compareError")
 			               ),
+			          
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
 			               ),
