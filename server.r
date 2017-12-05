@@ -252,7 +252,6 @@ server <- function(input, output) {
 	output$neuralNetworkChartHiddenTrialError <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
-		print('plot')
 	  plot(getNeuralNetwork(input$idSelect, hNodesOptimization = TRUE), rep = 'best')
 	})
 	
@@ -277,7 +276,6 @@ server <- function(input, output) {
 	})
 
 	output$neuralNetworkForecastForTrialError <- renderPlotly({
-		print('plotly')
 	  windowsChanged()
 	  return (getNeuralNetworkPredictionPlotly(input$idSelect, hNodesOptimization = TRUE))
 	})
