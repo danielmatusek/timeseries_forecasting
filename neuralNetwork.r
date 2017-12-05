@@ -55,19 +55,33 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   set.seed(1)
-  if(neuralNetwork.excludeBias) {
 
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
+  if(neuralNetwork.excludeBias) {
+    nn <- 1
+  out <- tryCatch({
+    nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
       exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector))
+    return(nn)
+    },
+    warning=function(cond) {
+      message(paste("Warning:"))
+      nn <- -1
+      return(nn)
+    })
+  return(out)
   }
   else {
     neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity)
   }
+  
 }
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
 getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
+  #trycatch
+  out <- tryCatch({
+  
   if (is.null(id))
   {
     trainSetsCombined <- getAllTrainSetsCombined()
@@ -116,14 +130,33 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
       return(neuralNetwork.forEach[[id]])
     }
   }
+  }, 
+#  error=function(cond) {
+#    message(paste("Error:", id))
+#    message("Here's the original error message:")
+#    message(cond)
+#    return(NA)
+#  },
+  warning=function(cond) {
+   # browser()
+    message(paste("Warning:", id, hiddenLayers))
+    message("Here's the original warning message:")
+    message(cond)
+    return(NULL)
+  }
+  )    
+  return(out)
 }
 
 testNeuralNetwork <- function(neuralNetwork, testSetID) {
   expected <- getTestSet(testSetID)$xt0
   testData <- getTestSet(testSetID)
   testData$xt0 <- NULL
-  
+  #compute = boese
   n <- compute(neuralNetwork, testData)
+  
+  #result <- list()
+  #expected  <- list()    
   n$net.expected <- expected
 
   n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
