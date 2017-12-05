@@ -82,6 +82,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hNodesOptimization = FALS
   if(hNodesOptimization)
   {
     neuralNetwork.hiddenNodesOptimization[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
+    return(neuralNetwork.hiddenNodesOptimization[[id]])
   }
   if (is.null(id))
   {
@@ -268,19 +269,25 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 {
   errorvector <- c(0)
   resetNeuralNetworks.hiddenNodesOptimization()
+
   if (is.null(neuralNetwork.hiddenNodesOptimization[[id]]))
   {
+    #get error values and forecast
     neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hNodesOptimization = TRUE), id)
     neuralNetwork.testResults.hiddenNodesOptimization.old[[id]] <<- neuralNetwork.testResults.hiddenNodesOptimization[[id]]
     last_error <- neuralNetwork.testResults.hiddenNodesOptimization[[id]]$net.mse 
     errorvector[1] <- last_error  
+    
     for (i in 1:data.windowSize){
       neuralNetwork.hiddenLayersOptimization <<- c(i)
       neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hNodesOptimization = TRUE), id)
       current_error <- neuralNetwork.testResults.hiddenNodesOptimization[[id]]$net.mse 
+      plot(getNeuralNetwork(id, hNodesOptimization = TRUE))
       if(last_error < current_error)
       {
-        return(neuralNetwork.testResults.hiddenNodesOptimization.old[[id]])
+        cat("Local optimum of number of nodes", c(i-1), nofill = TRUE)
+        neuralNetwork.hiddenLayersOptimization <<- c(i-1)
+        #return(neuralNetwork.testResults.hiddenNodesOptimization.old[[id]])
       }
       neuralNetwork.testResults.hiddenNodesOptimization.old[[id]] <<- neuralNetwork.testResults.hiddenNodesOptimization[[id]]
       errorvector[i+1] <- current_error
