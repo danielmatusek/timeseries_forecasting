@@ -152,24 +152,54 @@ getErrorMetricCompare <- function()
   data.table(NAME = names, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
 }
 
-
 getCoef <- function(id)
 {
-  comparison()
-  
-  n1 = rev(getNeuralNetwork(id)$weights[[1]][[1]][,1])
-  n2 = rev(getNeuralNetwork(NULL)$weights[[1]][[1]][,1])
-
-  n1 <- n1[!is.na(n1)] # remove bias
-  n2 <- n2[!is.na(n2)]
-  arc =  getARModel(id)$coef #[1 : data.windowSize] # remove error bias
-  
-  names = NULL
-  for(i in 1 : length(arc))
+  variables <- NULL
+  for(i in 1 : (data.windowSize+1))
   {
-    names = c(names,paste(c("x", i), collapse = ""))
+    variables = c(variables, paste(c("x", i), collapse = ""))
   }
-  data.table(Variables = names, AutoRegression = arc, "NN for each" = n1, "NN for all" = n2)
+  variables[length(variables)] <- 'Bias/Mean'
+  
+  dt <- data.table(Variables = variables)
+  names <- c('Variables')
+  
+  # Add Autoregressive
+  dt$arc = getARCoef(id)
+  names <- c(names, 'AutoRegressive')
+  
+  
+  # Add Auto Regression for each
+  if(neuralNetwork.enableForEach)
+  {
+    dt$nnfe <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1])
+    names <- c(names, 'NN for each')
+  }
+  
+  # Add Auto Regression for each with hidden layers
+  if(neuralNetwork.enableForEach.hidden)
+  {
+    dt$nnfeh <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1])
+    names <- c(names, 'NN for each hidden')
+  }
+  
+  # Add Auto Regression for all
+  if(neuralNetwork.enableForAll)
+  {
+    dt$nnfa <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(NULL))[[1]][[1]][,1])
+    names <- c(names, 'NN for all')
+  }
+  
+  # Add Auto Regression for all with hidden layers
+  if(neuralNetwork.enableForAll.hidden)
+  {
+    dt$nnfah <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(NULL, TRUE))[[1]][[1]][,1])
+    names <- c(names, 'NN for all hidden')
+  }
+  
+  names(dt) <- names
+  
+  dt
 }
 
 
@@ -188,6 +218,7 @@ getForecastComparisionPlot <- function(id) {
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Neural Network for each
+  
   prediction$nnfe <- append(rep(NA, data.horizon),
     getNeuralNetworkTestResults(id)$net.result)
   prediction$nnfe[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]

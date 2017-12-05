@@ -48,9 +48,11 @@ ui <- dashboardPage(skin = 'purple',
 		        uiOutput('windowSizeSlider'),
 		        uiOutput('horizonSlider')
 		      ),
-		      column(3,
-		        h3('Neural Network', style = 'margin-bottom: 20px;'),
+		      column(3, 
+		        h3('Neural Network', style = 'margin-bottom: 10px;'),
 		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
+		        checkboxInput('inputCheckbox', 'Exclude Input', FALSE),
+		        uiOutput('excludeInputSlider'),
 		        uiOutput('hiddenSliderInput'),
 		        checkboxGroupInput("variable_nn", "neural network forecast for",
 		                           c("one Time Series" = "forecast_one",
@@ -89,9 +91,6 @@ ui <- dashboardPage(skin = 'purple',
 			
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,
-			               tabPanel("Chart",
-			                        plotlyOutput("aRChart", height = "600px")
-			               ),
 			               tabPanel("Statistic",
 			                        dataTableOutput("arMLE"),
 			                        dataTableOutput("arCoef")
@@ -119,6 +118,7 @@ ui <- dashboardPage(skin = 'purple',
 			               tabPanel("Average Error",
 			                        dataTableOutput("compareError")
 			               ),
+			          
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
 			               ),

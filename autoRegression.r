@@ -7,8 +7,11 @@ aRModelName <- NULL
 
 learnARModel <- function(id)
 {
+
   #print(paste("AR", id, sep=" "))
   start.time <- Sys.time()
+  print(paste('train ar for id', id))
+  
   y <- data.sets[[id]]$y
   
   spl <<- length(y) - data.horizon
@@ -20,16 +23,14 @@ learnARModel <- function(id)
     arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
     end.time <- Sys.time()
     coef <- arModel$ar
-    print(arModel)
   }
   else if (aRModelName == "AutoArima")
   {
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
     end.time <- Sys.time()
     coef <- arModel$coef
-    print(arModel)
   } 
-  else if (aRModelName == "ManualAutoArima" | aRModelName == "ManualAR")
+  else if (aRModelName == "ManualAutoArima" || aRModelName == "ManualAR")
   {
     #get coefficients
     if(aRModelName == "ManualAutoArima"){
@@ -38,7 +39,7 @@ learnARModel <- function(id)
     } else {
       arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
       coef <- arModel$ar
-    } 
+    }
     #create output datatable
     ar_manual_result <- data.frame(V0 = double())
     end.time <- Sys.time()
@@ -68,10 +69,10 @@ learnARModel <- function(id)
   if(aRModelName == "AutoArima" | aRModelName == "AR"){
     tsPred <- predict(arModel, n.ahead = data.horizon)
     end.time <- Sys.time()
-    model <- list(coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
+    model <- list(model = arModel, coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
   }
   else {
-    model <- list(coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
+    model <- list(model = arModel, coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
     end.time <- Sys.time(Sys.time())
   }
   
@@ -89,36 +90,21 @@ getARModel <- function(id) {
   return (autoRegressiveModels[[id]])
 }
 
+getARCoef <- function(id)
+{
+  arModel <- getARModel(id)$model
+  
+  if(aRModelName == 'AR' || aRModelName == 'ManualAutoArima')
+  {
+    c(arModel$ar, arModel$x.mean)
+  }
+  else
+  {
+    arModel$coef
+  }
+}
+
 resetARModels <- function()
 {
   autoRegressiveModels <<- NULL
-}
-
-getPlotlyModel <- function(id)
-{
-  
-  f <- list(
-    family = "Courier New, monospace",
-    size = 18,
-    color = "#7f7f7f"
-  )
-  
-  x <- list(
-    title = data.names$x,
-    titlefont = f
-  )
-  
-  y <- list(
-    title = data.names$y,
-    titlefont = f
-  )
-  
-  p <- plot_ly()%>%
-    add_lines(x = (1 : spl), y = getARModel(id)$trained, color = I("blue"), name = "Original")%>%
-    add_lines(x = ((spl + 1): (spl + data.horizon)), y = getARModel(id)$expected, color = I("blue"), name = "Original FC")%>%
-    add_lines(x = ((spl + 1): (spl + data.horizon)), y = getARModel(id)$result, color = I("red"), name = "Prediction")%>%
-    layout(xaxis = x, yaxis = y)
-   
-  p$elementId <- NULL
-  p
 }
