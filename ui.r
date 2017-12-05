@@ -20,7 +20,7 @@ ui <- dashboardPage(skin = 'purple',
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
-	              menuItem("Sandbox", tabName = "sandbox", icon = icon("stethoscope")),
+	              menuItem("Hidden Nodes", tabName = "hNodesOptimization", icon = icon("stethoscope")),
 	      hr(),
 		            uiOutput("idSelectBox")
 		  )
@@ -57,7 +57,10 @@ ui <- dashboardPage(skin = 'purple',
 		                             "one TS with hidden" = "forecast_one_hidden",
 		                             "all Time Series" = "forecast_all",
 		                             "all TS with hidden" = "forecast_all_hidden"),
-		                           selected= c("forecast_one","forecast_one_hidden"))
+		                           selected= c("forecast_one","forecast_one_hidden")),
+						checkboxGroupInput("variable_nn_hidden", "neural network hidden nodes optimization",
+																c("Optimize" = "optimize_hidden_layer"),
+																selected= c("optimize_hidden_layer"))
 		      ),
 		      column(3,
 		        h3('Autoregression', style = 'margin-bottom: 20px;'),
@@ -129,8 +132,8 @@ ui <- dashboardPage(skin = 'purple',
                 )
 			        )
 			),
-			tabItem(tabName="sandbox",
-			        uiOutput("neuralNetwork_sandbox")
+			tabItem(tabName="hNodesOptimization",
+			        uiOutput("neuralNetwork_hNodesOptimization")
 			)
 		)
 	)

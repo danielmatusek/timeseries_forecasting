@@ -69,7 +69,6 @@ server <- function(input, output) {
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
-	  neuralNetwork.enableHiddenSandbox <<- 'forecast_hiddenSandbox' %in% input$variable_nn
 		resetComparison()
 	})
 	
@@ -210,19 +209,18 @@ server <- function(input, output) {
 	  do.call(tabBox, myTabs)
 	})
 	
-	output$neuralNetwork_sandbox <- renderUI({
+	output$neuralNetwork_hNodesOptimization <- renderUI({
 	  panels <- list()
-		print(input$variable_nn)
-	  mySandboxTabs <- lapply(input$variable_nn, function(x){
-	    if(1 == 1){
+	  myhNodesOptimizationTabs <- lapply(input$variable_nn_hidden, function(x){
+			if(x == "optimize_hidden_layer"){
 	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
 	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
 	                                             plotlyOutput('neuralNetworkForecastForTrialError')
 	      )
-	    }
+			}
 		})
-	  mySandboxTabs$width = "100%"
-	  do.call(tabBox, mySandboxTabs)
+	  myhNodesOptimizationTabs$width = "100%"
+	  do.call(tabBox, myhNodesOptimizationTabs)
 	})
 	
 	output$neuralNetworkChart <- renderPlot({
@@ -254,7 +252,8 @@ server <- function(input, output) {
 	output$neuralNetworkChartHiddenTrialError <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
-	  plot(getNeuralNetwork(input$idSelect, sandbox = TRUE), rep = 'best')
+		print('plot')
+	  plot(getNeuralNetwork(input$idSelect, hNodesOptimization = TRUE), rep = 'best')
 	})
 	
 	output$neuralNetworkForecastForEachChart <- renderPlotly({
@@ -278,8 +277,9 @@ server <- function(input, output) {
 	})
 
 	output$neuralNetworkForecastForTrialError <- renderPlotly({
+		print('plotly')
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, sandbox = TRUE))
+	  return (getNeuralNetworkPredictionPlotly(input$idSelect, hNodesOptimization = TRUE))
 	})
 	
 	

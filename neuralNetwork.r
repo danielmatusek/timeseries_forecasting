@@ -9,7 +9,7 @@ neuralNetwork.enableForEach.hidden <<- TRUE
 neuralNetwork.enableForAll <<- FALSE
 neuralNetwork.enableForAll.hidden <<- FALSE
 
-neuralNetwork.enableHiddenSandbox <<- FALSE
+neuralNetwork.enablehiddenNodesOptimization <<- FALSE
 neuralNetwork.hiddenLayersOptimization <<- c(0)
 
 resetNeuralNetworks.hidden <- function()
@@ -24,7 +24,7 @@ resetNeuralNetworks.hidden <- function()
 resetNeuralNetworks <- function()
 {
   resetNeuralNetworks.hidden()
-  resetNeuralNetworks.hiddenSandbox()
+  resetNeuralNetworks.hiddenNodesOptimization()
   
   neuralNetwork.forEach <<- NULL
   neuralNetwork.forAll <<- NULL
@@ -33,10 +33,11 @@ resetNeuralNetworks <- function()
   neuralNetwork.testResults.forAll <<- NULL
 }
 
-resetNeuralNetworks.hiddenSandbox <- function()
+resetNeuralNetworks.hiddenNodesOptimization <- function()
 {
-  neuralNetwork.hiddenSandbox <<- NULL
-  neuralNetwork.testResults.hiddenSandbox <<- NULL
+  neuralNetwork.hiddenNodesOptimization <<- NULL
+  neuralNetwork.testResults.hiddenNodesOptimization <<- NULL
+  neuralNetwork.testResults.hiddenNodesOptimization.old <<- NULL
 }
 
 setNeuralNetworkExcludeVector <- function() {
@@ -77,10 +78,10 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
-getNeuralNetwork <- function(id, hiddenLayers = FALSE, sandbox = FALSE) {
-  if(sandbox)
+getNeuralNetwork <- function(id, hiddenLayers = FALSE, hNodesOptimization = FALSE) {
+  if(hNodesOptimization)
   {
-    neuralNetwork.hiddenSandbox <<- optimizeNeuralNetworkHiddenLayer(id, hiddenLayers, sandbox)
+    neuralNetwork.hiddenNodesOptimization[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
   }
   if (is.null(id))
   {
@@ -146,15 +147,10 @@ testNeuralNetwork <- function(neuralNetwork, testSetID) {
 }
 
 # Get test result of the neural network for the given parameters
-getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE, sandbox = FALSE) {
-  if(sandbox)
+getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE, hNodesOptimization = FALSE) {
+  if(hNodesOptimization)
   {
-    if (is.null(neuralNetwork.testResults.hiddenSandbox[[id]]))
-      {
-        neuralNetwork.testResults.hiddenSandbox[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hiddenLayers = TRUE, sandbox = TRUE), id)
-      }
-      
-      return(neuralNetwork.testResults.hiddenSandbox[[id]])
+        neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- optimizeNeuralNetworkHiddenLayer(id)
   }
   if (forAll)
   {
@@ -234,13 +230,13 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
   data.table(ids = idsNNsDiffer)
 }
 
-getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE, sandbox = FALSE) {
+getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE, hNodesOptimization = FALSE) {
   if (is.null(id))
   {
     return(NULL)
   }
   
-  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers, sandbox)
+  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers, hNodesOptimization)
   if (is.null(testResults))
   {
     return(NULL)
@@ -268,25 +264,28 @@ getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = 
   p
 }
 
-optimizeNeuralNetworkHiddenLayer <- function(id, hiddenLayers = FALSE, sandbox = FALSE)
+optimizeNeuralNetworkHiddenLayer <- function(id)
 {
   errorvector <- c(0)
-  if (is.null(neuralNetwork.hiddenSandbox[[id]]))
+  resetNeuralNetworks.hiddenNodesOptimization()
+  if (is.null(neuralNetwork.hiddenNodesOptimization[[id]]))
   {
-    neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
-    last_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix["error", 1]
-    errorvector[1] <- last_error
-
-    for (i in 1:length(data.windowSize)){
-
+    neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hNodesOptimization = TRUE), id)
+    neuralNetwork.testResults.hiddenNodesOptimization.old[[id]] <<- neuralNetwork.testResults.hiddenNodesOptimization[[id]]
+    last_error <- neuralNetwork.testResults.hiddenNodesOptimization[[id]]$net.mse 
+    errorvector[1] <- last_error  
+    for (i in 1:data.windowSize){
       neuralNetwork.hiddenLayersOptimization <<- c(i)
-      neuralNetwork.hiddenSandbox[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
-      current_error <- neuralNetwork.hiddenSandbox[[id]]$result.matrix["error", 1]
+      neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hNodesOptimization = TRUE), id)
+      current_error <- neuralNetwork.testResults.hiddenNodesOptimization[[id]]$net.mse 
+      if(last_error < current_error)
+      {
+        return(neuralNetwork.testResults.hiddenNodesOptimization.old[[id]])
+      }
+      neuralNetwork.testResults.hiddenNodesOptimization.old[[id]] <<- neuralNetwork.testResults.hiddenNodesOptimization[[id]]
       errorvector[i+1] <- current_error
-
-      #TODO abbruchbedingung
     }
   }  
   print(errorvector)    
-  return(neuralNetwork.hiddenSandbox[[id]])
+  return(neuralNetwork.testResults.hiddenNodesOptimization[[id]])
 }
