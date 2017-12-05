@@ -291,6 +291,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
         neuralNetwork.hiddenLayersOptimization <<- c(i-1)
         #return(neuralNetwork.testResults.hiddenNodesOptimization.old[[id]])
       }
+      last_error <- current_error
       neuralNetwork.testResults.hiddenNodesOptimization.old[[id]] <<- neuralNetwork.testResults.hiddenNodesOptimization[[id]]
       errorvector[i+1] <- current_error
     }
