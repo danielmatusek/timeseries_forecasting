@@ -81,6 +81,8 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
 getNeuralNetwork <- function(id, hiddenLayers = FALSE, hNodesOptimization = FALSE) {
   if(hNodesOptimization) #when optimal number of hidden nodes must be retrieved
   {
+    neuralNetwork.hiddenLayers <<- neuralNetwork.hiddenLayersOptimization
+    setNeuralNetworkExcludeVector()
     neuralNetwork.hiddenNodesOptimization[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
     return(neuralNetwork.hiddenNodesOptimization[[id]])
   }
