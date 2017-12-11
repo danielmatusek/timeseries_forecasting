@@ -7,71 +7,65 @@ errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA")
 
 
 
+error_metric <- function(testResults)
+{
+  #forecast_set ist von Datentyp matrix, muss aber numeric sein
+  test_set <- as.numeric(testResults$expected)
+  forecast_set <- as.numeric(testResults$result)
+  
+  data.frame(mse = unlist(lapply(1:length(test_set), function(i) { mse(test_set[[i]], forecast_set[[i]]) })),
+    rmse = unlist(lapply(1:length(test_set), function(i) { rmse(test_set[[i]], forecast_set[[i]]) })),
+    smape = unlist(lapply(1:length(test_set), function(i) { sMAPE(test_set[[i]], forecast_set[[i]]) })),
+    diff = unlist(lapply(1:length(test_set), function(i) { abs(test_set[[i]] - forecast_set[[i]]) })))
+}
+
+applyMetric <- function(getTestResultsFUN, FUN)
+{
+  unlist(lapply(names(data.sets), function(id) {
+    testResults <- getTestResultsFUN(id)
+    unlist(lapply(1:length(testResults$expected), function(i) {
+      FUN(testResults$expected[[i]], testResults$result[[i]])
+    }))
+  }))
+}
+
+getErrorMetric <- function(FUN)
+{
+  metric <- data.table(ar = applyMetric(getARTestResults, FUN))
+  
+  if(neuralNetwork.enableForEach)
+  {
+    metric$nn <- applyMetric(getNeuralNetworkTestResults, FUN)
+  }
+  
+  if(neuralNetwork.enableForEach.hidden)
+  {
+    metric$nnh <- applyMetric(function(id) { getNeuralNetworkTestResults(id, hiddenLayers = TRUE) }, FUN)
+  }
+  
+  if(neuralNetwork.enableForAll)
+  {
+    metric$nnfa <- applyMetric(function(id) { getNeuralNetworkTestResults(id, forAll = TRUE) }, FUN)
+  }
+  
+  if(neuralNetwork.enableForAll.hidden)
+  {
+    metric$nnfah <- applyMetric(function(id) { getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE) }, FUN)
+  }
+  
+  metric
+}
 
 comparison <- function()
 {
   if(is.null(errorTable))
   {
-    ids = names(data.sets)
-    len = length(ids)
-    
-    errorListAR <- list()
-    errorListNN <- list()
-    errorListNNH <- list()
-    errorListNNFA <- list()
-    errorListNNHFA <- list()
-    
-    
-    for(i in 1 : len)
-    {
-      id = ids[i]
-      
-      errorListAR[[i]] = error_metric(getARModel(id)$expected, getARModel(id)$result)
-      if(neuralNetwork.enableForEach) errorListNN[[i]] = error_metric(getNeuralNetworkTestResults(id)$net.expected, getNeuralNetworkTestResults(id)$net.result)
-      if(neuralNetwork.enableForEach.hidden) errorListNNH[[i]] = error_metric(getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
-      if(neuralNetwork.enableForAll) errorListNNFA[[i]] = error_metric(getNeuralNetworkTestResults(id, forAll = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
-      if(neuralNetwork.enableForAll.hidden) errorListNNHFA[[i]] =  error_metric(getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.expected, getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
-    }
-    
-    errorTable <<- data.table(AR = errorListAR, NN = errorListNN, NNH = errorListNNH, NNFA = errorListNNFA, NNHFA = errorListNNHFA)
+    errorTable$mse <<- getErrorMetric(mse)
+    errorTable$rmse <<- getErrorMetric(rmse)
+    errorTable$smape <<- getErrorMetric(sMAPE)
+    errorTable$diff <<- getErrorMetric(function(x, y) { abs(x - y) })
   }
   return(errorTable)
-}
-
-
-getErrorNameValue <- function(errorName)
-{
-  if(errorName == "mse")
-  {
-    return(1)
-  }
-  else if(errorName == "rmse")
-  {
-    return(2)
-  } 
-  else if(errorName == "smape")
-  {
-    return(3)
-  }
-  return(NULL)
-}
-
-
-getListOfErrorFromModel <-  function(modelName, errorName)
-{
-  error <- vector()
-  for(i in 1 : length(errorTable))
-  {
-    eName = names(errorTable)[i]
-    if(eName == modelName)
-    {
-      for(j in 1 : length(errorTable[[i]]))
-      {
-        error = c(error, errorTable[[i]][[j]][getErrorNameValue(errorName)][[1]])
-      }
-      return(error)
-    }
-  }
 }
 
 
@@ -81,16 +75,17 @@ getListOfErrorFromModel <-  function(modelName, errorName)
 getBoxplot <- function(errorName)
 {
   comparison()
+  errorMetrics <- errorTable[[errorName]]
   p <- plot_ly(type = "box")
   
-  p <- p %>% add_boxplot(y = getListOfErrorFromModel("AR", errorName),  jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+  p <- p %>% add_boxplot(y = errorMetrics$ar,  jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
     marker = list(color = 'rgb(7,40,89)'),
     line = list(color = 'rgb(200,0,0)'),
     name = "AR", boxmean = TRUE)
   
   if(neuralNetwork.enableForEach)
   {
-    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NN", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+    p <- p %>%  add_boxplot(y = errorMetrics$nn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,0)'),
                 name = "NN", boxmean = TRUE)
@@ -98,7 +93,7 @@ getBoxplot <- function(errorName)
   
   if(neuralNetwork.enableForEach.hidden)
   {
-    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NNH", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+    p <- p %>%  add_boxplot(y = errorMetrics$nnh, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,0,200)'),
                 name = "NNH", boxmean = TRUE)
@@ -106,7 +101,7 @@ getBoxplot <- function(errorName)
   
   if(neuralNetwork.enableForAll)
   {
-    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NNFA", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+    p <- p %>%  add_boxplot(y = errorMetrics$nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(200,200,0)'),
                 name = "NNFA", boxmean = TRUE)
@@ -114,7 +109,7 @@ getBoxplot <- function(errorName)
     
   if(neuralNetwork.enableForAll.hidden)
   {
-    p <- p %>%  add_boxplot(y = getListOfErrorFromModel("NNHFA", errorName), jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+    p <- p %>%  add_boxplot(y = errorMetrics$nnfah, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,200)'),
                 name = " NNHFA")
@@ -130,11 +125,11 @@ getMeanErrorVectorFromModels <- function(errorName)
 {
   comparison()
   
-  errorMean = mean(getListOfErrorFromModel(errorModelNames[1], errorName))
-  if(neuralNetwork.enableForEach) errorMean = c(errorMean, mean(getListOfErrorFromModel(errorModelNames[2], errorName)))
-  if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(getListOfErrorFromModel(errorModelNames[3], errorName)))
-  if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(getListOfErrorFromModel(errorModelNames[4], errorName)))
-  if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(getListOfErrorFromModel(errorModelNames[5], errorName)))
+  errorMean = mean(errorTable[[errorName]][['ar']])
+  if(neuralNetwork.enableForEach) errorMean = c(errorMean, mean(errorTable[[errorName]][['nn']]))
+  if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
+  if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
+  if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
   errorMean
 }
 
@@ -172,28 +167,44 @@ getCoef <- function(id)
   # Add Auto Regression for each
   if(neuralNetwork.enableForEach)
   {
-    dt$nnfe <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1])
+    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1]
+    bias <- coef[1]
+    coef <- coef[-1]
+    coef[length(coef)+1] <- bias
+    dt$nnfe <- coef
     names <- c(names, 'NN for each')
   }
   
   # Add Auto Regression for each with hidden layers
   if(neuralNetwork.enableForEach.hidden)
   {
-    dt$nnfeh <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1])
+    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1]
+    bias <- coef[1]
+    coef <- coef[-1]
+    coef[length(coef)+1] <- bias
+    dt$nnfeh <- coef
     names <- c(names, 'NN for each hidden')
   }
   
   # Add Auto Regression for all
   if(neuralNetwork.enableForAll)
   {
-    dt$nnfa <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(NULL))[[1]][[1]][,1])
+    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(NULL))[[1]][[1]][,1]
+    bias <- coef[1]
+    coef <- coef[-1]
+    coef[length(coef)+1] <- bias
+    dt$nnfa <- coef
     names <- c(names, 'NN for all')
   }
   
   # Add Auto Regression for all with hidden layers
   if(neuralNetwork.enableForAll.hidden)
   {
-    dt$nnfah <- rev(getReducedNeuralNetworkWeights(getNeuralNetwork(NULL, TRUE))[[1]][[1]][,1])
+    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(NULL, TRUE))[[1]][[1]][,1]
+    bias <- coef[1]
+    coef <- coef[-1]
+    coef[length(coef)+1] <- bias
+    dt$nnfah <- coef
     names <- c(names, 'NN for all hidden')
   }
   
@@ -214,19 +225,19 @@ getForecastComparisionPlot <- function(id) {
     y = data.sets[[id]]$y[startRealData:data.length])
   
   # Add Auto Regression
-  prediction$ar <- append(rep(NA, data.horizon), getARModel(id)$result)
+  prediction$ar <- append(rep(NA, data.horizon), getARTestResults(id)$result)
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Neural Network for each
   prediction$nnfe <- append(rep(NA, data.horizon),
-    getNeuralNetworkTestResults(id)$net.result)
+    getNeuralNetworkTestResults(id)$result)
   prediction$nnfe[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Auto Regression for each with hidden layers
   if(neuralNetwork.enableForEach.hidden)
   {
     prediction$nnfeh <- append(rep(NA, data.horizon),
-      getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$net.result)
+      getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$result)
     prediction$nnfeh[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
   
@@ -234,7 +245,7 @@ getForecastComparisionPlot <- function(id) {
   if(neuralNetwork.enableForAll)
   {
     prediction$nnfa <- append(rep(NA, data.horizon),
-      getNeuralNetworkTestResults(id, forAll = TRUE)$net.result)
+      getNeuralNetworkTestResults(id, forAll = TRUE)$result)
     prediction$nnfa[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
   
@@ -242,7 +253,7 @@ getForecastComparisionPlot <- function(id) {
   if(neuralNetwork.enableForAll.hidden)
   {
     prediction$nnfah <- append(rep(NA, data.horizon),
-      getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$net.result)
+      getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$result)
     prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
   

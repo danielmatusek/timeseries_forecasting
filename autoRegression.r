@@ -13,65 +13,21 @@ learnARModel <- function(id)
   
   spl <<- length(y) - data.horizon
   trainData <- y[(1 : spl)]
-  testData <- y[-(1 : spl)]
 
-  if(aRModelName == "AR")
+  if(aRModelName == "AR" || aRModelName == "ManualAR")
   {
     arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
-    coef <- arModel$ar
   }
-  else if (aRModelName == "AutoArima")
+  else if (aRModelName == "AutoArima" || aRModelName == "ManualAutoArima")
   {
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
-    coef <- arModel$coef
-  } 
-  else if (aRModelName == "ManualAutoArima" || aRModelName == "ManualAR")
-  {
-    #get coefficients
-    if(aRModelName == "ManualAutoArima"){
-      arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
-      coef <- arModel$coef
-    } else {
-      arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
-      coef <- arModel$ar
-    }
-    #create output datatable
-    ar_manual_result <- data.frame(V0 = double())
-    #offset for forecast to use whole input data.table
-    ar_offset <- length(trainData) + 1
-    
-    if(aRModelName== "ManualAutoArima"){
-      timesSum <- (length(coef)-1)
-    } else timesSum <- (length(coef))
-    
-    for(i in 1:length(testData)){
-      y_t_before <- 0
-      for(j in 1:timesSum){
-        y_t <- y_t_before + (coef[j] * y[ar_offset - j])
-        y_t_before <- y_t
-      }
-      #y_t <- y_t_before + coef[length(coef)] ## -----> Error value for Auto.Arima)
-      temp_df <- data.frame(y_t)
-      names(temp_df) <- c("V0")
-      #append new forecasted value to table
-      ar_manual_result <- rbind(ar_manual_result, temp_df)
-      #move window one to the right, old y_t will be y_t-1
-      ar_offset <- ar_offset + 1
-    }
-  }
-
-  if(aRModelName == "AutoArima" | aRModelName == "AR"){
-    tsPred <- predict(arModel, n.ahead = data.horizon)
-    model <- list(model = arModel, coef = coef, trained = trainData, result = tsPred$pred, expected = testData)
-  }
-  else {
-    model <- list(model = arModel, coef = coef, trained = trainData, result = ar_manual_result$V0, expected = testData)
   }
   
-  autoRegressiveModels[[id]] <<- model
+  autoRegressiveModels[[id]] <<- arModel
 }
 
-getARModel <- function(id) {
+getARModel <- function(id)
+{
   if (is.null(autoRegressiveModels[[id]]))
   {
     learnARModel(id)
@@ -82,19 +38,50 @@ getARModel <- function(id) {
 
 getARCoef <- function(id)
 {
-  arModel <- getARModel(id)$model
+  arModel <- getARModel(id)
   
-  if(aRModelName == 'AR' || aRModelName == 'ManualAutoArima')
+  if (inherits(arModel, 'ar'))
   {
     c(arModel$ar, arModel$x.mean)
   }
-  else
+  else if (inherits(arModel, 'Arima'))
   {
     arModel$coef
   }
+  else
+  {
+    NULL
+  }
+}
+
+testAR <- function(id)
+{
+  testSet <- getTestSet(id)
+  expected <- testSet[['xt0']]
+  testSet[['xt0']] <- NULL
+  testSet[['bias']] <- 1
+  result <- as.matrix(testSet) %*% getARCoef(id)
+  
+  autoRegressiveTestResults[[id]] <<- structure(list(expected = expected, result = result), class = 'TestResults')
+}
+
+getARTestResults <- function(id)
+{
+  if (is.null(autoRegressiveTestResults[[id]]))
+  {
+    testAR(id)
+  }
+  
+  return (autoRegressiveTestResults[[id]])
 }
 
 resetARModels <- function()
 {
   autoRegressiveModels <<- NULL
+  resetARTestResults()
+}
+
+resetARTestResults <- function()
+{
+  autoRegressiveTestResults <<- NULL
 }

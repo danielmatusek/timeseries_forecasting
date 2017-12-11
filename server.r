@@ -150,6 +150,7 @@ server <- function(input, output) {
 	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
+	  
 		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
@@ -157,16 +158,19 @@ server <- function(input, output) {
 	
 	output$dataTable <- renderDataTable({
 	  databaseChanged()
+	  
 	  data.sets[[input$idSelect]]
 	})
 	
 	output$trainDataTable <- renderDataTable({
 	  windowsChanged()
+	  
 	  getTrainSet(input$idSelect)
 	})
 	
 	output$testDataTable <- renderDataTable({
 	  windowsChanged()
+	  
 	  getTestSet(input$idSelect)
 	})
 	
@@ -208,6 +212,7 @@ server <- function(input, output) {
 	output$neuralNetworkChart <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
+	  
 		plot(getNeuralNetwork(input$idSelect), rep = 'best')
 	})
 	
@@ -215,12 +220,14 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  
 	  plot(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE), rep = 'best')
 	})
 	
 	output$neuralNetworkChartForAll <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
+	  
 	  plot(getNeuralNetwork(NULL), rep = 'best')
 	})
 	
@@ -228,6 +235,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  
 	  plot(getNeuralNetwork(NULL, hiddenLayers = TRUE), rep = 'best')
 	})
 	
@@ -237,20 +245,6 @@ server <- function(input, output) {
 	
 	### UI elements: Auto Regression
 	
-	
-	output$arMLE <- renderDataTable({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  error_metric(getARModel(input$idSelect)$expected, getARModel(input$idSelect)$result)
-	})
-	
-	output$arCoef <- renderDataTable({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  data.table(coef = getARModel(input$idSelect)$coef)
-	})
 	
 	output$arACF <- renderPlot({
 	  databaseChanged()
@@ -321,11 +315,6 @@ server <- function(input, output) {
 	  arModelBaseChanged()
 	  
 	  getCoef(input$idSelect)
-	})
-	
-	output$ErrorMetricTable <- renderDataTable({
-	  result <- neuralNetworkTest()
-	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
 	})
 	
 	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
