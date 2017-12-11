@@ -1,0 +1,7 @@
+library(rnn)
+
+
+getRecNeuralNetwork <- function()
+{
+  
+}

@@ -38,6 +38,7 @@ ui <- dashboardPage(skin = 'purple',
 		        fileInput('dataFile', NULL,
 		          accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
 		        ),
+		        checkboxInput("use_data", "Use alipay_base Dataset", FALSE),
 		        uiOutput('idColumnSelect'),
 		        uiOutput("x_axis"),
 		        uiOutput("y_axis")
@@ -47,9 +48,11 @@ ui <- dashboardPage(skin = 'purple',
 		        uiOutput('windowSizeSlider'),
 		        uiOutput('horizonSlider')
 		      ),
-		      column(3,
-		        h3('Neural Network', style = 'margin-bottom: 20px;'),
+		      column(3, 
+		        h3('Neural Network', style = 'margin-bottom: 10px;'),
 		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
+		        checkboxInput('inputCheckbox', 'Exclude Input', FALSE),
+		        uiOutput('excludeInputSlider'),
 		        uiOutput('hiddenSliderInput'),
 		        checkboxGroupInput("variable_nn", "neural network forecast for",
 		                           c("one Time Series" = "forecast_one",
@@ -83,9 +86,7 @@ ui <- dashboardPage(skin = 'purple',
 			),
 
 			tabItem(tabName = "neuralNetwork",
-			      #  fluidPage( #fluidRow(
 			        uiOutput("neuralNetwork_tabs")
-			       # )
 			),
 			
 			tabItem(tabName = "aRModel",
@@ -119,7 +120,10 @@ ui <- dashboardPage(skin = 'purple',
 			               ),
 			          tabPanel('NN Dif. wrt HL',
 			            dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
-                )
+                ),
+			         tabPanel('CPU time',
+			                  plotlyOutput('data_cpu_time')
+			         )
 			        )
 			)
 		)

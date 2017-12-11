@@ -229,6 +229,7 @@ getForecastComparisionPlot <- function(id) {
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Neural Network for each
+  
   prediction$nnfe <- append(rep(NA, data.horizon),
     getNeuralNetworkTestResults(id)$result)
   prediction$nnfe[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]

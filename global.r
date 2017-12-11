@@ -6,6 +6,7 @@ data.testSets <- NULL
 
 data.windowSize <- NULL
 data.horizon <- NULL
+data.idSelected <- NULL
 
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names

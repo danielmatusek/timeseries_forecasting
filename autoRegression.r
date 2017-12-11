@@ -31,6 +31,7 @@ getARModel <- function(id)
   if (is.null(autoRegressiveModels[[id]]))
   {
     learnARModel(id)
+    
   }
   
   return (autoRegressiveModels[[id]])
