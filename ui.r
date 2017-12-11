@@ -18,6 +18,7 @@ ui <- dashboardPage(skin = 'purple',
 	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+	              menuItem("Reccurent NN", tabName = "reccurentNeuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	      hr(),
@@ -88,6 +89,12 @@ ui <- dashboardPage(skin = 'purple',
 			tabItem(tabName = "neuralNetwork",
 			        uiOutput("neuralNetwork_tabs")
 			),
+			
+			
+			tabItem(tabName = "reccurentNeuralNetwork",
+			        dataTableOutput("reccurentNeuralNetwork_tab")
+			),
+			
 			
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,

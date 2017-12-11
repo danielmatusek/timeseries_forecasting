@@ -20,7 +20,7 @@ server <- function(input, output) {
   
   
   rawData <- reactive({
-    file <- input$dataFile
+  file <- input$dataFile
     
     if (is.null(file) && !input$use_data)
     {
@@ -222,28 +222,37 @@ server <- function(input, output) {
 	 myTabs <- lapply(input$variable_nn, function(x){
 	    if(x == "forecast_one"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
-	                                             plotOutput("neuralNetworkChart", height = "600px")
+	                                             plotOutput("neuralNetworkChart", height = "600px"),
+	                                             dataTableOutput("neuralNetworkExcludeInput")
+	                                             
 	      )
 	    }
 	    else if(x == "forecast_one_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1 hidden', 
-	                                             plotOutput("neuralNetworkHiddenChart", height = "600px")
+	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"),
+	                                             dataTableOutput("neuralNetworkHiddenExcludeInput")
 	      )
 	    }
 	    else if(x == "forecast_all"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n', 
-	                                             plotOutput("neuralNetworkChartForAll", height = "600px")
+	                                             plotOutput("neuralNetworkChartForAll", height = "600px"),
+	                                             dataTableOutput("neuralNetworkForAllExcludeInput")
 	      )
 	    } 
 	    else if(x == "forecast_all_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n hidden',
-	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px")
+	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"),
+	                                             dataTableOutput("neuralNetworkHiddenForALLExcludeInput")
 	      )
 	    } 
 	  })
 	  myTabs$width = "100%"
 	  do.call(tabBox, myTabs)
 	})
+	
+	
+	
+	
 	
 	output$neuralNetworkChart <- renderPlot({
 	  idChanged()
@@ -280,7 +289,57 @@ server <- function(input, output) {
 	})
 	
 	
+	
+	
+	
+	output$neuralNetworkExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(input$idSelect))
+	  return(FALSE)
+	})
+	
+	output$neuralNetworkHiddenExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(input$idSelect, TRUE))
+	  return(FALSE)
+	})
+	
+	output$neuralNetworkForAllExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(NULL))
+	  return(FALSE)
+	})
+	
+	output$neuralNetworkHiddenForALLExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(NULL, TRUE))
+	  return(FALSE)
+	})
+	
+	
+	
+	### UI elements: Reccurent Neural Network
+	
 
+	
+	
+	
 	
 	
 	### UI elements: Auto Regression
