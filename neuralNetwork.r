@@ -79,7 +79,7 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) {
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
 getNeuralNetwork <- function(id, hiddenLayers = FALSE, hNodesOptimization = FALSE) {
-  if(hNodesOptimization)
+  if(hNodesOptimization) #when optimal number of hidden nodes must be retrieved
   {
     neuralNetwork.hiddenNodesOptimization[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayersOptimization)
     return(neuralNetwork.hiddenNodesOptimization[[id]])
@@ -149,7 +149,7 @@ testNeuralNetwork <- function(neuralNetwork, testSetID) {
 
 # Get test result of the neural network for the given parameters
 getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE, hNodesOptimization = FALSE) {
-  if(hNodesOptimization)
+  if(hNodesOptimization) #when optimal number of hidden layer must be retrieved
   {
         neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- optimizeNeuralNetworkHiddenLayer(id)
   }
@@ -280,17 +280,23 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     errorvector[1] <- last_error  
     
     for (i in 1:data.windowSize){
+      #Prepare environmental variables for nn calculation
       neuralNetwork.hiddenLayersOptimization <<- c(i)
       neuralNetwork.hiddenLayers <<- c(i)
       setNeuralNetworkExcludeVector()
+
+      #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hiddenNodesOptimization[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hNodesOptimization = TRUE), id)
       current_error <- neuralNetwork.testResults.hiddenNodesOptimization[[id]]$net.mse 
+
+      #break from optimization when error rises again
       if(last_error < current_error)
       {
         cat("Local optimum of number of nodes", c(i-1), nofill = TRUE)
         neuralNetwork.hiddenLayersOptimization <<- c(i-1)
-        #return(neuralNetwork.testResults.hiddenNodesOptimization.old[[id]])
+        return(neuralNetwork.testResults.hiddenNodesOptimization.old[[id]])
       }
+      #set new error to last error and save previous neural network
       last_error <- current_error
       neuralNetwork.testResults.hiddenNodesOptimization.old[[id]] <<- neuralNetwork.testResults.hiddenNodesOptimization[[id]]
       errorvector[i+1] <- current_error
