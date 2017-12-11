@@ -98,10 +98,6 @@ ui <- dashboardPage(skin = 'purple',
 			
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,
-			               tabPanel("Statistic",
-			                        dataTableOutput("arMLE"),
-			                        dataTableOutput("arCoef")
-			               ),
 			               tabPanel("Time Series Analysis",
 			                        plotOutput("arACF"),
 			                        plotOutput("arPACF")

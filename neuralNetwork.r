@@ -266,7 +266,7 @@ changedExcludedInput <- function(model)
 {
   if(neuralnetwork.isInputExcluded == FALSE) return(FALSE)
   
-  error = testNeuralNetwork(model, data.idSelected)$net.mse
+  error = testNeuralNetwork(model, data.idSelected)$mse
   print(error)
   print(model$weights)
   
@@ -298,22 +298,22 @@ getNeuralNetworkInputErrorTable <- function(id, hiddenLayers = FALSE)
         trainSetsCombined <- getAllTrainSetsCombined()
         if (hiddenLayers)
         {
-          eM[i,2] <- testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers, i), data.idSelected)$net.mse 
+          eM[i,2] <- testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers, i), data.idSelected)$mse 
         }
         else
         {
-          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, c(0), i), data.idSelected)$net.mse 
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, c(0), i), data.idSelected)$mse 
         }
       }
       else
       {
         if (hiddenLayers)
         {
-          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers, i), id)$net.mse 
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers, i), id)$mse 
         }
         else
         {
-          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), c(0), i), id)$net.mse 
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), c(0), i), id)$mse 
           
         }
       }
@@ -324,19 +324,17 @@ getNeuralNetworkInputErrorTable <- function(id, hiddenLayers = FALSE)
 
 
 
-
-
-
-testNeuralNetwork <- function(neuralNetwork, testSetID) {
-  expected <- getTestSet(testSetID)$xt0
+testNeuralNetwork <- function(neuralNetwork, testSetID)
+{
   testData <- getTestSet(testSetID)
+  expected <- testData$xt0
   testData$xt0 <- NULL
+  
+  #compute = boese
   n <- compute(neuralNetwork, testData)
   
-  n$net.expected <- expected
-  n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
-  
-  n
+  mse<- sum((expected - n$net.result)^2)/nrow(n$net.result)
+  structure(list(expected = expected, result = n$net.result, mse = mse), class = 'TestResults')
 }
 
 # Get test result of the neural network for the given parameters
@@ -419,71 +417,31 @@ getReducedNeuralNetworkWeights <- function(nn) {
 }
 
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
-  ids <- names(data.trainSets)
-  numHiddenNeurons <- neuralNetwork.hiddenLayers[1]
   tolerance <- 1e-5
   
-  idsNNsDiffer <- NULL
-  
-  for (i in 1:length(ids))
-  {
-    id <- ids[i]
+  idsNNsDiffer <- unlist(lapply(names(data.sets), function(id) {
+    reducedWeightsNN <- getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1]
+    reducedWeightsNNH <- getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1]
     
-    nn <- getNeuralNetwork(id)
-    nnh <- getNeuralNetwork(id, TRUE)
+    dif <- reducedWeightsNN - reducedWeightsNNH
     
-    reducedWeightsNNH <- getReducedNeuralNetworkWeights(nnh)
-    
-    for (j in 1:data.windowSize)
+    for (i in 1:length(dif))
     {
-      sum <- 0
-      for (k in 1:numHiddenNeurons)
+      if (abs(dif[i]) > tolerance)
       {
-        sum <- sum + nnh$weights[[1]][[1]][j+1, k] * nnh$weights[[1]][[2]][k+1, 1]
-      }
-      
-      if (abs(sum - nn$weights[[1]][[1]][j+1, 1]) > tolerance)
-      {
-        idsNNsDiffer <- c(idsNNsDiffer, id)
-        print(paste('difference', id, j, sum, nn$weights[[1]][[1]][j+1, 1]))
-        break
+        return (id)
       }
     }
-  }
+    
+    return (NULL)
+  }))
   
-  data.table(ids = idsNNsDiffer)
-}
-
-getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
-  if (is.null(id))
+  if (length(idsNNsDiffer) > 0)
   {
-    return(NULL)
+    data.table(ids = idsNNsDiffer)
   }
-  
-  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers)
-  if (is.null(testResults))
+  else
   {
-    return(NULL)
+    NULL
   }
-  
-  data.length <- length(data.sets[[id]]$y)
-  numTestResults <- length(testResults$net.result)
-  startRealData <- max(1, data.length - 2 * numTestResults + 1)
-  
-  prediction <- rbindlist(list(
-    as.data.table(rep(NA, numTestResults)),
-    as.data.table(testResults$net.result)
-  ))
-  names(prediction) <- c('prediction')
-  
-  prediction$x <- data.sets[[id]]$x[startRealData:data.length]
-  prediction$y <- data.sets[[id]]$y[startRealData:data.length]
-  
-  startIndex = data.length - startRealData - numTestResults + 1
-  prediction$prediction[[startIndex]] <- prediction$y[[startIndex]]
-  
-  p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
-    add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
-  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
-  p
 }
