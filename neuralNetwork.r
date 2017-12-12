@@ -16,6 +16,7 @@ neuralNetwork.enableForAll.hidden <<- FALSE
 
 neuralNetwork.hlOptimization <<- c(0)
 neuralNetwork.hlOptimizationErrorVector <<- c(0)
+neuralnetwork.tempHiddenNodes <<- c(0)
 
 resetNeuralNetworks.hidden <- function()
 {
@@ -40,7 +41,7 @@ resetNeuralNetworks <- function()
   
 }
 
-resetNeuralNetworks.hiddenNodesOptimization <- function()
+resetNeuralNetworks.hlOptimizationNN <- function()
 {
   neuralNetwork.hlOptimizationNN <<- NULL
   neuralNetwork.hlOptimizationNN.old <<- NULL
@@ -470,7 +471,7 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
 optimizeNeuralNetworkHiddenLayer <- function(id)
 {
   resetNeuralNetworks.hlOptimizationNN()
-
+  neuralNetwork.tempHiddenNodes <<- neuralNetwork.hiddenLayers
   if (is.null(neuralNetwork.hlOptimizationNN[[id]]))
   {
     #get neural network and error without hidden layer
@@ -497,6 +498,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
       if(last_error < current_error)
       {
         neuralNetwork.hlOptimization <<- c(i-1)
+        neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
         #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
@@ -522,12 +524,14 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
       {
         neuralNetwork.hlOptimization <<- c(m, j)
         neuralNetwork.hiddenLayers <<- c(m, j)
+        neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
         #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
       last_error <- current_error
       neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]
       neuralNetwork.hlOptimization
+      neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
     }
   }   
 }
