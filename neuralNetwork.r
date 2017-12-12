@@ -30,7 +30,7 @@ resetNeuralNetworks.hidden <- function()
 resetNeuralNetworks <- function()
 {
   resetNeuralNetworks.hidden()
-  resetNeuralNetworks.hiddenNodesOptimization()
+  resetNeuralNetworks.hlOptimizationNN()
   
   neuralNetwork.forEach <<- NULL
   neuralNetwork.forAll <<- NULL
