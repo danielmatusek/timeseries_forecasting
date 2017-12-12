@@ -11,7 +11,8 @@ trainRNN <- function(id,  hiddenLayers = c(0))
   set.seed(1)
   trainset <- getTrainSet(id)
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
-  rnn <- RSNNS::elman(x = trainset[,2:length(trainset)], y = trainset[,1])
+  rnn <- RSNNS::elman(x = trainset[,2:length(trainset)], y = trainset[,1], size = neuralNetwork.hiddenLayers)
+  browser()
  
   return(rnn)
 }
