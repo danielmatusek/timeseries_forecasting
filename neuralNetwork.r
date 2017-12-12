@@ -471,6 +471,7 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
 optimizeNeuralNetworkHiddenLayer <- function(id)
 {
   resetNeuralNetworks.hlOptimizationNN()
+  neuralNetwork.hlOptimizationErrorVector <<- c(0)
   neuralNetwork.tempHiddenNodes <<- neuralNetwork.hiddenLayers
   if (is.null(neuralNetwork.hlOptimizationNN[[id]]))
   {
@@ -479,26 +480,24 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
     neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
 
-    last_error <- getHlOptimizationError(neuralNetwork.testResults.hlOptimizationNN[[id]], id)
+    last_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$mse
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
     
     #add first layer incrementally
     for (i in 1:data.windowSize){
-      print(i)
       #Prepare environmental variables for nn calculation
       neuralNetwork.hlOptimization <<- c(i)
       neuralNetwork.hiddenLayers <<- c(i)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- getHlOptimizationError(neuralNetwork.testResults.hlOptimizationNN[[id]], id) 
+      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$mse
       neuralNetwork.hlOptimizationErrorVector[i+1] <<- current_error
 
       #break from optimization when error rises again
       if(last_error < current_error)
       {
         neuralNetwork.hlOptimization <<- c(i-1)
-        neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
         #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
@@ -516,36 +515,22 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- getHlOptimizationError(neuralNetwork.testResults.hlOptimizationNN[[id]], id) 
-      neuralNetwork.hlOptimizationErrorVector[m+i+1] <<- current_error
+      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$mse
+      neuralNetwork.hlOptimizationErrorVector[m+j+1] <<- current_error
 
       #break from optimization when error rises again
       if(last_error < current_error)
       {
         neuralNetwork.hlOptimization <<- c(m, j)
         neuralNetwork.hiddenLayers <<- c(m, j)
-        neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
         #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
       last_error <- current_error
       neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]
       neuralNetwork.hlOptimization
-      neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
     }
   }   
-}
-
-getHlOptimizationError <- function(nn, id)
-{
-    #test_set <- as.numeric(nn$expected)
-    #forecast_set <- as.numeric(nn$result)
-    test_set <- nn$expected
-    forecast_set <- nn$result
-    last_error <- sum((test_set - forecast_set)^2)/nrow(forecast_set)
-    #last_error <- unlist(lapply(1:length(test_set), function(k) { mse(test_set[[k]], forecast_set[[k]]) }))
-
-    last_error
 }
 
 getHlOptimizationErrorTable <- function(id)
