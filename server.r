@@ -254,18 +254,18 @@ server <- function(input, output) {
 	  do.call(tabBox, myTabs)
 	})
 	
-	output$neuralNetwork_hNodesOptimization <- renderUI({
+	output$neuralNetwork_hlOptimization <- renderUI({
 	  panels <- list()
-	  myhNodesOptimizationTabs <- lapply(input$variable_nn_hidden, function(x){
+	  myhlOptimizationTabs <- lapply(input$variable_nn_hidden, function(x){
 			if(x == "optimize_hidden_layer"){
 	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
 	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
-	                                             plotlyOutput('neuralNetworkForecastForTrialError')
+	                                             h5(textOutput(('neuralNetworkForecastForTrialError')))
 	      )
 			}
 		})
-	  myhNodesOptimizationTabs$width = "100%"
-	  do.call(tabBox, myhNodesOptimizationTabs)
+	  myhlOptimizationTabs$width = "100%"
+	  do.call(tabBox, myhlOptimizationTabs)
 	})
 	
 	output$neuralNetworkChart <- renderPlot({
@@ -350,15 +350,19 @@ server <- function(input, output) {
 	  return(FALSE)
 	})
 
-	output$neuralNetworkForecastForTrialError <- renderPlotly({
+	output$neuralNetworkChartHiddenTrialError <- renderPlot({
+	  idChanged()
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, hNodesOptimization = TRUE))
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+		optimizeNeuralNetworkHiddenLayer(input$idSelect)
+	  
+	  plot(getNeuralNetwork(input$idSelect, hlOptimization = TRUE), rep = 'best')
 	})
 
-	output$neuralNetworkChartHiddenTrialError <- renderPlot({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  plot(getNeuralNetwork(input$idSelect, hNodesOptimization = TRUE), rep = 'best')
+	output$neuralNetworkForecastForTrialError <- renderPrint({
+		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill=FALSE)
 	})
 
 	

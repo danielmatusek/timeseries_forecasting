@@ -21,7 +21,7 @@ ui <- dashboardPage(skin = 'purple',
 	              menuItem("Reccurent NN", tabName = "reccurentNeuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
-	              menuItem("Hidden Nodes", tabName = "hNodesOptimization", icon = icon("stethoscope")),
+	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
 	      hr(),
 		            uiOutput("idSelectBox")
 		  )
@@ -137,8 +137,8 @@ ui <- dashboardPage(skin = 'purple',
 			         )
 			        )
 			),
-			tabItem(tabName="hNodesOptimization",
-			        uiOutput("neuralNetwork_hNodesOptimization")
+			tabItem(tabName="hlOptimization",
+			        uiOutput("neuralNetwork_hlOptimization")
 			)
 		)
 	)
