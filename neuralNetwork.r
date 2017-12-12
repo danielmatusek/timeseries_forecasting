@@ -8,6 +8,7 @@ neuralNetwork.excludedMaxInputs <<- 0
 neuralNetwork.excludedInput <<- 0
 neuralNetwork.excludedPastError <<- -1
 neuralNetwork.excludedPastModel <<- NULL
+neuralnetwork.excludeInputMax <<- TRUE
 
 neuralNetwork.enableForEach <<- TRUE
 neuralNetwork.enableForEach.hidden <<- TRUE
@@ -83,7 +84,6 @@ setNeuralNetworkExcludeVector <- function(hidden, excludeInputNodes = c(0)) {
     }
   }
   neuralNetwork.excludeVector <<- sort(neuralNetwork.excludeVector, decreasing = FALSE)
-  
 }
 
 getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
@@ -113,7 +113,15 @@ getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
       }
       idx <- c(vec,which(sumVector == 0))
       sumVector <- replace(sumVector, sumVector==0, NaN)
-      idx <- c(idx, which(sumVector == min(sumVector, na.rm = TRUE)))
+      if(neuralnetwork.excludeInputMax)
+      {
+        idx <- c(idx, which(sumVector == max(sumVector, na.rm = TRUE)))
+      }
+      else
+      {
+        idx <- c(idx, which(sumVector == min(sumVector, na.rm = TRUE)))
+      }
+      
       
     }
     else
@@ -138,7 +146,15 @@ getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
     {
       ws <- abs(neuralNetwork.excludedPastModel$weights[[1]][[1]][2 : (data.windowSize + 1)]) # get weight input vector without bias
       vec <- which(is.na(ws)) + 1 # add bias offset
-      vec[(length(vec) + 1)] = which(ws == min(ws, na.rm = TRUE)) + 1 # add bias offset
+      if(neuralnetwork.excludeInputMax)
+      {
+        vec[(length(vec) + 1)] = which(ws == max(ws, na.rm = TRUE)) + 1 # add bias offset
+      }
+      else
+      {
+        vec[(length(vec) + 1)] = which(ws == min(ws, na.rm = TRUE)) + 1 # add bias offset
+      }
+      
     }
     else
     { 
