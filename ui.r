@@ -21,7 +21,8 @@ ui <- dashboardPage(skin = 'purple',
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	      hr(),
-		            uiOutput("idSelectBox")
+		            uiOutput("idSelectBox"),
+	              checkboxInput('errorTypCheck', 'Error eine Zeitreihe', TRUE)
 		  )
 	  )
 	),
