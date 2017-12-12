@@ -18,8 +18,10 @@ ui <- dashboardPage(skin = 'purple',
 	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+	              menuItem("Reccurent NN", tabName = "reccurentNeuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
+	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
 	      hr(),
 		            uiOutput("idSelectBox"),
 	              checkboxInput('errorTypCheck', 'Error eine Zeitreihe', TRUE)
@@ -60,7 +62,10 @@ ui <- dashboardPage(skin = 'purple',
 		                             "one TS with hidden" = "forecast_one_hidden",
 		                             "all Time Series" = "forecast_all",
 		                             "all TS with hidden" = "forecast_all_hidden"),
-		                           selected= c("forecast_one","forecast_one_hidden"))
+		                           selected= c("forecast_one","forecast_one_hidden")),
+						checkboxGroupInput("variable_nn_hidden", "neural network hidden nodes optimization",
+																c("Optimize" = "optimize_hidden_layer"),
+																selected= c("optimize_hidden_layer"))
 		      ),
 		      column(3,
 		        h3('Autoregression', style = 'margin-bottom: 20px;'),
@@ -90,12 +95,14 @@ ui <- dashboardPage(skin = 'purple',
 			        uiOutput("neuralNetwork_tabs")
 			),
 			
+			
+			tabItem(tabName = "reccurentNeuralNetwork",
+			        dataTableOutput("reccurentNeuralNetwork_tab")
+			),
+			
+			
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,
-			               tabPanel("Statistic",
-			                        dataTableOutput("arMLE"),
-			                        dataTableOutput("arCoef")
-			               ),
 			               tabPanel("Time Series Analysis",
 			                        plotOutput("arACF"),
 			                        plotOutput("arPACF")
@@ -130,6 +137,9 @@ ui <- dashboardPage(skin = 'purple',
 			                  plotlyOutput('data_cpu_time')
 			         )
 			        )
+			),
+			tabItem(tabName="hlOptimization",
+			        uiOutput("neuralNetwork_hlOptimization")
 			)
 		)
 	)

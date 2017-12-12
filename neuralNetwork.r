@@ -14,6 +14,10 @@ neuralNetwork.enableForEach.hidden <<- TRUE
 neuralNetwork.enableForAll <<- FALSE
 neuralNetwork.enableForAll.hidden <<- FALSE
 
+neuralNetwork.hlOptimization <<- c(0)
+neuralNetwork.hlOptimizationErrorVector <<- c(0)
+neuralnetwork.tempHiddenNodes <<- c(0)
+
 resetNeuralNetworks.hidden <- function()
 {
   neuralNetwork.forEach.hiddenLayers <<- NULL
@@ -26,6 +30,7 @@ resetNeuralNetworks.hidden <- function()
 resetNeuralNetworks <- function()
 {
   resetNeuralNetworks.hidden()
+  resetNeuralNetworks.hlOptimizationNN()
   
   neuralNetwork.forEach <<- NULL
   neuralNetwork.forAll <<- NULL
@@ -36,8 +41,17 @@ resetNeuralNetworks <- function()
   
 }
 
-setNeuralNetworkExcludeVector <- function(hidden) {
+resetNeuralNetworks.hlOptimizationNN <- function()
+{
+  neuralNetwork.hlOptimizationNN <<- NULL
+  neuralNetwork.hlOptimizationNN.old <<- NULL
+  neuralNetwork.testResults.hlOptimizationNN<<- NULL
+  neuralNetwork.testResults.hlOptimizationNN.old <<- NULL
+}
+
+setNeuralNetworkExcludeVector <- function(hidden, excludeInputNodes = c(0)) {
   # Calculate Bias Neuron weights (see: https://stackoverflow.com/q/40633567)
+  
   neuralNetwork.excludeVector <<- vector()
   
   if(neuralNetwork.excludeBias)
@@ -45,9 +59,9 @@ setNeuralNetworkExcludeVector <- function(hidden) {
     neuralNetwork.excludeVector <<- c(1) # first bias needs to be excluded every time
   }
   
-  if(neuralnetwork.isInputExcluded && !(neuralNetwork.excludedInput == neuralNetwork.excludedMaxInputs))
+  if((neuralnetwork.isInputExcluded && !(neuralNetwork.excludedInput == neuralNetwork.excludedMaxInputs)) || excludeInputNodes != 0)
   {
-    neuralNetwork.excludeVector <<- c(neuralNetwork.excludeVector, getMinimalWeightVector((neuralNetwork.excludedMaxInputs - neuralNetwork.excludedInput )))
+    neuralNetwork.excludeVector <<- c(neuralNetwork.excludeVector, getMinimalWeightVector(hidden, excludeInputNodes))
   }
   
   if(hidden[1] > 0 && neuralNetwork.excludeBias){ #only if hidden layer are present
@@ -68,82 +82,98 @@ setNeuralNetworkExcludeVector <- function(hidden) {
       }
     }
   }
-  #browser()
   neuralNetwork.excludeVector <<- sort(neuralNetwork.excludeVector, decreasing = FALSE)
   
 }
 
-getMinimalWeightVector <- function(excludeInputs)
+getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
 {
-  
   ws <- vector()
   vec <- vector()
-  hidden <- neuralNetwork.hiddenLayers
   
-  if(neuralNetwork.hiddenLayers)
+  if(hidden != 0)
   {
-    
+    hidden    <- neuralNetwork.hiddenLayers
     sumVector <- vector()
+    idx       <- 0
     
-    ws <- neuralNetwork.excludedPastModel$weights[[1]][[1]][1 : (data.windowSize * hidden + (hidden))]
-    
-    s <- vector()
-    for(j in 1 : data.windowSize)
+    if(excludeInputNode == 0)
     {
-      s <- vector()
+      ws <- abs(neuralNetwork.excludedPastModel$weights[[1]][[1]][1 : (data.windowSize * hidden + (hidden))])
+      
+      for(j in 1 : data.windowSize)
+      {
+        s <- vector()
+        for(i in 1 : hidden)
+        {
+          from <- ((i - 1) * (data.windowSize + 1)) + 1
+          s <- abs(c(s, ws[from + j ])) # first point + bias + input offset
+        }
+        sumVector[j] <- sum(s, na.rm = TRUE)
+      }
+      idx <- c(vec,which(sumVector == 0))
+      sumVector <- replace(sumVector, sumVector==0, NaN)
+      idx <- c(idx, which(sumVector == min(sumVector, na.rm = TRUE)))
+      
+    }
+    else
+    {
+      idx <- excludeInputNode
+    }
+    
+    
+    for(id in idx)
+    {
       for(i in 1 : hidden)
       {
         from <- ((i - 1) * (data.windowSize + 1)) + 1
-        s <- c(s, ws[from + j ]) # first point + bias + input offset
+        vec <- c(vec, from + id)
       }
-      sumVector[j] <- sum(s, na.rm = TRUE)
     }
     
-    # to <- from + data.windowSize
-    
-    idx <- which(sumVector == min(sumVector, na.rm = TRUE))
-    
-    for(i in 1 : hidden)
-    {
-      from <- ((i - 1) * (data.windowSize + 1)) + 1
-      newIdx <- from + idx
-      vec <- c(vec, which(ws[newIdx] == ws))
-    }
   }
   else
   {
-    ws <- neuralNetwork.excludedPastModel$weights[[1]][[1]][2 : (data.windowSize + 1)]
-    vec <- which(is.na(ws)) + 1
-    vec[excludeInputs] = which(ws == min(ws, na.rm = TRUE)) + 1
-    ws[vec[excludeInputs]] = NaN
+    if(excludeInputNode == 0)
+    {
+      ws <- abs(neuralNetwork.excludedPastModel$weights[[1]][[1]][2 : (data.windowSize + 1)]) # get weight input vector without bias
+      vec <- which(is.na(ws)) + 1 # add bias offset
+      vec[(length(vec) + 1)] = which(ws == min(ws, na.rm = TRUE)) + 1 # add bias offset
+    }
+    else
+    { 
+      vec[1] = excludeInputNode + 1
+    }
   }
   return(vec)
 }
 
 
 
-trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) 
+
+trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeInputNode = c(0)) 
 {
   
-  setNeuralNetworkExcludeVector(hiddenLayers)
+  setNeuralNetworkExcludeVector(hiddenLayers, excludeInputNode)
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   set.seed(1)
 
-
-  if(isTRUE(neuralNetwork.excludeVector) || neuralNetwork.excludeBias) {
+  
+  if(!is.logical(neuralNetwork.excludeVector) || neuralNetwork.excludeBias) {
     nn <- 1
-  out <- tryCatch({
-    nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
-      exclude = (if(hiddenLayers == c(0)) c(1) else neuralNetwork.excludeVector))
-    return(nn)
+    out <- tryCatch({
+      nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
+      exclude = neuralNetwork.excludeVector)
+      return(nn)
     },
-    warning=function(cond) {
+      warning=function(cond) {
       message(paste("Warning:"))
       nn <- -1
       return(nn)
     })
-  return(out)
+    
+    return(out)
   }
   else
   {
@@ -153,11 +183,22 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0))
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
-
-getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
+getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
   #trycatch
-  out <- tryCatch({
   
+  out <- tryCatch({
+  if(hlOptimization) #when optimal number of hidden nodes must be retrieved
+  {
+    if(is.null(neuralNetwork.hlOptimizationNN[[id]]))
+    {
+      neuralNetwork.hlOptimizationNN[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hlOptimization)    
+      return(neuralNetwork.hlOptimizationNN[[id]])
+    } else {
+      neuralNetwork.hlOptimizationNN.old[[id]] <<- neuralNetwork.hlOptimizationNN[[id]]
+      neuralNetwork.hlOptimizationNN[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hlOptimization)    
+      return(neuralNetwork.hlOptimizationNN[[id]])
+    }
+  }
   if (is.null(id))
   {
     trainSetsCombined <- getAllTrainSetsCombined()
@@ -234,7 +275,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE) {
 #    return(NA)
 #  },
   warning=function(cond) {
-   # browser()
+   
     message(paste("Warning:", id, hiddenLayers))
     message("Here's the original warning message:")
     message(cond)
@@ -248,7 +289,7 @@ changedExcludedInput <- function(model)
 {
   if(neuralnetwork.isInputExcluded == FALSE) return(FALSE)
   
-  error = testNeuralNetwork(model, data.idSelected)$net.mse
+  error = testNeuralNetwork(model, data.idSelected)$mse
   print(error)
   print(model$weights)
   
@@ -267,25 +308,60 @@ changedExcludedInput <- function(model)
 }
 
 
+# it eliminates every input one times and shows error in a matrix -> x - which input Node was eliminated, y - which error has the model
+getNeuralNetworkInputErrorTable <- function(id, hiddenLayers = FALSE)
+{
+  eM <- matrix(nrow = data.windowSize, ncol = 2)
+  for(i in 1 : data.windowSize)
+  {
+    eM[i,1] = i
+    
+      if (is.null(id))
+      {
+        trainSetsCombined <- getAllTrainSetsCombined()
+        if (hiddenLayers)
+        {
+          eM[i,2] <- testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers, i), data.idSelected)$mse 
+        }
+        else
+        {
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, c(0), i), data.idSelected)$mse 
+        }
+      }
+      else
+      {
+        if (hiddenLayers)
+        {
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers, i), id)$mse 
+        }
+        else
+        {
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), c(0), i), id)$mse 
+          
+        }
+      }
+  }
+  
+  return(data.table(inputNode = eM[nrow(eM):1, 1], "mse error" = eM[,2]))
+}
 
-testNeuralNetwork <- function(neuralNetwork, testSetID) {
-  expected <- getTestSet(testSetID)$xt0
+
+
+testNeuralNetwork <- function(neuralNetwork, testSetID)
+{
   testData <- getTestSet(testSetID)
+  expected <- testData$xt0
   testData$xt0 <- NULL
+  
   #compute = boese
   n <- compute(neuralNetwork, testData)
   
-  #result <- list()
-  #expected  <- list()    
-  n$net.expected <- expected
-
-  n$net.mse <- sum((n$net.expected - n$net.result)^2)/nrow(n$net.result)
-  
-  n
+  mse<- sum((expected - n$net.result)^2)/nrow(n$net.result)
+  structure(list(expected = expected, result = n$net.result, mse = mse), class = 'TestResults')
 }
 
 # Get test result of the neural network for the given parameters
-getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
+getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE) {  
   if (forAll)
   {
     if (hiddenLayers)
@@ -363,71 +439,102 @@ getReducedNeuralNetworkWeights <- function(nn) {
 }
 
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() {
-  ids <- names(data.trainSets)
-  numHiddenNeurons <- neuralNetwork.hiddenLayers[1]
   tolerance <- 1e-5
   
-  idsNNsDiffer <- NULL
-  
-  for (i in 1:length(ids))
-  {
-    id <- ids[i]
+  idsNNsDiffer <- unlist(lapply(names(data.sets), function(id) {
+    reducedWeightsNN <- getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1]
+    reducedWeightsNNH <- getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1]
     
-    nn <- getNeuralNetwork(id)
-    nnh <- getNeuralNetwork(id, TRUE)
+    dif <- reducedWeightsNN - reducedWeightsNNH
     
-    reducedWeightsNNH <- getReducedNeuralNetworkWeights(nnh)
-    
-    for (j in 1:data.windowSize)
+    for (i in 1:length(dif))
     {
-      sum <- 0
-      for (k in 1:numHiddenNeurons)
+      if (abs(dif[i]) > tolerance)
       {
-        sum <- sum + nnh$weights[[1]][[1]][j+1, k] * nnh$weights[[1]][[2]][k+1, 1]
-      }
-      
-      if (abs(sum - nn$weights[[1]][[1]][j+1, 1]) > tolerance)
-      {
-        idsNNsDiffer <- c(idsNNsDiffer, id)
-        print(paste('difference', id, j, sum, nn$weights[[1]][[1]][j+1, 1]))
-        break
+        return (id)
       }
     }
-  }
+    
+    return (NULL)
+  }))
   
-  data.table(ids = idsNNsDiffer)
+  if (length(idsNNsDiffer) > 0)
+  {
+    data.table(ids = idsNNsDiffer)
+  }
+  else
+  {
+    NULL
+  }
 }
 
-getNeuralNetworkPredictionPlotly <- function(id, forAll = FALSE, hiddenLayers = FALSE) {
-  if (is.null(id))
+optimizeNeuralNetworkHiddenLayer <- function(id)
+{
+  resetNeuralNetworks.hlOptimizationNN()
+  neuralNetwork.hlOptimizationErrorVector <<- c(0)
+  neuralNetwork.tempHiddenNodes <<- neuralNetwork.hiddenLayers
+  if (is.null(neuralNetwork.hlOptimizationNN[[id]]))
   {
-    return(NULL)
-  }
-  
-  testResults <- getNeuralNetworkTestResults(id, forAll, hiddenLayers)
-  if (is.null(testResults))
-  {
-    return(NULL)
-  }
-  
-  data.length <- length(data.sets[[id]]$y)
-  numTestResults <- length(testResults$net.result)
-  startRealData <- max(1, data.length - 2 * numTestResults + 1)
-  
-  prediction <- rbindlist(list(
-    as.data.table(rep(NA, numTestResults)),
-    as.data.table(testResults$net.result)
-  ))
-  names(prediction) <- c('prediction')
-  
-  prediction$x <- data.sets[[id]]$x[startRealData:data.length]
-  prediction$y <- data.sets[[id]]$y[startRealData:data.length]
-  
-  startIndex = data.length - startRealData - numTestResults + 1
-  prediction$prediction[[startIndex]] <- prediction$y[[startIndex]]
-  
-  p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original') %>%
-    add_trace(y = ~prediction, name = 'Prediction', line = list(dash = 'dash'))
-  p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
-  p
+    #get neural network and error without hidden layer
+    neuralNetwork.hlOptimization <<- c(0)
+    neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
+    neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
+
+    last_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$mse
+    neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
+    
+    #add first layer incrementally
+    for (i in 1:data.windowSize){
+      #Prepare environmental variables for nn calculation
+      neuralNetwork.hlOptimization <<- c(i)
+      neuralNetwork.hiddenLayers <<- c(i)
+
+      #get neural network for this id and hidden nodes vector
+      neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
+      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$mse
+      neuralNetwork.hlOptimizationErrorVector[i+1] <<- current_error
+
+      #break from optimization when error rises again
+      if(last_error < current_error)
+      {
+        neuralNetwork.hlOptimization <<- c(i-1)
+        #return(neuralNetwork.hlOptimization)
+      }
+      #set new error to last error and save previous neural network
+      last_error <- current_error
+      neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]
+      neuralNetwork.hlOptimization
+    }
+
+    m <- data.windowSize
+    #add first layer incrementally
+    for (j in 1:m){
+      #Prepare environmental variables for nn calculation
+      neuralNetwork.hlOptimization <<- c(m, j)
+      neuralNetwork.hiddenLayers <<- c(m, j)
+
+      #get neural network for this id and hidden nodes vector
+      neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
+      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$mse
+      neuralNetwork.hlOptimizationErrorVector[m+j+1] <<- current_error
+
+      #break from optimization when error rises again
+      if(last_error < current_error)
+      {
+        neuralNetwork.hlOptimization <<- c(m, j)
+        neuralNetwork.hiddenLayers <<- c(m, j)
+        #return(neuralNetwork.hlOptimization)
+      }
+      #set new error to last error and save previous neural network
+      last_error <- current_error
+      neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]
+      neuralNetwork.hlOptimization
+    }
+  }   
+}
+
+getHlOptimizationErrorTable <- function(id)
+{
+  print(neuralNetwork.hlOptimizationErrorVector)
+  return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
 }

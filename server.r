@@ -20,7 +20,7 @@ server <- function(input, output) {
   
   
   rawData <- reactive({
-    file <- input$dataFile
+  file <- input$dataFile
     
     if (is.null(file) && !input$use_data)
     {
@@ -95,7 +95,7 @@ server <- function(input, output) {
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
-	  resetComparison()
+		resetComparison()
 	})
 	
 	arModelBaseChanged <- reactive({
@@ -194,6 +194,7 @@ server <- function(input, output) {
 	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
+	  
 		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
@@ -201,16 +202,19 @@ server <- function(input, output) {
 	
 	output$dataTable <- renderDataTable({
 	  databaseChanged()
+	  
 	  data.sets[[input$idSelect]]
 	})
 	
 	output$trainDataTable <- renderDataTable({
 	  windowsChanged()
+	  
 	  getTrainSet(input$idSelect)
 	})
 	
 	output$testDataTable <- renderDataTable({
 	  windowsChanged()
+	  
 	  getTestSet(input$idSelect)
 	})
 	
@@ -223,30 +227,50 @@ server <- function(input, output) {
 	
 	output$neuralNetwork_tabs <- renderUI({
 	  panels <- list()
-	 myTabs <- lapply(input$variable_nn, function(x){
+	 	myTabs <- lapply(input$variable_nn, function(x){
 	    if(x == "forecast_one"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
-	                                             plotOutput("neuralNetworkChart", height = "600px")
+	                                             plotOutput("neuralNetworkChart", height = "600px"),
+	                                             dataTableOutput("neuralNetworkExcludeInput")
+	                                             
 	      )
 	    }
 	    else if(x == "forecast_one_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1 hidden', 
-	                                             plotOutput("neuralNetworkHiddenChart", height = "600px")
+	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"),
+	                                             dataTableOutput("neuralNetworkHiddenExcludeInput")
 	      )
 	    }
 	    else if(x == "forecast_all"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n', 
-	                                             plotOutput("neuralNetworkChartForAll", height = "600px")
+	                                             plotOutput("neuralNetworkChartForAll", height = "600px"),
+	                                             dataTableOutput("neuralNetworkForAllExcludeInput")
 	      )
 	    } 
 	    else if(x == "forecast_all_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n hidden',
-	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px")
+	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"),
+	                                             dataTableOutput("neuralNetworkHiddenForALLExcludeInput")
 	      )
-	    } 
+	    }
 	  })
 	  myTabs$width = "100%"
 	  do.call(tabBox, myTabs)
+	})
+	
+	output$neuralNetwork_hlOptimization <- renderUI({
+	  panels <- list()
+	  myhlOptimizationTabs <- lapply(input$variable_nn_hidden, function(x){
+			if(x == "optimize_hidden_layer"){
+	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
+	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
+	                                             h5(textOutput(('neuralNetworkForecastForTrialError'))),
+																							 dataTableOutput("neuralNetworkTableForTrialError")
+	      )
+			}
+		})
+	  myhlOptimizationTabs$width = "100%"
+	  do.call(tabBox, myhlOptimizationTabs)
 	})
 	
 	output$neuralNetworkChart <- renderPlot({
@@ -254,6 +278,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  excludeBiasChanged()
+	  
 		plot(getNeuralNetwork(input$idSelect), rep = 'best')
 	})
 	
@@ -263,6 +288,7 @@ server <- function(input, output) {
 	  excludeInputChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  
 	  plot(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE), rep = 'best')
 	})
 	
@@ -271,6 +297,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputChanged()
+	  
 	  plot(getNeuralNetwork(NULL), rep = 'best')
 	})
 	
@@ -280,29 +307,86 @@ server <- function(input, output) {
 	  excludeInputChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  
 	  plot(getNeuralNetwork(NULL, hiddenLayers = TRUE), rep = 'best')
 	})
 	
 	
+	
+	
+	
+	output$neuralNetworkExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(input$idSelect))
+	  return(FALSE)
+	})
+	
+	output$neuralNetworkHiddenExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(input$idSelect, TRUE))
+	  return(FALSE)
+	})
+	
+	output$neuralNetworkForAllExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(NULL))
+	  return(FALSE)
+	})
+	
+	output$neuralNetworkHiddenForALLExcludeInput <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(NULL, TRUE))
+	  return(FALSE)
+	})
 
+	output$neuralNetworkChartHiddenTrialError <- renderPlot({
+	  idChanged()
+	  windowsChanged()
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+		optimizeNeuralNetworkHiddenLayer(input$idSelect)
+	  
+	  plot(getNeuralNetwork(input$idSelect, hlOptimization = TRUE), rep = 'best')
+	})
+
+	output$neuralNetworkForecastForTrialError <- renderPrint({
+		neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
+		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill=FALSE)
+	})
+
+	output$neuralNetworkTableForTrialError <- renderDataTable({
+		getHlOptimizationErrorTable(input$idSelect)
+	})
+
+	
+	
+	### UI elements: Reccurent Neural Network
+	
+
+	
+	
+	
 	
 	
 	### UI elements: Auto Regression
 	
-	
-	output$arMLE <- renderDataTable({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  error_metric(getARModel(input$idSelect)$expected, getARModel(input$idSelect)$result)
-	})
-	
-	output$arCoef <- renderDataTable({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  data.table(coef = getARModel(input$idSelect)$coef)
-	})
 	
 	output$arACF <- renderPlot({
 	  databaseChanged()
@@ -380,11 +464,6 @@ server <- function(input, output) {
 	  getCoef(input$idSelect)
 	})
 	
-	output$ErrorMetricTable <- renderDataTable({
-	  result <- neuralNetworkTest()
-	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
-	})
-	
 	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
 	  idChanged()
 	  windowsChanged()
@@ -398,7 +477,10 @@ server <- function(input, output) {
 	output$data_cpu_time <- renderPlotly({
 	  arModelBaseChanged()
 	  windowsChanged()
+	  
+	  resetARModels()
 	  resetNeuralNetworks()
+
 	  nnTypChanged()
     x <- list()
 	  if(neuralNetwork.enableForEach){
@@ -421,7 +503,7 @@ server <- function(input, output) {
 #	  cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
 #	  resetARModels()
 #   getARModel(input$idSelect)
-    cpu_time[5] <- function.time
+    cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
     x <- c(x,"AR")
     data <- unlist(cpu_time)
     
