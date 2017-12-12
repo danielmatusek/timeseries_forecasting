@@ -9,8 +9,10 @@ library(zoo)
 source('autoRegression.r')
 source('neuralNetwork.r')
 source('comparision.r')
+source('recNeuralNetwork.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
+cpu_time <- list()
 
 server <- function(input, output) {
   
@@ -18,16 +20,23 @@ server <- function(input, output) {
   
   
   rawData <- reactive({
-    file <- input$dataFile
+  file <- input$dataFile
     
-    if (is.null(file))
+    if (is.null(file) && !input$use_data)
     {
       return(NULL)
     }
-    
-    #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+   #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+      
+    if(input$use_data){
+      data  <- readRDS("../resources/alipay_base.rdata")
+    }else{
+      data  <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+    }
+
+    return(data )
   })
+  
 
   databaseChanged <- reactive({
     data <- rawData()
@@ -42,13 +51,19 @@ server <- function(input, output) {
 	windowsChanged <- reactive({
 	  data.windowSize <<- input$windowSizeSlider
 	  data.horizon <<- input$horizonSlider
-    
+	  excludeInputChanged()
 	  resetWindows()
 	  resetARModels()
 	  resetComparison()
 	  resetNeuralNetworks()
-	  setNeuralNetworkExcludeVector()
 	})
+	
+	
+	idChanged <- reactive({
+	  data.idSelected <<- input$idSelect
+	})
+	
+	
 	
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
@@ -61,7 +76,18 @@ server <- function(input, output) {
 	  neuralNetwork.hiddenLayers <<- c(input$hiddenSliderInput)
 	  
 	  resetNeuralNetworks.hidden()
-	  setNeuralNetworkExcludeVector()
+	})
+	
+	excludeInputChanged <- reactive({
+	  
+	  neuralnetwork.isInputExcluded <<- input$inputCheckbox
+	  
+	  if(neuralnetwork.isInputExcluded == TRUE)
+	  {
+	    neuralNetwork.excludedMaxInputs <<- input$hiddenSliderInput
+	    neuralNetwork.excludedInput <<- input$hiddenSliderInput
+	  }
+	  resetNeuralNetworks()
 	})
 	
 	nnTypChanged <- reactive({
@@ -111,7 +137,8 @@ server <- function(input, output) {
 	  
 	  if (!is.null(data.sets))
 	  {
-	    selectInput("idSelect", "Dataset", names(data.sets))
+	    d <- data.sets[order(as.numeric(names(data.sets)))]   #sortieren von names(data.sets)
+	    selectInput("idSelect", "Dataset", names(d))
 	  }
 	})
 	
@@ -141,6 +168,19 @@ server <- function(input, output) {
 	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, input$windowSizeSlider, 3, step = 1)
 	})
 	
+	output$excludeInputSlider <- renderUI({
+	  if(input$inputCheckbox == TRUE)
+	  {
+	    if(input$windowSizeSlider > 1)
+	    {
+	      sliderInput("excludeInputSlider", "Exclude Max Inputs", 1, input$windowSizeSlider - 1, 3, step = 1) 
+	    }
+	    
+	  }
+	  
+	})
+
+	
 	
 	
 	
@@ -150,6 +190,7 @@ server <- function(input, output) {
 	
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
+	  
 		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
@@ -157,16 +198,19 @@ server <- function(input, output) {
 	
 	output$dataTable <- renderDataTable({
 	  databaseChanged()
+	  
 	  data.sets[[input$idSelect]]
 	})
 	
 	output$trainDataTable <- renderDataTable({
 	  windowsChanged()
+	  
 	  getTrainSet(input$idSelect)
 	})
 	
 	output$testDataTable <- renderDataTable({
 	  windowsChanged()
+	  
 	  getTestSet(input$idSelect)
 	})
 	
@@ -183,25 +227,26 @@ server <- function(input, output) {
 	    if(x == "forecast_one"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1', 
 	                                             plotOutput("neuralNetworkChart", height = "600px"),
-	                                             plotlyOutput('neuralNetworkForecastForEachChart')
+	                                             dataTableOutput("neuralNetworkExcludeInput")
+	                                             
 	      )
 	    }
 	    else if(x == "forecast_one_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /1 hidden', 
-	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"),       
-	                                             plotlyOutput('neuralNetworkForecastForEachHiddenChart')
+	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"),
+	                                             dataTableOutput("neuralNetworkHiddenExcludeInput")
 	      )
 	    }
 	    else if(x == "forecast_all"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n', 
-	                                             plotOutput("neuralNetworkChartForAll", height = "600px"), 
-	                                             plotlyOutput('neuralNetworkForecastForAllChart')
+	                                             plotOutput("neuralNetworkChartForAll", height = "600px"),
+	                                             dataTableOutput("neuralNetworkForAllExcludeInput")
 	      )
 	    } 
 	    else if(x == "forecast_all_hidden"){
 	      panels[[length(panels)+1]] <- tabPanel('Forecast /n hidden',
-	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"), 
-	                                             plotlyOutput('neuralNetworkForecastForAllHiddenChart')
+	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"),
+	                                             dataTableOutput("neuralNetworkHiddenForALLExcludeInput")
 	      )
 	    }
 	  })
@@ -224,49 +269,85 @@ server <- function(input, output) {
 	})
 	
 	output$neuralNetworkChart <- renderPlot({
+	  idChanged()
 	  windowsChanged()
+	  excludeInputChanged()
 	  excludeBiasChanged()
+	  
 		plot(getNeuralNetwork(input$idSelect), rep = 'best')
 	})
 	
 	output$neuralNetworkHiddenChart <- renderPlot({
+	  idChanged()
 	  windowsChanged()
+	  excludeInputChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  
 	  plot(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE), rep = 'best')
 	})
 	
 	output$neuralNetworkChartForAll <- renderPlot({
+	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
+	  excludeInputChanged()
+	  
 	  plot(getNeuralNetwork(NULL), rep = 'best')
 	})
 	
 	output$neuralNetworkHiddenChartForALL <- renderPlot({
+	  idChanged()
 	  windowsChanged()
+	  excludeInputChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  
 	  plot(getNeuralNetwork(NULL, hiddenLayers = TRUE), rep = 'best')
 	})
 	
-	output$neuralNetworkForecastForEachChart <- renderPlotly({
+	
+	
+	
+	
+	output$neuralNetworkExcludeInput <- renderDataTable({
+	  idChanged()
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect))
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(input$idSelect))
+	  return(FALSE)
 	})
 	
-	output$neuralNetworkForecastForEachHiddenChart <- renderPlotly({
+	output$neuralNetworkHiddenExcludeInput <- renderDataTable({
+	  idChanged()
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, hiddenLayers = TRUE))
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(input$idSelect, TRUE))
+	  return(FALSE)
 	})
 	
-	output$neuralNetworkForecastForAllChart <- renderPlotly({
+	output$neuralNetworkForAllExcludeInput <- renderDataTable({
+	  idChanged()
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE))
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(NULL))
+	  return(FALSE)
 	})
 	
-	output$neuralNetworkForecastForAllHiddenChart <- renderPlotly({
+	output$neuralNetworkHiddenForALLExcludeInput <- renderDataTable({
+	  idChanged()
 	  windowsChanged()
-	  return (getNeuralNetworkPredictionPlotly(input$idSelect, forAll = TRUE, hiddenLayers = FALSE))
+	  excludeInputChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  if(neuralnetwork.isInputExcluded) return(getNeuralNetworkInputErrorTable(NULL, TRUE))
+	  return(FALSE)
 	})
 
 	output$neuralNetworkForecastForTrialError <- renderPlotly({
@@ -281,32 +362,17 @@ server <- function(input, output) {
 	})
 
 	
+	
+	### UI elements: Reccurent Neural Network
+	
 
+	
+	
+	
 	
 	
 	### UI elements: Auto Regression
 	
-	
-	output$aRChart <- renderPlotly({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  getPlotlyModel(input$idSelect)
-	})
-	
-	output$arMLE <- renderDataTable({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  error_metric(getARModel(input$idSelect)$expected, getARModel(input$idSelect)$result)
-	})
-	
-	output$arCoef <- renderDataTable({
-	  windowsChanged()
-	  arModelBaseChanged()
-	  
-	  data.table(coef = getARModel(input$idSelect)$coef)
-	})
 	
 	output$arACF <- renderPlot({
 	  databaseChanged()
@@ -328,6 +394,7 @@ server <- function(input, output) {
 	
 	
 	output$forecastComparisionPlot <- renderPlotly({
+	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -362,6 +429,7 @@ server <- function(input, output) {
 	})
 	
 	output$compareError <- renderDataTable({
+	  idChanged()
 	  windowsChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
@@ -370,6 +438,7 @@ server <- function(input, output) {
 	})
 	
 	output$compareCoefficient <- renderDataTable({
+	  idChanged()
 	  databaseChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
@@ -379,12 +448,8 @@ server <- function(input, output) {
 	  getCoef(input$idSelect)
 	})
 	
-	output$ErrorMetricTable <- renderDataTable({
-	  result <- neuralNetworkTest()
-	  error_metric(result$net.result[,1], result$net.expected, result$net.mse)
-	})
-	
 	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
+	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -392,4 +457,26 @@ server <- function(input, output) {
 	  
 	  findDifferenceInNeuralNetworksWrtHiddenLayers()
 	})
+	
+	output$data_cpu_time <- renderPlotly({
+	  arModelBaseChanged()
+	  windowsChanged()
+	  
+	  resetARModels()
+	  resetNeuralNetworks()
+	  cpu_time[1] <- system.time(getNeuralNetwork(input$idSelect))[3] +0
+	  cpu_time[2] <- system.time(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE))[3] +0
+	  #cpu_time[3] <- system.time(getNeuralNetwork(NULL))[3] +0
+	  #cpu_time[4] <- as.numeric(system.time(getNeuralNetwork(NULL, hiddenLayers = TRUE))[3])*100
+	  cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
+    
+	  data <- unlist(cpu_time)
+	  
+	  p <- plot_ly(
+	    x = c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
+	    y = c(data),
+	    type = "bar"
+	  )
+	  p
+	  })
 }

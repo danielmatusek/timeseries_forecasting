@@ -18,6 +18,7 @@ ui <- dashboardPage(skin = 'purple',
 	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+	              menuItem("Reccurent NN", tabName = "reccurentNeuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	              menuItem("Hidden Nodes", tabName = "hNodesOptimization", icon = icon("stethoscope")),
@@ -39,6 +40,7 @@ ui <- dashboardPage(skin = 'purple',
 		        fileInput('dataFile', NULL,
 		          accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
 		        ),
+		        checkboxInput("use_data", "Use alipay_base Dataset", FALSE),
 		        uiOutput('idColumnSelect'),
 		        uiOutput("x_axis"),
 		        uiOutput("y_axis")
@@ -48,9 +50,11 @@ ui <- dashboardPage(skin = 'purple',
 		        uiOutput('windowSizeSlider'),
 		        uiOutput('horizonSlider')
 		      ),
-		      column(3,
-		        h3('Neural Network', style = 'margin-bottom: 20px;'),
+		      column(3, 
+		        h3('Neural Network', style = 'margin-bottom: 10px;'),
 		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
+		        checkboxInput('inputCheckbox', 'Exclude Input', FALSE),
+		        uiOutput('excludeInputSlider'),
 		        uiOutput('hiddenSliderInput'),
 		        checkboxGroupInput("variable_nn", "neural network forecast for",
 		                           c("one Time Series" = "forecast_one",
@@ -87,20 +91,17 @@ ui <- dashboardPage(skin = 'purple',
 			),
 
 			tabItem(tabName = "neuralNetwork",
-			      #  fluidPage( #fluidRow(
 			        uiOutput("neuralNetwork_tabs")
-			       # )
 			),
+			
+			
+			tabItem(tabName = "reccurentNeuralNetwork",
+			        dataTableOutput("reccurentNeuralNetwork_tab")
+			),
+			
 			
 			tabItem(tabName = "aRModel",
 			        tabBox(width = NULL,
-			               tabPanel("Chart",
-			                        plotlyOutput("aRChart", height = "600px")
-			               ),
-			               tabPanel("Statistic",
-			                        dataTableOutput("arMLE"),
-			                        dataTableOutput("arCoef")
-			               ),
 			               tabPanel("Time Series Analysis",
 			                        plotOutput("arACF"),
 			                        plotOutput("arPACF")
@@ -124,12 +125,16 @@ ui <- dashboardPage(skin = 'purple',
 			               tabPanel("Average Error",
 			                        dataTableOutput("compareError")
 			               ),
+			          
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
 			               ),
 			          tabPanel('NN Dif. wrt HL',
 			            dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
-                )
+                ),
+			         tabPanel('CPU time',
+			                  plotlyOutput('data_cpu_time')
+			         )
 			        )
 			),
 			tabItem(tabName="hNodesOptimization",
