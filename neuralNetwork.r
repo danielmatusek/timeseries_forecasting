@@ -311,38 +311,41 @@ changedExcludedInput <- function(model)
 # it eliminates every input one times and shows error in a matrix -> x - which input Node was eliminated, y - which error has the model
 getNeuralNetworkInputErrorTable <- function(id, hiddenLayers = FALSE)
 {
-  eM <- matrix(nrow = data.windowSize, ncol = 2)
-  for(i in 1 : data.windowSize)
+  
+  eM <- matrix(nrow = data.windowSize + 1, ncol = 2) # plus 1 for the original NN
+  for(i in 1 : (data.windowSize + 1))
   {
-    eM[i,1] = i
+    j <- i - 1 
+    eM[i,1] = j
+    
     
       if (is.null(id))
       {
         trainSetsCombined <- getAllTrainSetsCombined()
         if (hiddenLayers)
         {
-          eM[i,2] <- testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers, i), data.idSelected)$mse 
+          eM[i,2] <- testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers, j), data.idSelected)$mse 
         }
         else
         {
-          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, c(0), i), data.idSelected)$mse 
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(trainSetsCombined, c(0), j), data.idSelected)$mse 
         }
       }
       else
       {
         if (hiddenLayers)
         {
-          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers, i), id)$mse 
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers, j), id)$mse 
         }
         else
         {
-          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), c(0), i), id)$mse 
+          eM[i,2] <-  testNeuralNetwork(trainNeuralNetwork(getTrainSet(id), c(0), j), id)$mse 
           
         }
       }
   }
   
-  return(data.table(inputNode = eM[nrow(eM):1, 1], "mse error" = eM[,2]))
+  return(data.table(inputNode = eM[,1], "mse error" = eM[,2]))
 }
 
 
