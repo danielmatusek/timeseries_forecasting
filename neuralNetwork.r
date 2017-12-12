@@ -8,6 +8,7 @@ neuralNetwork.excludedMaxInputs <<- 0
 neuralNetwork.excludedInput <<- 0
 neuralNetwork.excludedPastError <<- -1
 neuralNetwork.excludedPastModel <<- NULL
+neuralnetwork.excludeInputMax <<- TRUE
 
 neuralNetwork.enableForEach <<- TRUE
 neuralNetwork.enableForEach.hidden <<- TRUE
@@ -83,7 +84,6 @@ setNeuralNetworkExcludeVector <- function(hidden, excludeInputNodes = c(0)) {
     }
   }
   neuralNetwork.excludeVector <<- sort(neuralNetwork.excludeVector, decreasing = FALSE)
-  
 }
 
 getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
@@ -113,7 +113,15 @@ getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
       }
       idx <- c(vec,which(sumVector == 0))
       sumVector <- replace(sumVector, sumVector==0, NaN)
-      idx <- c(idx, which(sumVector == min(sumVector, na.rm = TRUE)))
+      if(neuralnetwork.excludeInputMax)
+      {
+        idx <- c(idx, which(sumVector == max(sumVector, na.rm = TRUE)))
+      }
+      else
+      {
+        idx <- c(idx, which(sumVector == min(sumVector, na.rm = TRUE)))
+      }
+      
       
     }
     else
@@ -138,7 +146,15 @@ getMinimalWeightVector <- function(hidden, excludeInputNode = c(0))
     {
       ws <- abs(neuralNetwork.excludedPastModel$weights[[1]][[1]][2 : (data.windowSize + 1)]) # get weight input vector without bias
       vec <- which(is.na(ws)) + 1 # add bias offset
-      vec[(length(vec) + 1)] = which(ws == min(ws, na.rm = TRUE)) + 1 # add bias offset
+      if(neuralnetwork.excludeInputMax)
+      {
+        vec[(length(vec) + 1)] = which(ws == max(ws, na.rm = TRUE)) + 1 # add bias offset
+      }
+      else
+      {
+        vec[(length(vec) + 1)] = which(ws == min(ws, na.rm = TRUE)) + 1 # add bias offset
+      }
+      
     }
     else
     { 
@@ -537,6 +553,37 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
 getHlOptimizationErrorTable <- function(id)
 {
-  print(neuralNetwork.hlOptimizationErrorVector)
-  return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
+  #print(neuralNetwork.hlOptimizationErrorVector)
+  #return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
+
+  row <- (length(neuralNetwork.hlOptimizationErrorVector))
+
+  eM <- matrix(nrow = row, ncol = 3) # plus 1 for the original NN
+  n_firstlayer <- neuralNetwork.hlOptimization[1]
+  n_seclayer <- neuralNetwork.hlOptimization[2]
+
+
+  for(i in 1 : row)
+  {
+    eM[i,3] <- neuralNetwork.hlOptimizationErrorVector[i]
+  }
+
+  first_index <- n_firstlayer + 1
+  eM[1,1] <- 0
+  eM[1,2] <- 0
+  for(k in 1 : first_index)
+  {
+    eM[k+1,1] <- k
+    eM[k+1,2] <- 0
+  }
+
+  second_index <- n_seclayer
+  for(l in 1 : second_index)
+  {
+    offset <- first_index + l
+    eM[offset, 1] <- n_firstlayer
+    eM[offset, 2] <- l
+  }
+  
+  return(data.table("first layer" = eM[,1], "second layer" = eM[,2], "mse" = eM[,3]))
 }

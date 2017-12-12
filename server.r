@@ -86,6 +86,7 @@ server <- function(input, output) {
 	  {
 	    neuralNetwork.excludedMaxInputs <<- input$hiddenSliderInput
 	    neuralNetwork.excludedInput <<- input$hiddenSliderInput
+	    neuralnetwork.excludeInputMax <<- input$inputMaxCheckbox
 	  }
 	  resetNeuralNetworks()
 	})
@@ -178,6 +179,7 @@ server <- function(input, output) {
 	    if(input$windowSizeSlider > 1)
 	    {
 	      sliderInput("excludeInputSlider", "Exclude Max Inputs", 1, input$windowSizeSlider - 1, 3, step = 1) 
+	      checkboxInput('inputMaxCheckbox', 'Exclude MAX Input', TRUE)
 	    }
 	    
 	  }
@@ -368,12 +370,14 @@ server <- function(input, output) {
 
 	output$neuralNetworkForecastForTrialError <- renderPrint({
 		windowsChanged()
+		idChanged()
 		neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
 		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill=FALSE)
 	})
 
 	output$neuralNetworkTableForTrialError <- renderDataTable({
 		windowsChanged()
+		idChanged()
 		getHlOptimizationErrorTable(input$idSelect)
 	})
 
