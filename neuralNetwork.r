@@ -294,7 +294,7 @@ changedExcludedInput <- function(model)
   print(model$weights)
   
   
-  if((neuralNetwork.excludedPastError < 0) || (neuralNetwork.excludedInput > 0 && error <= neuralNetwork.excludedPastError))
+  if((neuralNetwork.excludedPastError < 0) || (neuralNetwork.excludedInput > 0 && error <= (neuralNetwork.excludedPastError)))
   {
     neuralNetwork.excludedPastError <<- error
     neuralNetwork.excludedPastModel <<- model
@@ -317,7 +317,6 @@ getNeuralNetworkInputErrorTable <- function(id, hiddenLayers = FALSE)
   {
     j <- i - 1 
     eM[i,1] = j
-    
     
       if (is.null(id))
       {
