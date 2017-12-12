@@ -370,12 +370,14 @@ server <- function(input, output) {
 
 	output$neuralNetworkForecastForTrialError <- renderPrint({
 		windowsChanged()
+		idChanged()
 		neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
 		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill=FALSE)
 	})
 
 	output$neuralNetworkTableForTrialError <- renderDataTable({
 		windowsChanged()
+		idChanged()
 		getHlOptimizationErrorTable(input$idSelect)
 	})
 
