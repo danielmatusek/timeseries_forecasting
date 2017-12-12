@@ -260,7 +260,8 @@ server <- function(input, output) {
 			if(x == "optimize_hidden_layer"){
 	      panels[[length(panels)+1]] <- tabPanel('HiddenLayer Trial and Error', 
 	                                             plotOutput("neuralNetworkChartHiddenTrialError", height = "600px"),
-	                                             h5(textOutput(('neuralNetworkForecastForTrialError')))
+	                                             h5(textOutput(('neuralNetworkForecastForTrialError'))),
+																							 dataTableOutput("neuralNetworkTableForTrialError")
 	      )
 			}
 		})
@@ -363,6 +364,10 @@ server <- function(input, output) {
 
 	output$neuralNetworkForecastForTrialError <- renderPrint({
 		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill=FALSE)
+	})
+
+	output$neuralNetworkTableForTrialError <- renderDataTable({
+		getHlOptimizationErrorTable(input$idSelect)
 	})
 
 	
