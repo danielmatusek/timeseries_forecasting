@@ -374,7 +374,19 @@ server <- function(input, output) {
 	
 	### UI elements: Reccurent Neural Network
 	
-
+output$reccurentNeuralNetwork_tab <- renderDataTable({
+  idChanged()
+  windowsChanged()
+  excludeInputChanged()
+  excludeBiasChanged()
+  hiddenLayersChanged()
+  
+  m <- trainRNN(input$idSelect, input$hiddenSliderInput)
+  t <- testRNN(m, input$idSelect)
+  
+  data.table(result = t$result, expected = t$expected)
+  
+})
 	
 	
 	
