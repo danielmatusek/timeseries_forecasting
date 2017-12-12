@@ -23,7 +23,8 @@ ui <- dashboardPage(skin = 'purple',
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
 	      hr(),
-		            uiOutput("idSelectBox")
+		            uiOutput("idSelectBox"),
+	              checkboxInput('errorTypCheck', 'Error eine Zeitreihe', TRUE)
 		  )
 	  )
 	),

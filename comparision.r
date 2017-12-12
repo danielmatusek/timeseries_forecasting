@@ -21,12 +21,21 @@ error_metric <- function(testResults)
 
 applyMetric <- function(getTestResultsFUN, FUN)
 {
-  unlist(lapply(names(data.sets), function(id) {
-    testResults <- getTestResultsFUN(id)
-    unlist(lapply(1:length(testResults$expected), function(i) {
-      FUN(testResults$expected[[i]], testResults$result[[i]])
+  if(!errorTypCheck){
+    unlist(lapply(names(data.sets), function(id) {
+      testResults <- getTestResultsFUN(id)
+      unlist(lapply(1:length(testResults$expected), function(i) {
+        FUN(testResults$expected[[i]], testResults$result[[i]])
+      }))
     }))
-  }))
+  }else{
+
+      testResults <- getTestResultsFUN(data.idSelected)
+      unlist(lapply(1:length(testResults$expected), function(i) {
+        FUN(testResults$expected[[i]], testResults$result[[i]])
+      }))
+
+  }
 }
 
 getErrorMetric <- function(FUN)

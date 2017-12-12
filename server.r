@@ -104,7 +104,11 @@ server <- function(input, output) {
 	  resetARModels()
 	})
 	
-	
+	errorTypChanged <- reactive({
+	  idChanged()
+	  resetComparison()
+	  errorTypCheck <<- input$errorTypCheck
+	})
 	
 	
 	
@@ -363,11 +367,13 @@ server <- function(input, output) {
 	})
 
 	output$neuralNetworkForecastForTrialError <- renderPrint({
+		windowsChanged()
 		neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
 		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill=FALSE)
 	})
 
 	output$neuralNetworkTableForTrialError <- renderDataTable({
+		windowsChanged()
 		getHlOptimizationErrorTable(input$idSelect)
 	})
 
@@ -414,7 +420,6 @@ output$reccurentNeuralNetwork_tab <- renderDataTable({
 	
 	### UI elements: Comparision
 	
-	
 	output$forecastComparisionPlot <- renderPlotly({
 	  idChanged()
 	  windowsChanged()
@@ -430,6 +435,7 @@ output$reccurentNeuralNetwork_tab <- renderDataTable({
 	  windowsChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  errorTypChanged()
 	  
 	  getBoxplot('mse')
 	})
@@ -438,6 +444,7 @@ output$reccurentNeuralNetwork_tab <- renderDataTable({
 	  windowsChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  errorTypChanged()
 	  
 	  getBoxplot('rmse')
 	})
@@ -446,6 +453,7 @@ output$reccurentNeuralNetwork_tab <- renderDataTable({
 	  windowsChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  errorTypChanged()
 	  
 	  getBoxplot('smape')
 	})
@@ -486,16 +494,38 @@ output$reccurentNeuralNetwork_tab <- renderDataTable({
 	  
 	  resetARModels()
 	  resetNeuralNetworks()
-	  cpu_time[1] <- system.time(getNeuralNetwork(input$idSelect))[3] +0
-	  cpu_time[2] <- system.time(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE))[3] +0
-	  #cpu_time[3] <- system.time(getNeuralNetwork(NULL))[3] +0
-	  #cpu_time[4] <- as.numeric(system.time(getNeuralNetwork(NULL, hiddenLayers = TRUE))[3])*100
-	  cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
+
+	  nnTypChanged()
+    x <- list()
+	  if(neuralNetwork.enableForEach){
+	    cpu_time[1] <- system.time(getNeuralNetwork(input$idSelect))[3] +0
+	    x <- c(x,"one modell")
+	  } 
+	  if(neuralNetwork.enableForEach.hidden){
+	    cpu_time[2] <- system.time(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE))[3] +0
+	    x <- c(x,"one modell hidden") 
+	  } 
+	  if(neuralNetwork.enableForAll){
+	    cpu_time[3] <- system.time(getNeuralNetwork(NULL))[3] +0
+	    x <- c(x,"all time series without hidden") 
+	  } 
+	  if(neuralNetwork.enableForAll.hidden){
+	    cpu_time[4] <- as.numeric(system.time(getNeuralNetwork(NULL, hiddenLayers = TRUE))[3])*100
+	    x <- c(x,"all time series with hidden") 
+	  }     
+    resetARModels()
+#	  cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
+#	  resetARModels()
+#   getARModel(input$idSelect)
+    cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
+    x <- c(x,"AR")
+    data <- unlist(cpu_time)
     
-	  data <- unlist(cpu_time)
+    #sort x
+    x <- factor(x, levels = unique(x)[order(c(data), decreasing = TRUE)])
 	  
 	  p <- plot_ly(
-	    x = c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
+	    x = x, #c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
 	    y = c(data),
 	    type = "bar"
 	  )
