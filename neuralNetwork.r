@@ -537,6 +537,37 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
 getHlOptimizationErrorTable <- function(id)
 {
-  print(neuralNetwork.hlOptimizationErrorVector)
-  return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
+  #print(neuralNetwork.hlOptimizationErrorVector)
+  #return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
+
+  row <- (length(neuralNetwork.hlOptimizationErrorVector))
+
+  eM <- matrix(nrow = row, ncol = 3) # plus 1 for the original NN
+  n_firstlayer <- neuralNetwork.hlOptimization[1]
+  n_seclayer <- neuralNetwork.hlOptimization[2]
+
+
+  for(i in 1 : row)
+  {
+    eM[i,3] <- neuralNetwork.hlOptimizationErrorVector[i]
+  }
+
+  first_index <- n_firstlayer + 1
+  eM[1,1] <- 0
+  eM[1,2] <- 0
+  for(k in 1 : first_index)
+  {
+    eM[k+1,1] <- k
+    eM[k+1,2] <- 0
+  }
+
+  second_index <- n_seclayer
+  for(l in 1 : second_index)
+  {
+    offset <- first_index + l
+    eM[offset, 1] <- n_firstlayer
+    eM[offset, 2] <- l
+  }
+  
+  return(data.table("first layer" = eM[,1], "second layer" = eM[,2], "mse" = eM[,3]))
 }
