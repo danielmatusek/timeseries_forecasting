@@ -12,8 +12,13 @@ trainRNN <- function(id,  hiddenLayers = c(0))
   traininput <- trainset[,2:length(trainset)]
   traintarget <- trainset[,1]
 
+  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
+
+  print(myset)
+
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
-  rnn <- RSNNS::elman(x = traininput, y = traintarget, size = neuralNetwork.hiddenLayers)
+  rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
+                      inputsTest = myset$inputsTest, targetsTest = myset$targetsTest)
  
   return(rnn)
 }
@@ -21,12 +26,15 @@ trainRNN <- function(id,  hiddenLayers = c(0))
 testRNN <- function(model, id)
 {
   testset <- getTestSet(id)
+  print(testset)
   expected <- testset[,1]
   
   result <- predict(model, testset[,2 : length(testset)])
   
   
   mse <- sum((expected - result)^2) / nrow(result)
+  print(expected)
+  print(result)
   structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')
 }
 
@@ -52,10 +60,19 @@ trainMLP <- function(id, hiddenLayers = c(0))
 {
   set.seed(1)
   trainset <- getTrainSet(id)
+  traininput <- trainset[,2:length(trainset)]
+  traintarget <- trainset[,1]
+
+  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
+  myset <- RSNNS::normTrainingAndTestSet(myset)
+
+  print(myset)
+
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
-  mlp <- RSNNS::mlp(x = trainset[,2:length(trainset)], y = trainset[,1], size = neuralNetwork.hiddenLayers, initFunc = "Randomize_Weights", 
-        learnFunc = "Std_Backpropagation", linOut = TRUE)
- 
+  mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = 1, learnFuncParams=c(0.05),
+                      inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
+                      linOut = TRUE, maxit = 500)
+  browser()
   return(mlp)
 }
 
