@@ -41,7 +41,9 @@ ui <- dashboardPage(skin = 'purple',
 		        fileInput('dataFile', NULL,
 		          accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
 		        ),
-		        checkboxInput("use_data", "Use alipay_base Dataset", FALSE),
+		        selectInput("use_data","Use Dataset:",c("load csv"="csv","alipay" = "alipay","metadata_complete"="metadata")),
+		      #  checkboxInput("use_data_alipay", "Use alipay_base Dataset", FALSE),
+		      #  checkboxInput("use_data_meterdata", "Use meterdata_complete_series Dataset", FALSE),
 		        uiOutput('idColumnSelect'),
 		        uiOutput("x_axis"),
 		        uiOutput("y_axis")
