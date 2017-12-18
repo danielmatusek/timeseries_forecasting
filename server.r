@@ -18,28 +18,24 @@ server <- function(input, output) {
   
   ### Settings Changed Events
   
-  
   rawData <- reactive({
     file <- input$dataFile
-    
-    if ((is.null(file) && !input$use_data_alipay && !input$use_data_meterdata) || (input$use_data_alipay && input$use_data_meterdata))
+    if (is.null(file) && input$use_data=="csv")
     {
       return(NULL)
     }
     #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    
-    if(input$use_data_alipay){
+    if(input$use_data=="alipay"){
       data  <- readRDS("../resources/alipay_base.rdata")
-      #updateCheckboxInput(session, "use_data_meterdata", value = FALSE)
-    } else if (input$use_data_meterdata){
+    } 
+    if (input$use_data=="metadata"){
       data  <- readRDS("../resources/meterdata_complete_series.RData")
-      #updateCheckboxInput(session, "use_data_alipay", value = FALSE)
     }
-    else if (!input$use_data_alipay && !input$use_data_meterdata){
+    if (input$use_data=="csv"){
       data  <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
     }
     
-    return(data )
+    return(data)
   })
   
 
