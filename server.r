@@ -20,20 +20,25 @@ server <- function(input, output) {
   
   
   rawData <- reactive({
-  file <- input$dataFile
+    file <- input$dataFile
     
-    if (is.null(file) && !input$use_data)
+    if ((is.null(file) && !input$use_data_alipay && !input$use_data_meterdata) || (input$use_data_alipay && input$use_data_meterdata))
     {
       return(NULL)
     }
-   #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-      
-    if(input$use_data){
+    #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+    
+    if(input$use_data_alipay){
       data  <- readRDS("../resources/alipay_base.rdata")
-    }else{
+      #updateCheckboxInput(session, "use_data_meterdata", value = FALSE)
+    } else if (input$use_data_meterdata){
+      data  <- readRDS("../resources/meterdata_complete_series.RData")
+      #updateCheckboxInput(session, "use_data_alipay", value = FALSE)
+    }
+    else if (!input$use_data_alipay && !input$use_data_meterdata){
       data  <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
     }
-
+    
     return(data )
   })
   
