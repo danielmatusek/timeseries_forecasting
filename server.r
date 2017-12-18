@@ -402,8 +402,7 @@ server <- function(input, output) {
 		m <- trainRNN(input$idSelect, input$hiddenSliderInput)
 		t <- testRNN(m, input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)
-		
+		data.table(result = t$result, expected = t$expected)		
 	})
 
 	#MLP with RSNNS
@@ -418,8 +417,7 @@ server <- function(input, output) {
 		m <- trainMLP(input$idSelect, input$hiddenSliderInput)
 		t <- testMLP(m, input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)
-		
+		data.table(result = t$result, expected = t$expected)		
 	})
 	
 	
