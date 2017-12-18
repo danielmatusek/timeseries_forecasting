@@ -10,6 +10,7 @@ source('autoRegression.r')
 source('neuralNetwork.r')
 source('comparision.r')
 source('recNeuralNetwork.r')
+source('plot.rsnns.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 cpu_time <- list()
@@ -397,6 +398,16 @@ output$reccurentNeuralNetwork_tab <- renderDataTable({
   
   data.table(result = t$result, expected = t$expected)
   
+})
+
+output$recPlot <- renderPlot({
+  idChanged()
+  windowsChanged()
+  excludeInputChanged()
+  excludeBiasChanged()
+  hiddenLayersChanged()
+  
+  plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
 })
 	
 	

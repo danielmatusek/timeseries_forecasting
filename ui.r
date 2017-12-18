@@ -98,7 +98,8 @@ ui <- dashboardPage(skin = 'purple',
 			
 			
 			tabItem(tabName = "reccurentNeuralNetwork",
-			        dataTableOutput("reccurentNeuralNetwork_tab")
+			        dataTableOutput("reccurentNeuralNetwork_tab"),
+			  plotOutput('recPlot', height = '600px')
 			),
 			
 			
