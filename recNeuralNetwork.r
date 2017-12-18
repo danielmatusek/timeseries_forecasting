@@ -13,12 +13,13 @@ trainRNN <- function(id,  hiddenLayers = c(0))
   traintarget <- trainset[,1]
 
   myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
+  myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
   print(myset)
 
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
   rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
-                      inputsTest = myset$inputsTest, targetsTest = myset$targetsTest)
+                      inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.1), maxit = 500)
  
   return(rnn)
 }
@@ -72,7 +73,6 @@ trainMLP <- function(id, hiddenLayers = c(0))
   mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = 1, learnFuncParams=c(0.05),
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
                       linOut = TRUE, maxit = 500, hiddenActFunc = "Act_Identity")
-  browser()
   return(mlp)
 }
 
