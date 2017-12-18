@@ -18,7 +18,7 @@ ui <- dashboardPage(skin = 'purple',
 	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
-	              menuItem("Reccurent NN", tabName = "reccurentNeuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+	              menuItem("RSNNS Package", tabName = "rsnnspackage", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
@@ -98,8 +98,15 @@ ui <- dashboardPage(skin = 'purple',
 			),
 			
 			
-			tabItem(tabName = "reccurentNeuralNetwork",
+			tabItem(tabName = "rsnnspackage",
+				tabBox(width = NULL,
+					tabPanel("RNN",
 			        dataTableOutput("reccurentNeuralNetwork_tab")
+					),
+					tabPanel("MLP",
+							dataTableOutput("rsnns_mlp_tab")
+					)
+				)
 			),
 			
 			
