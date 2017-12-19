@@ -70,11 +70,11 @@ trainMLP <- function(id, hiddenLayers = TRUE)
   {
     mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers, learnFuncParams=c(0.05),
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
-                      linOut = TRUE, maxit = 500, hiddenActFunc = "Act_Identity")
+                      linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
   } else {
     mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = NULL, learnFuncParams=c(0.05),
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
-                      linOut = TRUE, maxit = 500, hiddenActFunc = "Act_Identity")
+                      linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
   }
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
   
