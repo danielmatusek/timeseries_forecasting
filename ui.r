@@ -101,7 +101,7 @@ ui <- dashboardPage(skin = 'purple',
 			
 			tabItem(tabName = "rsnnspackage",
 				tabBox(width = NULL,
-					tabPanel("RNN",
+					tabPanel("RNN/Elman",
 			        dataTableOutput("reccurentNeuralNetwork_tab"),
 							plotOutput('recPlot', height = '600px')
 					),
