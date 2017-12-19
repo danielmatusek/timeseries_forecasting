@@ -266,6 +266,16 @@ getForecastComparisionPlot <- function(id) {
       getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$result)
     prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
+
+  #Add RNN from RSNNS Package
+  prediction$rsnnsrnn <- append(rep(NA, data.horizon),
+    testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$result)
+    prediction$rsnnsrnn[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+
+  #Add MLP from RSNNS Package
+  prediction$rsnnsmlp <- append(rep(NA, data.horizon),
+    testMLP(trainMLP(id, neuralNetwork.hiddenLayers), id)$result)
+    prediction$rsnnsmlp[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Plot the data
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
@@ -286,6 +296,8 @@ getForecastComparisionPlot <- function(id) {
   {
     p <- p %>% add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
   }
+  p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS rnn', line = list(color = 'rgb(150, 150, 0)'))
+  p <- p %>% add_trace(y = ~rsnnsmlp, name = 'RSNNS mlp', line = list(color = 'rgb(75, 75, 0)'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }

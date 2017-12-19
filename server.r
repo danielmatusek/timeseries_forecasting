@@ -10,6 +10,7 @@ source('autoRegression.r')
 source('neuralNetwork.r')
 source('comparision.r')
 source('recNeuralNetwork.r')
+source('plot.rsnns.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 cpu_time <- list()
@@ -18,28 +19,24 @@ server <- function(input, output) {
   
   ### Settings Changed Events
   
-  
   rawData <- reactive({
     file <- input$dataFile
-    
-    if ((is.null(file) && !input$use_data_alipay && !input$use_data_meterdata) || (input$use_data_alipay && input$use_data_meterdata))
+    if (is.null(file) && input$use_data=="csv")
     {
       return(NULL)
     }
     #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    
-    if(input$use_data_alipay){
+    if(input$use_data=="alipay"){
       data  <- readRDS("../resources/alipay_base.rdata")
-      #updateCheckboxInput(session, "use_data_meterdata", value = FALSE)
-    } else if (input$use_data_meterdata){
+    } 
+    if (input$use_data=="metadata"){
       data  <- readRDS("../resources/meterdata_complete_series.RData")
-      #updateCheckboxInput(session, "use_data_alipay", value = FALSE)
     }
-    else if (!input$use_data_alipay && !input$use_data_meterdata){
+    if (input$use_data=="csv"){
       data  <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
     }
     
-    return(data )
+    return(data)
   })
   
 
@@ -101,6 +98,8 @@ server <- function(input, output) {
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
+		rsnns.rnn <<- 'rsnns_rnn' %in% input$variable_nn
+		rsnns.mlp <<- 'rsnns_mlp' %in% input$variable_nn
 		resetComparison()
 	})
 	
@@ -418,6 +417,16 @@ server <- function(input, output) {
 		t <- testMLP(m, input$idSelect)
 		
 		data.table(result = t$result, expected = t$expected)		
+	})
+
+	output$recPlot <- renderPlot({
+  	idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
+  
+  	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
 	})
 	
 	
