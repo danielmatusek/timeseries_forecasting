@@ -105,8 +105,13 @@ ui <- dashboardPage(skin = 'purple',
 			        dataTableOutput("reccurentNeuralNetwork_tab"),
 							plotOutput('recPlot', height = '600px')
 					),
-					tabPanel("MLP",
-							dataTableOutput("rsnns_mlp_tab")
+					tabPanel("MLP with Hidden Layer",
+							dataTableOutput("rsnns_mlp_tab"),
+							plotOutput('mlp_plot')
+					),
+					tabPanel("MLP without Hidden Layer",
+							dataTableOutput("rsnns_mlp_tab_without_hidden"),
+							plotOutput('mlp_plot_without_hidden')
 					)
 				)
 			),

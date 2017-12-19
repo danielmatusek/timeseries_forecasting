@@ -404,7 +404,7 @@ server <- function(input, output) {
 		data.table(result = t$result, expected = t$expected)		
 	})
 
-	#MLP with RSNNS
+	#MLP with RSNNS and with Hidden Layer
 
 	output$rsnns_mlp_tab <- renderDataTable({
 		idChanged()
@@ -413,7 +413,21 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, input$hiddenSliderInput)
+		m <- trainMLP(input$idSelect)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
+	#MLP with RSNSS and without Hidden Layer
+	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect, hiddenLayers = TRUE)
 		t <- testMLP(m, input$idSelect)
 		
 		data.table(result = t$result, expected = t$expected)		
@@ -427,6 +441,26 @@ server <- function(input, output) {
   	hiddenLayersChanged()
   
   	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+	})
+
+	output$mlp_plot <- renderPlot({
+  	idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
+  
+  	plot(trainMLP(input$idSelect), paste0('xt', 1:data.windowSize))
+	})
+
+	output$mlp_plot_without_hidden <- renderPlot({
+  	idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
+  
+  	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
 	})
 	
 	
