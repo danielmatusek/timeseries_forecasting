@@ -10,6 +10,7 @@ source('autoRegression.r')
 source('neuralNetwork.r')
 source('comparision.r')
 source('recNeuralNetwork.r')
+source('plot.rsnns.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 cpu_time <- list()
@@ -18,23 +19,24 @@ server <- function(input, output) {
   
   ### Settings Changed Events
   
-  
   rawData <- reactive({
-  file <- input$dataFile
-    
-    if (is.null(file) && !input$use_data)
+    file <- input$dataFile
+    if (is.null(file) && input$use_data=="csv")
     {
       return(NULL)
     }
-   #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-      
-    if(input$use_data){
+    #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
+    if(input$use_data=="alipay"){
       data  <- readRDS("../resources/alipay_base.rdata")
-    }else{
+    } 
+    if (input$use_data=="metadata"){
+      data  <- readRDS("../resources/meterdata_complete_series.RData")
+    }
+    if (input$use_data=="csv"){
       data  <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
     }
-
-    return(data )
+    
+    return(data)
   })
   
 
@@ -104,6 +106,8 @@ server <- function(input, output) {
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
+		rsnns.rnn <<- 'rsnns_rnn' %in% input$variable_nn
+		rsnns.mlp <<- 'rsnns_mlp' %in% input$variable_nn
 		resetComparison()
 	})
 	
@@ -466,21 +470,81 @@ server <- function(input, output) {
 
 	
 	
-	### UI elements: Reccurent Neural Network
+	### UI elements: RSNNS Package
+
+	#Recurrent Neural Network
 	
-output$reccurentNeuralNetwork_tab <- renderDataTable({
-  idChanged()
-  windowsChanged()
-  excludeInputChanged()
-  excludeBiasChanged()
-  hiddenLayersChanged()
+	output$reccurentNeuralNetwork_tab <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainRNN(input$idSelect, input$hiddenSliderInput)
+		t <- testRNN(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
+	#MLP with RSNNS and with Hidden Layer
+
+	output$rsnns_mlp_tab <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
+	#MLP with RSNSS and without Hidden Layer
+	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
+	output$recPlot <- renderPlot({
+  	idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
   
-  m <- trainRNN(input$idSelect, input$hiddenSliderInput)
-  t <- testRNN(m, input$idSelect)
+  	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+	})
+
+	output$mlp_plot <- renderPlot({
+  	idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
   
-  data.table(result = t$result, expected = t$expected)
+  	plot(trainMLP(input$idSelect), paste0('xt', 1:data.windowSize))
+	})
+
+	output$mlp_plot_without_hidden <- renderPlot({
+  	idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
   
-})
+  	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
+	})
 	
 	
 	

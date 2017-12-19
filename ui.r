@@ -18,7 +18,7 @@ ui <- dashboardPage(skin = 'purple',
 	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
 		            menuItem("Neural Network", tabName = "neuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
-	              menuItem("Reccurent NN", tabName = "reccurentNeuralNetwork", icon = icon("sitemap", "fa-rotate-90")),
+	              menuItem("RSNNS Package", tabName = "rsnnspackage", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
@@ -41,7 +41,9 @@ ui <- dashboardPage(skin = 'purple',
 		        fileInput('dataFile', NULL,
 		          accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
 		        ),
-		        checkboxInput("use_data", "Use alipay_base Dataset", FALSE),
+		        selectInput("use_data","Use Dataset:",c("load csv"="csv","alipay" = "alipay","metadata_complete"="metadata")),
+		      #  checkboxInput("use_data_alipay", "Use alipay_base Dataset", FALSE),
+		      #  checkboxInput("use_data_meterdata", "Use meterdata_complete_series Dataset", FALSE),
 		        uiOutput('idColumnSelect'),
 		        uiOutput("x_axis"),
 		        uiOutput("y_axis")
@@ -97,8 +99,21 @@ ui <- dashboardPage(skin = 'purple',
 			),
 			
 			
-			tabItem(tabName = "reccurentNeuralNetwork",
-			        dataTableOutput("reccurentNeuralNetwork_tab")
+			tabItem(tabName = "rsnnspackage",
+				tabBox(width = NULL,
+					tabPanel("RNN",
+			        dataTableOutput("reccurentNeuralNetwork_tab"),
+							plotOutput('recPlot', height = '600px')
+					),
+					tabPanel("MLP with Hidden Layer",
+							dataTableOutput("rsnns_mlp_tab"),
+							plotOutput('mlp_plot')
+					),
+					tabPanel("MLP without Hidden Layer",
+							dataTableOutput("rsnns_mlp_tab_without_hidden"),
+							plotOutput('mlp_plot_without_hidden')
+					)
+				)
 			),
 			
 			
