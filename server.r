@@ -427,7 +427,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = TRUE)
+		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
 		t <- testMLP(m, input$idSelect)
 		
 		data.table(result = t$result, expected = t$expected)		

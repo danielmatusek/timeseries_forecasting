@@ -16,11 +16,10 @@ trainRNN <- function(id, hiddenLayers = c(0))
   myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
   #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
-  print(myset)
-
   rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
-                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.05), 
-                    maxit = 500, learnFunc = "Rprop")
+                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
+                    maxit = 500)
+  rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
   
   return(rnn)
@@ -36,8 +35,6 @@ testRNN <- function(model, id)
   
   
   mse <- sum((expected - result)^2) / nrow(result)
-  print(expected)
-  print(result)
   structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')
 }
 
@@ -69,15 +66,13 @@ trainMLP <- function(id, hiddenLayers = TRUE)
   myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
   myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
-  print(myset)
-
   if(hiddenLayers)
   {
     mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers, learnFuncParams=c(0.05),
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
                       linOut = TRUE, maxit = 500, hiddenActFunc = "Act_Identity")
   } else {
-    mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = c(0), learnFuncParams=c(0.05),
+    mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = NULL, learnFuncParams=c(0.05),
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
                       linOut = TRUE, maxit = 500, hiddenActFunc = "Act_Identity")
   }
