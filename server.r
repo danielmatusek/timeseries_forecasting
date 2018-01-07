@@ -168,7 +168,11 @@ server <- function(input, output) {
 	    return(NULL)
 	  }
 	  numData <- length(data.sets[[id]]$x)
-	  sliderInput('windowSizeSlider', 'Window Size', 1, 0.05*numData, 0.0175*numData, step = 1)
+	  values <- input$windowSizeSlider
+	  if(is.null(values)){
+	    values <- 0.0175*numData
+	  }
+	  sliderInput('windowSizeSlider', 'Window Size', 1, round(0.05*numData), values, step = 1)
 	})
 	
 	output$horizonSlider <- renderUI({
@@ -176,13 +180,21 @@ server <- function(input, output) {
 	  
 	  if(!is.null(windowSize))
 	  {
-	    sliderInput('horizonSlider', 'Predict Values', 1, 2*windowSize, windowSize, step = 1)
+	    values <- input$horizonSlider
+	    if(is.null(values)){
+	      values <- windowSize
+	    }
+	    sliderInput('horizonSlider', 'Predict Values', 1, 2*windowSize, values, step = 1)
 	  }
 	})
 	
 	output$hiddenSliderInput <- renderUI({
 	  if (is.null(input$windowSizeSlider)) return()
-	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, input$windowSizeSlider, 3, step = 1)
+	  values <- input$hiddenSliderInput
+	  if(is.null(values)){
+	    values <- 3
+	  }
+	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, input$windowSizeSlider, values, step = 1)
 	})
 	
 	output$excludeInputSlider <- renderUI({
