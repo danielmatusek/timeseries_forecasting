@@ -281,6 +281,11 @@ getForecastComparisionPlot <- function(id) {
   prediction$rsnnsmlp_nhl <- append(rep(NA, data.horizon),
     testMLP(trainMLP(id, hiddenLayers = FALSE), id)$result)
     prediction$rrsnnsmlp_nhl[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+
+  #Add Jordan Network from RSNNS Package
+  prediction$rsnnsjordan <- append(rep(NA, data.horizon),
+    testJordan(trainJordan(id, neuralNetwork.hiddenLayers), id)$result)
+    prediction$rsnnsjordan[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Plot the data
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
@@ -304,6 +309,7 @@ getForecastComparisionPlot <- function(id) {
   p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS rnn', line = list(color = 'rgb(0, 128, 128)'))
   p <- p %>% add_trace(y = ~rsnnsmlp, name = 'RSNNS mlp', line = list(color = 'rgb(145, 30, 180)'))
   p <- p %>% add_trace(y = ~rsnnsmlp_nhl, name = 'RSNNS mlp without hidden', line = list(color = 'rgb(245, 130, 48)'))
+  p <- p %>% add_trace(y = ~rsnnsjordan, name = 'RSNNS jordan', line = list(color = 'rgb(250, 190, 190)'))
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }

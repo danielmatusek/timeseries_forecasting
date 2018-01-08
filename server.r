@@ -557,6 +557,16 @@ server <- function(input, output) {
   
   	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
 	})
+
+	output$rsnns_jordan_plot <- renderPlot({
+		idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
+
+		plot(trainJordan(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+	})
 	
 	
 	

@@ -112,6 +112,10 @@ ui <- dashboardPage(skin = 'purple',
 					tabPanel("MLP without Hidden Layer",
 							dataTableOutput("rsnns_mlp_tab_without_hidden"),
 							plotOutput('mlp_plot_without_hidden')
+					),
+					tabPanel("RNN/Jordan",
+							dataTableOutput("rsnns_jordan_tab"),
+							plotOutput('rsnns_jordan_plot')
 					)
 				)
 			),
