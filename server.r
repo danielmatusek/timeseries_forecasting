@@ -539,6 +539,19 @@ server <- function(input, output) {
   	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
 	})
 
+	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect, hiddenLayers = TRUE)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
 	output$mlp_plot <- renderPlot({
   	idChanged()
   	windowsChanged()
@@ -549,6 +562,19 @@ server <- function(input, output) {
   	plot(trainMLP(input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
+	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
 	output$mlp_plot_without_hidden <- renderPlot({
   	idChanged()
   	windowsChanged()
@@ -557,6 +583,19 @@ server <- function(input, output) {
   	hiddenLayersChanged()
   
   	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
+	})
+
+	output$rsnns_jordan_tab <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainJordan(input$idSelect, hiddenLayers = input$hiddenSliderInput)
+		t <- testJordan(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
 	})
 
 	output$rsnns_jordan_plot <- renderPlot({
