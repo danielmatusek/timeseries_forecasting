@@ -194,7 +194,8 @@ server <- function(input, output) {
 	  if(is.null(values)){
 	    values <- 3
 	  }
-	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, input$windowSizeSlider, values, step = 1)
+		maxHiddenSlider <- input$windowSizeSlider * 2
+	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
 	})
 	
 	output$excludeInputSlider <- renderUI({
