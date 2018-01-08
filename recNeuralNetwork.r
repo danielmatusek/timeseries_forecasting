@@ -118,7 +118,7 @@ trainJordan <- function(id, hiddenLayers = c(0))
   traintarget <- trainset[,1]
 
   myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
-  myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
+  myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = TRUE)
 
   jordan <- RSNNS::jordan(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
                     inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
