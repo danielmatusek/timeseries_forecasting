@@ -43,7 +43,7 @@ server <- function(input, output) {
   databaseChanged <- reactive({
     data <- rawData()
 
-    if (!is.null(data))
+    if (!is.null(data)) 
     {
       parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
     }
@@ -67,7 +67,17 @@ server <- function(input, output) {
 	  resetNeuralNetworks.InputExclusion()
 	})
 	
-	
+	inputDifferenceChanged <- reactive({
+	  resetWindows()
+	  data.windowSize <<- input$windowSizeSlider
+	  neuralNetwork.inputDifference <<- input$inputDifferenceCheckbox
+	  resetWindows()
+	  resetARModels()
+	  resetComparison()
+	  resetNeuralNetworks()
+	  resetNeuralNetworks.InputExclusion()
+	  resetNeuralNetworks()
+	})
 	
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
@@ -84,6 +94,7 @@ server <- function(input, output) {
 	  resetNeuralNetworks.InputExclusion()
 	})
 	
+	
 	excludeInputChanged <- reactive({
 	  
 	  neuralNetwork.isInputExcluded <<- input$inputCheckbox
@@ -97,17 +108,31 @@ server <- function(input, output) {
 	  resetNeuralNetworks.InputExclusion()
 	})
 	
+	
 	inputStrategyChanged <- reactive({
 	  return(NULL)
 	})
+	
+	
+	excludeInputErrorChanged <- reactive({
+	  
+	  neuralnetwork.greedyErrorType <<- input$inputSelectedErrorType
+	  print(neuralnetwork.greedyErrorType)
+	  resetNeuralNetworks()
+	  resetNeuralNetworks.InputExclusion()
+	  
+	})
+	
 	
 	nnTypChanged <- reactive({
 	  neuralNetwork.enableForEach <<- 'forecast_one' %in% input$variable_nn
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
-		rsnns.rnn <<- 'rsnns_rnn' %in% input$variable_nn
-		rsnns.mlp <<- 'rsnns_mlp' %in% input$variable_nn
+		rsnns.rnn <<- TRUE #'rsnns_rnn' %in% input$variable_nn
+		rsnns.mlp <<- TRUE #'rsnns_mlp' %in% input$variable_nn
+		rsnns.mlph <<- TRUE #'rsnns_mlph' %in% input$variable_nn
+		rsnns.jordan <<- TRUE #'rsnns_jordan' %in% input$variable_nn
 		resetComparison()
 	})
 	
@@ -194,21 +219,27 @@ server <- function(input, output) {
 	  if(is.null(values)){
 	    values <- 3
 	  }
-	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, input$windowSizeSlider, values, step = 1)
+		maxHiddenSlider <- input$windowSizeSlider * 2
+	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
 	})
 	
-	output$excludeInputSlider <- renderUI({
-	  if(input$inputCheckbox == TRUE)
+	
+	
+	output$inputStrategy <- renderUI({
+	 if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
 	  {
-	    if(input$windowSizeSlider > 1)
-	    {
-	      #sliderInput("excludeInputSlider", "Exclude Max Inputs", 1, input$windowSizeSlider - 1, 3, step = 1) 
 	      selectInput("inputStrategy", "Strategy", neuralnetwork.strategies)
-	    }
+	  }
+	})
+	
+	output$inputSelectedErrorType <- renderUI({
+	  if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
+	  {
+	    selectInput("inputSelectedErrorType", "Error Type", c("Outsample", "Insample"))
 	    
 	  }
-	  
 	})
+	
 	
 	
 	### UI elements: Data
@@ -273,12 +304,9 @@ server <- function(input, output) {
 	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"))
 	    }
 	  })
-	 	
-	 	
-	 	myTabs <- c(myTabs, lapply(input$variable_nn, function(x){
-	 	  
-	 	 if(neuralNetwork.isInputExcluded)
-	 	 {
+	 	if(neuralNetwork.isInputExcluded)
+	 	{
+	 	 	myTabs <- c(myTabs, lapply(input$variable_nn, function(x){
 	 	    if(x == "forecast_one" )
 	 	    {
   	 	   panels[[length(panels) + 1]] <- tabPanel('Forecast /1 Ex. Inp.',
@@ -303,11 +331,11 @@ server <- function(input, output) {
 	 	                                              plotOutput("nnhfacei", height = "600px"),
 	 	                                              dataTableOutput("nnhfaeidt"))
 	 	   }
-	   }
-	 	}))
+	  }))
+	 	}
 	 	
-	  myTabs$width = "100%"
-	  do.call(tabBox, myTabs)
+	 myTabs$width = "100%"
+	 do.call(tabBox, myTabs)
 	})
 	
 	output$neuralNetwork_hlOptimization <- renderUI({
@@ -327,6 +355,7 @@ server <- function(input, output) {
 	
 	output$neuralNetworkChart <- renderPlot({
 	  idChanged()
+	  inputDifferenceChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  
@@ -336,6 +365,7 @@ server <- function(input, output) {
 	output$neuralNetworkHiddenChart <- renderPlot({
 	  idChanged()
 	  windowsChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
@@ -345,6 +375,7 @@ server <- function(input, output) {
 	output$neuralNetworkChartForAll <- renderPlot({
 	  idChanged()
 	  windowsChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  
 	  plot(getNeuralNetwork(NULL, FALSE), rep = 'best')
@@ -354,6 +385,7 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
+	  inputDifferenceChanged()
 	  hiddenLayersChanged()
 	  
 	  plot(getNeuralNetwork(NULL, TRUE), rep = 'best')
@@ -365,8 +397,10 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(input$idSelect, hiddenLayers = FALSE, input$inputStrategy), rep = 'best')
 	})
@@ -376,8 +410,10 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(input$idSelect, TRUE, input$inputStrategy), rep = 'best')
 	})
@@ -386,8 +422,10 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(NULL, FALSE, input$inputStrategy), rep = 'best')
 	})
@@ -397,8 +435,10 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(NULL, TRUE, input$inputStrategy), rep = 'best')
 	})
@@ -409,9 +449,11 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
     s <- neuralNetwork.excluded.statistics[[2]]
     data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -421,8 +463,10 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
+	  excludeInputErrorChanged()
 	  
 	  s <- neuralNetwork.excluded.statistics[[4]]
 	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -433,8 +477,10 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  s <- neuralNetwork.excluded.statistics[[1]]
 	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -445,8 +491,10 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  s <- neuralNetwork.excluded.statistics[[3]]
 	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -538,6 +586,19 @@ server <- function(input, output) {
   	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
 	})
 
+	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect, hiddenLayers = TRUE)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
 	output$mlp_plot <- renderPlot({
   	idChanged()
   	windowsChanged()
@@ -548,6 +609,19 @@ server <- function(input, output) {
   	plot(trainMLP(input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
+	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
+		t <- testMLP(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
 	output$mlp_plot_without_hidden <- renderPlot({
   	idChanged()
   	windowsChanged()
@@ -556,6 +630,29 @@ server <- function(input, output) {
   	hiddenLayersChanged()
   
   	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
+	})
+
+	output$rsnns_jordan_tab <- renderDataTable({
+		idChanged()
+		windowsChanged()
+		excludeInputChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
+		
+		m <- trainJordan(input$idSelect, hiddenLayers = input$hiddenSliderInput)
+		t <- testJordan(m, input$idSelect)
+		
+		data.table(result = t$result, expected = t$expected)		
+	})
+
+	output$rsnns_jordan_plot <- renderPlot({
+		idChanged()
+  	windowsChanged()
+  	excludeInputChanged()
+  	excludeBiasChanged()
+  	hiddenLayersChanged()
+
+		plot(trainJordan(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
 	})
 	
 	
@@ -590,6 +687,7 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  getForecastComparisionPlot(input$idSelect)
 	})
@@ -599,6 +697,7 @@ server <- function(input, output) {
 	  nnTypChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
+	  inputDifferenceChanged()
 	  
 	  getBoxplot('mse')
 	})
@@ -608,6 +707,7 @@ server <- function(input, output) {
 	  nnTypChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
+	  inputDifferenceChanged()
 	  
 	  getBoxplot('rmse')
 	})
@@ -617,6 +717,7 @@ server <- function(input, output) {
 	  nnTypChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
+	  inputDifferenceChanged()
 	  
 	  getBoxplot('smape')
 	})
@@ -626,6 +727,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  getErrorMetricCompare()
 	})
@@ -637,6 +739,7 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  getCoef(input$idSelect)
 	})

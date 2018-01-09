@@ -4,6 +4,10 @@
 
  rsnns.rnn <<- TRUE
  rsnns.mlp <<- TRUE
+ rsnns.mlph <<- TRUE
+ rsnns.jordan <<- TRUE
+ 
+ validationset.ratio <<- 0.05
  
  
 trainRNN <- function(id, hiddenLayers = c(0))
@@ -13,12 +17,12 @@ trainRNN <- function(id, hiddenLayers = c(0))
   traininput <- trainset[,2:length(trainset)]
   traintarget <- trainset[,1]
 
-  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.1)
+  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
   #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
   rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
                     inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
-                    maxit = 500)
+                    maxit = 500, learnFunc = "JE_Rprop")
   rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
   
@@ -29,10 +33,15 @@ testRNN <- function(model, id)
 {
   testset <- getTestSet(id)
   print(testset)
-  expected <- testset[,1]
+  expected <- unlist(testset[,1])
   
-  result <- predict(model, testset[,2 : length(testset)])
+  result <- predict(model, testset[,2 : length(testset)])[,1]
   
+  if(neuralNetwork.inputDifference)
+  {
+    result <-  setOffsetToResultSet(id, result)
+    expected <- getOrgiginalTestSet(id)
+  }
   
   mse <- sum((expected - result)^2) / nrow(result)
   structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')
@@ -84,10 +93,15 @@ trainMLP <- function(id, hiddenLayers = TRUE)
 testMLP <- function(model, id)
 {
   testset <- getTestSet(id)
-  expected <- testset[,1]
+  expected <- unlist(testset[,1])
   
-  result <- predict(model, testset[,2 : length(testset)])
+  result <- predict(model, testset[,2 : length(testset)])[,1]
   
+  if(neuralNetwork.inputDifference)
+  {
+    result <-  setOffsetToResultSet(id, result)
+    expected <- getOrgiginalTestSet(id)
+  }
   
   mse <- sum((expected - result)^2) / nrow(result)
   structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')
@@ -104,6 +118,59 @@ getMLPPlot <- function(x)
 }
 
 resetMLP <- function(x)
+{
+
+}
+
+####### Train and Test Jordan Network
+
+trainJordan <- function(id, hiddenLayers = c(0))
+{
+  set.seed(1)
+  trainset <- getTrainSet(id)
+  traininput <- trainset[,2:length(trainset)]
+  traintarget <- trainset[,1]
+
+  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
+  #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
+
+  jordan <- RSNNS::jordan(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
+                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
+                    maxit = 500, learnFunc = "JE_Rprop")
+  #rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
+  #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
+  
+  return(jordan)
+}
+
+testJordan <- function(model, id)
+{
+  testset <- getTestSet(id)
+  expected <- unlist(testset[,1])
+  
+  result <- predict(model, testset[,2 : length(testset)])[,1]  
+  
+  if(neuralNetwork.inputDifference)
+  {
+    result <-  setOffsetToResultSet(id, result)
+    expected <- getOrgiginalTestSet(id)
+  }
+  
+  mse <- sum((expected - result)^2) / nrow(result)
+  structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')
+}
+
+getJordan <- function(x)
+{
+
+}
+
+getJordanPlot <- function(x)
+{
+
+}
+
+resetJordan <- function(x)
 {
 
 }

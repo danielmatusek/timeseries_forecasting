@@ -3,8 +3,7 @@ library(plotly)
 
 errorTable <- NULL
 
-errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA")
-
+errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA","ELMAN","MLP","MLPH","JORDAN")
 
 
 error_metric <- function(testResults)
@@ -29,12 +28,10 @@ applyMetric <- function(getTestResultsFUN, FUN)
       }))
     }))
   }else{
-
       testResults <- getTestResultsFUN(data.idSelected)
       unlist(lapply(1:length(testResults$expected), function(i) {
         FUN(testResults$expected[[i]], testResults$result[[i]])
       }))
-
   }
 }
 
@@ -60,6 +57,22 @@ getErrorMetric <- function(FUN)
   if(neuralNetwork.enableForAll.hidden)
   {
     metric$nnfah <- applyMetric(function(id) { getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE) }, FUN)
+  }
+  if(rsnns.rnn)
+  {
+    metric$rnn <- applyMetric(function(id) { testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id) }, FUN)
+  }
+  if(rsnns.mlp)
+  {
+    metric$mlp <- applyMetric(function(id) { testMLP(trainMLP(id, hiddenLayers = FALSE), id) }, FUN)
+  }
+  if(rsnns.mlph)
+  {
+    metric$mlph <- applyMetric(function(id) { testMLP(trainMLP(id, hiddenLayers = TRUE), id) }, FUN)
+  }
+  if(rsnns.jordan)
+  {
+    metric$jordan <- applyMetric(function(id) { testJordan(trainJordan(id, neuralNetwork.hiddenLayers), id) }, FUN)
   }
   
   metric
@@ -89,14 +102,14 @@ getBoxplot <- function(errorName)
   
   p <- p %>% add_boxplot(y = errorMetrics$ar,  jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
     marker = list(color = 'rgb(7,40,89)'),
-    line = list(color = 'rgb(200,0,0)'),
+    line = list(color = 'rgb(193,5,52)'),
     name = "AR", boxmean = TRUE)
   
   if(neuralNetwork.enableForEach)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(0,200,0)'),
+                line = list(color = 'rgb(0,0,255)'),
                 name = "NN", boxmean = TRUE)
   }
   
@@ -104,7 +117,7 @@ getBoxplot <- function(errorName)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nnh, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(0,0,200)'),
+                line = list(color = 'rgb(0, 255, 255)'),
                 name = "NNH", boxmean = TRUE)
   }
   
@@ -112,7 +125,7 @@ getBoxplot <- function(errorName)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(200,200,0)'),
+                line = list(color = 'rgb(255, 0, 128)'),
                 name = "NNFA", boxmean = TRUE)
   }
     
@@ -120,10 +133,38 @@ getBoxplot <- function(errorName)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nnfah, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(0,200,200)'),
-                name = " NNHFA")
+                line = list(color = 'rgb(128, 0, 128)'),
+                name = "NNHFA")
   }
-    
+  
+  if(rsnns.rnn)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$rnn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(255, 127, 0)'),
+                            name = "ELMAN", boxmean = TRUE)    
+  }
+  if(rsnns.mlp)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$mlp, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(255, 0, 0)'),
+                            name = "MLP", boxmean = TRUE)    
+  }
+  if(rsnns.mlph)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$mlph, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(0,96,0)'),
+                            name = "MLPH", boxmean = TRUE)    
+  }
+  if(rsnns.jordan)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$jordan, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(0, 255, 128)'),
+                            name = "JORDAN", boxmean = TRUE)    
+  }    
     
   p$elementId <- NULL
   p
@@ -139,6 +180,11 @@ getMeanErrorVectorFromModels <- function(errorName)
   if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
   if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
   if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
+  #f�r RSNNS auch noch
+  if(rsnns.rnn) errorMean = c(errorMean, mean(errorTable[[errorName]][['rnn']]))#names = c(names, errorModelNames[6])
+  if(rsnns.mlp) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlp']]))
+  if(rsnns.mlph) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlph']]))
+  if(rsnns.jordan) errorMean = c(errorMean, mean(errorTable[[errorName]][['jordan']]))
   errorMean
 }
 
@@ -152,7 +198,10 @@ getErrorMetricCompare <- function()
   if(neuralNetwork.enableForEach.hidden) names = c(names, errorModelNames[3])
   if(neuralNetwork.enableForAll) names = c(names, errorModelNames[4])
   if(neuralNetwork.enableForAll.hidden) names = c(names, errorModelNames[5])
-  
+  if(rsnns.rnn) names = c(names, errorModelNames[6])
+  if(rsnns.mlp) names = c(names, errorModelNames[7])
+  if(rsnns.mlph) names = c(names, errorModelNames[8])
+  if(rsnns.jordan) names = c(names, errorModelNames[9])
   data.table(NAME = names, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
 }
 
@@ -217,6 +266,7 @@ getCoef <- function(id)
     names <- c(names, 'NN for all hidden')
   }
   
+
   names(dt) <- names
   
   dt
@@ -337,26 +387,42 @@ getForecastComparisionPlot <- function(id) {
   }
 
   #Add RNN from RSNNS Package
-  prediction$rsnnsrnn <- append(rep(NA, data.horizon),
-    testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$result)
-    prediction$rsnnsrnn[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  if(rsnns.rnn)
+  {
+    prediction$rsnnsrnn <- append(rep(NA, data.horizon),
+      testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$result)
+      prediction$rsnnsrnn[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
 
   #Add MLP with hidden Layer from RSNNS Package
-  prediction$rsnnsmlp <- append(rep(NA, data.horizon),
-    testMLP(trainMLP(id, hiddenLayers = TRUE), id)$result)
-    prediction$rsnnsmlp[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  if(rsnns.mlph){
+    prediction$rsnnsmlp <- append(rep(NA, data.horizon),
+      testMLP(trainMLP(id, hiddenLayers = TRUE), id)$result)
+      prediction$rsnnsmlp[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
 
   #Add MLP without hidden Layer from RSNNS Package
-  prediction$rsnnsmlp_nhl <- append(rep(NA, data.horizon),
-    testMLP(trainMLP(id, hiddenLayers = FALSE), id)$result)
-    prediction$rrsnnsmlp_nhl[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+
+  if(rsnns.mlp){
+    prediction$rsnnsmlp_nhl <- append(rep(NA, data.horizon),
+      testMLP(trainMLP(id, hiddenLayers = FALSE), id)$result)
+      prediction$rrsnnsmlp_nhl[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
+
+  #Add Jordan Network from RSNNS Package
+  if(rsnns.jordan){
+    prediction$rsnnsjordan <- append(rep(NA, data.horizon),
+      testJordan(trainJordan(id, neuralNetwork.hiddenLayers), id)$result)
+      prediction$rsnnsjordan[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
+
   
   # Plot the data
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
-    add_trace(y = ~ar, name = 'Auto Regression', line = list(color = 'rgb(255, 0, 0)'))
+    add_trace(y = ~ar, name = 'Auto Regression', line = list(color = 'rgb(193,5,52)'))
   if(neuralNetwork.enableForEach)
   {
-    p <- p %>% add_trace(y = ~nnfe, name = 'Neural Network /1', line = list(color = 'rgb(255, 150, 0)'))
+    p <- p %>% add_trace(y = ~nnfe, name = 'Neural Network /1', line = list(color = 'rgb(0,0,255)'))
   }
   if(neuralNetwork.enableForEach.hidden)
   {
@@ -364,15 +430,30 @@ getForecastComparisionPlot <- function(id) {
   }
   if(neuralNetwork.enableForAll)
   {
-    p <- p %>% add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(0, 0, 255)'))
+    p <- p %>% add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(255, 0, 128)'))
   }
   if(neuralNetwork.enableForAll.hidden)
   {
-    p <- p %>% add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
+    p <- p %>% add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(128, 0, 128)'))
   }
-  p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS rnn', line = list(color = 'rgb(0, 128, 128)'))
-  p <- p %>% add_trace(y = ~rsnnsmlp, name = 'RSNNS mlp', line = list(color = 'rgb(145, 30, 180)'))
-  p <- p %>% add_trace(y = ~rsnnsmlp_nhl, name = 'RSNNS mlp without hidden', line = list(color = 'rgb(245, 130, 48)'))
+  if(rsnns.rnn)
+  {
+    p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS elman', line = list(color = 'rgb(255, 127, 0)'))
+  }
+  if(rsnns.mlph)
+  {
+    p <- p %>% add_trace(y = ~rsnnsmlp, name = 'RSNNS mlp', line = list(color = 'rgb(0,96,0)'))    
+  }
+
+  if(rsnns.mlp)
+  {
+    p <- p %>% add_trace(y = ~rsnnsmlp_nhl, name = 'RSNNS mlp without hidden', line = list(color = 'rgb(255, 0, 0)'))
+  }
+  
+  if(rsnns.jordan){
+    p <- p %>% add_trace(y = ~rsnnsjordan, name = 'RSNNS jordan', line = list(color = 'rgb(0, 255, 128)'))
+  }
+ 
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }
