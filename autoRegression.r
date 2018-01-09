@@ -8,9 +8,10 @@ aRModelName <- NULL
 learnARModel <- function(id)
 {
   print(paste('train ar for id', id))
-  
+
   y <- data.sets[[id]]$y
-  
+  if(neuralNetwork.inputDifference) y <- diff(data.sets[[id]]$y)
+    
   spl <<- length(y) - data.horizon
   trainData <- y[(1 : spl)]
 
@@ -57,11 +58,20 @@ getARCoef <- function(id)
 
 testAR <- function(id)
 {
+  
   testSet <- getTestSet(id)
   expected <- testSet[['xt0']]
+  
+
   testSet[['xt0']] <- NULL
   testSet[['bias']] <- 1
   result <- as.matrix(testSet) %*% getARCoef(id)
+  
+  if(neuralNetwork.inputDifference)
+  {
+    result <-  setOffsetToResultSet(id, result)
+    expected <- getOrgiginalTestSet(id)
+  }
   
   autoRegressiveTestResults[[id]] <<- structure(list(expected = expected, result = result), class = 'TestResults')
 }

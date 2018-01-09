@@ -56,9 +56,10 @@ ui <- dashboardPage(skin = 'purple',
 		      column(3, 
 		        h3('Neural Network', style = 'margin-bottom: 10px;'),
 		        checkboxInput('biasCheckbox', 'Exclude Bias', TRUE),
+		        checkboxInput('inputDifferenceCheckbox', 'Use Difference', FALSE),
 		        checkboxInput('inputCheckbox', 'Exclude Input', FALSE),
 		        uiOutput('inputStrategy'),
-		        uiOutput('excludeInputSlider'),
+		        uiOutput('inputSelectedErrorType'),
 		        uiOutput('hiddenSliderInput'),
 		        checkboxGroupInput("variable_nn", "neural network forecast for",
 		                           c("one Time Series" = "forecast_one",
@@ -112,6 +113,10 @@ ui <- dashboardPage(skin = 'purple',
 					tabPanel("MLP without Hidden Layer",
 							dataTableOutput("rsnns_mlp_tab_without_hidden"),
 							plotOutput('mlp_plot_without_hidden')
+					),
+					tabPanel("RNN/Jordan",
+							dataTableOutput("rsnns_jordan_tab"),
+							plotOutput('rsnns_jordan_plot')
 					)
 				)
 			),

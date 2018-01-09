@@ -3,6 +3,7 @@ data.sets <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
+data.inputDifference.testSets <- NULL
 
 data.windowSize <- NULL
 data.horizon <- NULL
@@ -63,8 +64,21 @@ resetWindows <- function() {
 }
 
 createWindows <- function(id) {
-  windows <- as.data.table(rollapply(data.sets[[id]]$y, width = data.windowSize+1, FUN = identity, by = 1),
-    by.column = TRUE)
+  
+  dataSet <- data.sets[[id]]$y
+  
+  windows <- NULL
+  if(neuralNetwork.inputDifference)
+  {
+    win <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+    names(win) <- paste0('xt', data.windowSize:0)
+    setcolorder(win, paste0('xt', 0:data.windowSize))
+    index <- 1:(nrow(win) - (data.horizon + 1)) # to calculate the difference you need the last point of train data
+    data.inputDifference.testSets[[id]] <<-  win[-index, ]
+    dataSet <- diff(dataSet)
+  }
+  
+  windows <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
   names(windows) <- paste0('xt', data.windowSize:0)
   setcolorder(windows, paste0('xt', 0:data.windowSize))
   
@@ -72,6 +86,20 @@ createWindows <- function(id) {
   data.trainSets[[id]] <<- windows[index, ]
   data.testSets[[id]] <<- windows[-index, ]
 }
+
+getDiffereceVector <- function(x)
+{
+  if(length(x) < 2) return(NULL)
+  vDiff <- vector()
+  
+  for(i in 1 : (length(x) - 1))
+  {
+    vDiff <- c(vDiff, (x[i + 1] - x[i]))
+  }
+  return(vDiff)
+}
+
+
 
 getTrainSet <- function(id) {
   if (is.null(data.trainSets[[id]]))
@@ -92,11 +120,31 @@ getAllTrainSetsCombined <- function() {
   return(rbindlist(data.trainSets))
 }
 
+setOffsetToResultSet <- function(id, resultSet)
+{
+  if(neuralNetwork.inputDifference)
+  {
+    resultWithOffset <- data.inputDifference.testSets[[id]]$xt0[1] + resultSet[1]
+    for(i in 2 : length(resultSet))
+    {
+      resultWithOffset <- c(resultWithOffset, resultWithOffset[i-1] + resultSet[i])
+    }
+    return(resultWithOffset)
+  }
+}
+
+getOrgiginalTestSet <- function(id)
+{
+  if(neuralNetwork.inputDifference)
+  {
+    return(c(data.inputDifference.testSets[[id]]$xt0[2 : length(data.inputDifference.testSets[[id]]$xt0)]))
+  }
+}
+
 getTestSet <- function(id) {
   if (is.null(data.testSets[[id]]))
   {
     createWindows(id)
   }
-  
   return(data.testSets[[id]])
 }
