@@ -33,6 +33,11 @@ testRNN <- function(model, id)
   
   result <- predict(model, testset[,2 : length(testset)])
   
+  if(neuralNetwork.inputDifference)
+  {
+    result <-  setOffsetToResultSet(id, result)
+    expected <- getOrgiginalTestSet(id)
+  }
   
   mse <- sum((expected - result)^2) / nrow(result)
   structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')
@@ -88,6 +93,11 @@ testMLP <- function(model, id)
   
   result <- predict(model, testset[,2 : length(testset)])
   
+  if(neuralNetwork.inputDifference)
+  {
+    result <-  setOffsetToResultSet(id, result)
+    expected <- getOrgiginalTestSet(id)
+  }
   
   mse <- sum((expected - result)^2) / nrow(result)
   structure(list(expected = expected, result = result, mse = mse), class = 'TestResults')

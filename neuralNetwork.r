@@ -3,6 +3,7 @@ library(neuralnet)
 neuralNetwork.excludeBias <<- TRUE
 neuralNetwork.hiddenLayers <<- c(0)
 neuralNetwork.excludeVector <<- NULL
+neuralNetwork.inputDifference <<- FALSE
 
 neuralNetwork.isInputExcluded <<- FALSE
 neuralNetwork.excludeInputNodes <<- NULL
@@ -253,8 +254,15 @@ testNeuralNetwork <- function(neuralNetwork, testSetID)
   expected <- testData$xt0
   testData$xt0 <- NULL
   
+
   #compute = boese
   n <- compute(neuralNetwork, testData)
+  
+  if(neuralNetwork.inputDifference)
+  {
+    n$net.result <-  setOffsetToResultSet(testSetID, n$net.result)
+    expected <- getOrgiginalTestSet(testSetID)
+  }
   
   mse   <- sum((expected - n$net.result)^2)/nrow(n$net.result)
   smape <- sMAPE(expected, n$net.result)

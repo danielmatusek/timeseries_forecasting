@@ -2,7 +2,6 @@ library(ggplot2)
 library(plotly)
 
 errorTable <- NULL
-
 errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA")
 
 

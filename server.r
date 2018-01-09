@@ -43,7 +43,7 @@ server <- function(input, output) {
   databaseChanged <- reactive({
     data <- rawData()
 
-    if (!is.null(data))
+    if (!is.null(data)) 
     {
       parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
     }
@@ -67,7 +67,17 @@ server <- function(input, output) {
 	  resetNeuralNetworks.InputExclusion()
 	})
 	
-	
+	inputDifferenceChanged <- reactive({
+	  resetWindows()
+	  data.windowSize <<- input$windowSizeSlider
+	  neuralNetwork.inputDifference <<- input$inputDifferenceCheckbox
+	  resetWindows()
+	  resetARModels()
+	  resetComparison()
+	  resetNeuralNetworks()
+	  resetNeuralNetworks.InputExclusion()
+	  resetNeuralNetworks()
+	})
 	
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
@@ -315,6 +325,7 @@ server <- function(input, output) {
 	
 	output$neuralNetworkChart <- renderPlot({
 	  idChanged()
+	  inputDifferenceChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  
@@ -324,6 +335,7 @@ server <- function(input, output) {
 	output$neuralNetworkHiddenChart <- renderPlot({
 	  idChanged()
 	  windowsChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
@@ -333,6 +345,7 @@ server <- function(input, output) {
 	output$neuralNetworkChartForAll <- renderPlot({
 	  idChanged()
 	  windowsChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  
 	  plot(getNeuralNetwork(NULL, FALSE), rep = 'best')
@@ -342,6 +355,7 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
+	  inputDifferenceChanged()
 	  hiddenLayersChanged()
 	  
 	  plot(getNeuralNetwork(NULL, TRUE), rep = 'best')
@@ -353,6 +367,7 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
 	  
@@ -364,6 +379,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
@@ -374,6 +390,7 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
 	  
@@ -385,6 +402,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
@@ -397,6 +415,7 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -409,6 +428,7 @@ server <- function(input, output) {
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
+	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
 	  
@@ -421,6 +441,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
@@ -433,6 +454,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeInputChanged()
 	  inputStrategyChanged()
+	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
@@ -578,6 +600,7 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  getForecastComparisionPlot(input$idSelect)
 	})
@@ -587,6 +610,7 @@ server <- function(input, output) {
 	  nnTypChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
+	  inputDifferenceChanged()
 	  
 	  getBoxplot('mse')
 	})
@@ -596,6 +620,7 @@ server <- function(input, output) {
 	  nnTypChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
+	  inputDifferenceChanged()
 	  
 	  getBoxplot('rmse')
 	})
@@ -605,6 +630,7 @@ server <- function(input, output) {
 	  nnTypChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
+	  inputDifferenceChanged()
 	  
 	  getBoxplot('smape')
 	})
@@ -614,6 +640,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  getErrorMetricCompare()
 	})
@@ -625,6 +652,7 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  nnTypChanged()
 	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  getCoef(input$idSelect)
 	})
