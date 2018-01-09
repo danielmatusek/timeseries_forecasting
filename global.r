@@ -124,12 +124,7 @@ setOffsetToResultSet <- function(id, resultSet)
 {
   if(neuralNetwork.inputDifference)
   {
-    resultWithOffset <- data.inputDifference.testSets[[id]]$xt0[1] + resultSet[1]
-    for(i in 2 : length(resultSet))
-    {
-      resultWithOffset <- c(resultWithOffset, resultWithOffset[i-1] + resultSet[i])
-    }
-    return(resultWithOffset)
+    return( data.inputDifference.testSets[[id]]$xt0[1 : length(resultSet)] + resultSet)
   }
 }
 
