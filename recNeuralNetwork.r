@@ -142,9 +142,9 @@ trainJordan <- function(id, hiddenLayers = c(0))
 testJordan <- function(model, id)
 {
   testset <- getTestSet(id)
-  expected <- testset[,1]
+  expected <- unlist(testset[,1])
   
-  result <- predict(model, testset[,2 : length(testset)])  
+  result <- predict(model, testset[,2 : length(testset)])[,1]  
   
   if(neuralNetwork.inputDifference)
   {

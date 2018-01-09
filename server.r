@@ -132,6 +132,7 @@ server <- function(input, output) {
 		rsnns.rnn <<- TRUE #'rsnns_rnn' %in% input$variable_nn
 		rsnns.mlp <<- TRUE #'rsnns_mlp' %in% input$variable_nn
 		rsnns.mlph <<- TRUE #'rsnns_mlph' %in% input$variable_nn
+		rsnns.jordan <<- TRUE #'rsnns_jordan' %in% input$variable_nn
 		resetComparison()
 	})
 	
