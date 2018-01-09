@@ -13,6 +13,7 @@ neuralNetwork.excludedPastErrors <<- vector()
 neuralNetwork.excludedInternalErrors <<- vector()
 neuralnetwork.strategies <<- c("Greedy") # "Min", "Max",
 neuralNetwork.excluded.statistics <<- list()
+neuralnetwork.greedyErrorType <<- NULL
 
 neuralNetwork.enableForEach <<- TRUE
 neuralNetwork.enableForEach.hidden <<- TRUE
@@ -350,7 +351,6 @@ getReducedNeuralNetworkWeights <- function(nn) {
 # calculate the best neural network model with specific strategy
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
 {
-  #browser()
   resetNeuralNetworks.InputExclusion()
   
   if(length(neuralNetwork.excludedPastModels) == 0)
@@ -389,7 +389,16 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
         return(oldModel)
       }
       # search for the next best input
-      path <- c(path, getIdxOfMinErr(neuralNetwork.excludedPastErrors[from : to]))
+      #browser()
+      if(neuralnetwork.greedyErrorType == "Outsample")
+      {
+        path <- c(path, getIdxOfMinErr(neuralNetwork.excludedPastErrors[from : to]))
+      }
+      else if(neuralnetwork.greedyErrorType == "Insample")
+      {
+        path <- c(path, getIdxOfMinErr(neuralNetwork.excludedInternalErrors[from : to]))
+      }
+      
     }
   }
   
@@ -429,6 +438,16 @@ resetGlobalModel <- function(id, hiddenLayers)
 # return NULL if old model is better
 compareOldModel <- function(path, from, to)
 {
+  errors <- NULL
+  if(neuralnetwork.greedyErrorType == "Outsample")
+  {
+    errors <- neuralNetwork.excludedPastErrors
+  }
+  else
+  {
+    errors <- neuralNetwork.excludedInternalErrors
+  }
+    
   pos <- 0
   if(length(path) == 1)
   {
@@ -438,12 +457,13 @@ compareOldModel <- function(path, from, to)
   {
     pos <- from - data.windowSize  + (path[length(path)] - 1)
   }
-  4
+  if(length(path) >= (data.windowSize - 1)) return(neuralNetwork.excludedPastModels[[pos]])
+  
   for(i in 1 : data.windowSize)
   {
-    if(!is.na(neuralNetwork.excludedPastErrors[[from + (i-1)]]))
+    if(!is.na(errors[[from + (i-1)]]))
     {
-      if(neuralNetwork.excludedPastErrors[[pos]] >= neuralNetwork.excludedPastErrors[[from + (i-1)]])
+      if(errors[[pos]] >= errors[[from + (i-1)]])
        {
          return(NULL)
        }

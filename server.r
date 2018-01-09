@@ -94,6 +94,7 @@ server <- function(input, output) {
 	  resetNeuralNetworks.InputExclusion()
 	})
 	
+	
 	excludeInputChanged <- reactive({
 	  
 	  neuralNetwork.isInputExcluded <<- input$inputCheckbox
@@ -107,9 +108,21 @@ server <- function(input, output) {
 	  resetNeuralNetworks.InputExclusion()
 	})
 	
+	
 	inputStrategyChanged <- reactive({
 	  return(NULL)
 	})
+	
+	
+	excludeInputErrorChanged <- reactive({
+	  
+	  neuralnetwork.greedyErrorType <<- input$inputSelectedErrorType
+	  print(neuralnetwork.greedyErrorType)
+	  resetNeuralNetworks()
+	  resetNeuralNetworks.InputExclusion()
+	  
+	})
+	
 	
 	nnTypChanged <- reactive({
 	  neuralNetwork.enableForEach <<- 'forecast_one' %in% input$variable_nn
@@ -208,18 +221,23 @@ server <- function(input, output) {
 	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
 	})
 	
-	output$excludeInputSlider <- renderUI({
-	  if(input$inputCheckbox == TRUE)
+	
+	
+	output$inputStrategy <- renderUI({
+	 if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
 	  {
-	    if(input$windowSizeSlider > 1)
-	    {
-	      #sliderInput("excludeInputSlider", "Exclude Max Inputs", 1, input$windowSizeSlider - 1, 3, step = 1) 
 	      selectInput("inputStrategy", "Strategy", neuralnetwork.strategies)
-	    }
+	  }
+	})
+	
+	output$inputSelectedErrorType <- renderUI({
+	  if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
+	  {
+	    selectInput("inputSelectedErrorType", "Error Type", c("Outsample", "Insample"))
 	    
 	  }
-	  
 	})
+	
 	
 	
 	### UI elements: Data
@@ -383,6 +401,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(input$idSelect, hiddenLayers = FALSE, input$inputStrategy), rep = 'best')
 	})
@@ -395,6 +414,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(input$idSelect, TRUE, input$inputStrategy), rep = 'best')
 	})
@@ -406,6 +426,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(NULL, FALSE, input$inputStrategy), rep = 'best')
 	})
@@ -418,6 +439,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  plot(getExcludedInputNeuralNetwork(NULL, TRUE, input$inputStrategy), rep = 'best')
 	})
