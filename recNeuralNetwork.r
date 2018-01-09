@@ -4,6 +4,10 @@
 
  rsnns.rnn <<- TRUE
  rsnns.mlp <<- TRUE
+ rsnns.mlph <<- TRUE
+ rsnns.jordan <<- TRUE
+ 
+ validationset.ratio <<- 0.05
  
  
 trainRNN <- function(id, hiddenLayers = c(0))
@@ -13,11 +17,11 @@ trainRNN <- function(id, hiddenLayers = c(0))
   traininput <- trainset[,2:length(trainset)]
   traintarget <- trainset[,1]
 
-  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.15)
+  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
   #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
   rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
-                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.0001), 
+                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
                     maxit = 500, learnFunc = "JE_Rprop")
   rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
@@ -127,11 +131,11 @@ trainJordan <- function(id, hiddenLayers = c(0))
   traininput <- trainset[,2:length(trainset)]
   traintarget <- trainset[,1]
 
-  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=0.15)
+  myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
   #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
   jordan <- RSNNS::jordan(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
-                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.0001), 
+                    inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
                     maxit = 500, learnFunc = "JE_Rprop")
   #rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
   #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE

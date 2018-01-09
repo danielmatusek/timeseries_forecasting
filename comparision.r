@@ -3,7 +3,7 @@ library(plotly)
 
 errorTable <- NULL
 
-errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA","RNN","MLP","MLPH","JORDAN")
+errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA","ELMAN","MLP","MLPH","JORDAN")
 
 
 error_metric <- function(testResults)
@@ -142,7 +142,7 @@ getBoxplot <- function(errorName)
     p <- p %>%  add_boxplot(y = errorMetrics$rnn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                             marker = list(color = 'rgb(7,40,89)'),
                             line = list(color = 'rgb(255, 127, 0)'),
-                            name = "RNN", boxmean = TRUE)    
+                            name = "ELMAN", boxmean = TRUE)    
   }
   if(rsnns.mlp)
   {
@@ -180,11 +180,11 @@ getMeanErrorVectorFromModels <- function(errorName)
   if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
   if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
   if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
-  #für RSNNS auch noch
+  #fï¿½r RSNNS auch noch
   if(rsnns.rnn) errorMean = c(errorMean, mean(errorTable[[errorName]][['rnn']]))#names = c(names, errorModelNames[6])
   if(rsnns.mlp) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlp']]))
   if(rsnns.mlph) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlph']]))
-  if(rsnna.jordan) errorMean = c(errorMean, mean(errorTable[[errorName]][['jordan']]))
+  if(rsnns.jordan) errorMean = c(errorMean, mean(errorTable[[errorName]][['jordan']]))
   errorMean
 }
 
@@ -369,7 +369,7 @@ getForecastComparisionPlot <- function(id) {
   }
   if(rsnns.rnn)
   {
-    p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS rnn', line = list(color = 'rgb(255, 127, 0)'))
+    p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS elman', line = list(color = 'rgb(255, 127, 0)'))
   }
   if(rsnns.mlph)
   {
