@@ -453,6 +453,7 @@ server <- function(input, output) {
 	  inputStrategyChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
     s <- neuralNetwork.excluded.statistics[[2]]
     data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -465,6 +466,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  inputStrategyChanged()
 	  excludeBiasChanged()
+	  excludeInputErrorChanged()
 	  
 	  s <- neuralNetwork.excluded.statistics[[4]]
 	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -478,6 +480,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  s <- neuralNetwork.excluded.statistics[[1]]
 	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
@@ -491,6 +494,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
+	  excludeInputErrorChanged()
 	  
 	  s <- neuralNetwork.excluded.statistics[[3]]
 	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
