@@ -146,9 +146,41 @@ ui <- dashboardPage(skin = 'purple',
 			               tabPanel("Coefficients",
 			                        dataTableOutput("compareCoefficient")
 			               ),
-			          tabPanel('NN Dif. wrt HL',
-			            dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
-                ),
+			          #tabPanel('NN Dif. wrt HL',
+			          #  dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
+			          #),
+			          tabPanel('Model Prodictions',
+			            fluidRow(
+			              column(width = 5,
+			                selectInput('model1Select', 'Model 1',
+			                  c('Auto-Regeressives Modell' = 'ar',
+			                    'Neural Netzwerk: Eigenes Modell für jedes' = 'nnfe',
+			                    'Neural Netzwerk: Eigenes Modell für jedes mit Hidden Layer' = 'nnfeh',
+			                    'Neural Netzwerk: Ein Modell für alle' = 'nnfa',
+			                    'Neural Netzwerk: Ein Modell für alle mit Hidden Layer' = 'nnfah',
+			                    'Jordan-Netzwerk' = 'jordan',
+			                    'Elman-Netzwerk' = 'elman',
+			                    'MLP' = 'mlp',
+			                    'MLP mit Hidden Layer' = 'mlph'), selected ='ar')
+			              ),
+			              column(width = 5,
+			                selectInput('model2Select', 'Model 2',
+			                  c('Auto-Regeressives Modell' = 'ar',
+			                    'Neural Netzwerk: Eigenes Modell für jedes' = 'nnfe',
+			                    'Neural Netzwerk: Eigenes Modell für jedes mit Hidden Layer' = 'nnfeh',
+			                    'Neural Netzwerk: Ein Modell für alle' = 'nnfa',
+			                    'Neural Netzwerk: Ein Modell für alle mit Hidden Layer' = 'nnfah',
+			                    'Jordan-Netzwerk' = 'jordan',
+			                    'Elman-Netzwerk' = 'elman',
+			                    'MLP' = 'mlp',
+			                    'MLP mit Hidden Layer' = 'mlph'), selected = 'nnfe')
+			              ),
+			              column(width = 2,
+			                actionButton('compareModels', 'Vergleichen')
+			              )
+			            ),
+			            dataTableOutput('ModelPredictionsCompareTable')
+			          ),
 			         tabPanel('CPU time',
 			                  plotlyOutput('data_cpu_time')
 			         )

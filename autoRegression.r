@@ -63,7 +63,7 @@ testAR <- function(id)
   testSet[['bias']] <- 1
   result <- as.matrix(testSet) %*% getARCoef(id)
   
-  autoRegressiveTestResults[[id]] <<- structure(list(expected = expected, result = result), class = 'TestResults')
+  autoRegressiveTestResults[[id]] <<- structure(list(expected = expected, result = result[,1]), class = 'TestResults')
 }
 
 getARTestResults <- function(id)

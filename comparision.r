@@ -222,6 +222,75 @@ getCoef <- function(id)
   dt
 }
 
+# Compares the test results of two given models using all time series.
+# The test results are said to differ´in one point if the difference of both predictions
+# exceeds the threshold value multiplied by the value span of the complete time series.
+# Supported models: ar, nnfe, nnfeh, nnfa, nnfah, jordan, elman, mlp, mlph
+compareModels <- function(modelName1, modelName2, threshold = 0.01)
+{
+  if (modelName1 == modelName2)
+  {
+    stop('Cannot compare one model with itself.')
+  }
+  
+  getTestResultsFUN <- function(modelName) {
+    switch (modelName,
+      ar = { getARTestResults },
+      nnfe = { getNeuralNetworkTestResults },
+      nnfeh = { function(id) { getNeuralNetworkTestResults(id, hiddenLayers = TRUE) } },
+      nnfa = { function(id) { getNeuralNetworkTestResults(id, forAll = TRUE) } },
+      nnfah = { function(id) { getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE) } },
+      jordan = { getJordanTestResults },
+      elman = { getElmanTestResults },
+      mlp = { getMLPTestResults },
+      mlph = { function(id) { getMLPTestResults(id, hiddenLayers = TRUE) } },
+      { NULL }
+    )
+  }
+  
+  getTestResults1 <- getTestResultsFUN(modelName1)
+  getTestResults2 <- getTestResultsFUN(modelName2)
+  
+  if (is.null(getTestResults1))
+  {
+    stop(paste0("Model '", modelName1, "' unknown"))
+  }
+  if (is.null(getTestResults2))
+  {
+    stop(paste0("Model '", modelName2, "' unknown"))
+  }
+  
+  diffs <- lapply(names(data.sets), function(id) {
+    tryCatch({
+      results1 <- getTestResults1(id)$result
+      if (is.atomic(results1))
+      {
+        list(id = id, diff = -1)
+      }
+      results2 <- getTestResults2(id)$result
+      if (is.atomic(results2))
+      {
+        list(id = id, diff = -1)
+      }
+      valueSpan <- getTimeSeriesValueSpan(id)
+      
+      diffRelative <- abs((results1 - results2) / valueSpan)
+      
+      list(id = id, diff = sum(diffRelative > threshold))
+    },
+    error = function(e) {
+      list(id = id, diff = -1)
+    })
+  })
+  
+  # represent as a data.table, group and order by diff
+  dt <- rbindlist(diffs)
+  dt <- dt[, .(ids = list(id)), by = diff]
+  setorder(dt, diff)
+  
+  dt
+}
+
 
 
 getForecastComparisionPlot <- function(id) {

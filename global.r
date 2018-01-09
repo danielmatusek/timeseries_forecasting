@@ -57,6 +57,12 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   }
 }
 
+getTimeSeriesValueSpan <- function(id)
+{
+  values <- data.sets[[id]]$y
+  max(values) - min(values)
+}
+
 resetWindows <- function() {
   data.trainSets <<- NULL
   data.testSets <<- NULL

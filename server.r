@@ -651,6 +651,37 @@ server <- function(input, output) {
 	  findDifferenceInNeuralNetworksWrtHiddenLayers()
 	})
 	
+	modelComparision <- eventReactive(input$compareModels, {
+	  idChanged()
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  nnTypChanged()
+	  
+	  if (is.null(data.sets))
+	  {
+	    return (NULL)
+	  }
+	  
+	  compareModels(input$model1Select, input$model2Select, 0.02)
+	})
+	
+	#output$ModelPredictionsCompareTable <- renderDataTable(modelComparision)
+	output$ModelPredictionsCompareTable <- renderDataTable({
+	  idChanged()
+	  windowsChanged()
+	  excludeBiasChanged()
+	  hiddenLayersChanged()
+	  nnTypChanged()
+	  
+	  if (is.null(data.sets))
+	  {
+	    return (NULL)
+	  }
+	  
+	  compareModels(input$model1Select, input$model2Select, 0.02)
+	})
+	
 	output$data_cpu_time <- renderPlotly({
 	  arModelBaseChanged()
 	  windowsChanged()

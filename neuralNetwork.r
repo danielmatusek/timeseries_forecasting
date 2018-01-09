@@ -135,63 +135,68 @@ excludeInputs <- function(hidden)
 
 trainNeuralNetwork <- function(trainset, hiddenLayers = c(0)) 
 {
-  
   setNeuralNetworkExcludeVector(hiddenLayers)
   n <- names(trainset)
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
   set.seed(1)
   
   
-  #if elements exist in excludevector then the condition is false
-  if(!is.logical(neuralNetwork.excludeVector) || neuralNetwork.excludeBias) {
-    nn <- 1
-    out <- tryCatch({
+  tryCatch({
+    #if elements exist in excludevector then the condition is false
+    if(!is.logical(neuralNetwork.excludeVector) || neuralNetwork.excludeBias) {
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
-      exclude = neuralNetwork.excludeVector)
-      return(nn)
-    },
-      warning=function(cond) {
-      message(paste("Warning:"))
-      nn <- -1
-      return(nn)
-    })
+        exclude = neuralNetwork.excludeVector)
+    }
+    else
+    {
+      nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity)
+    }
     
-    return(out)
-  }
-  else
-  {
-    neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity)
-  }
+    # remove the larger "unnecessary" fields. They fill up RAM.
+    nn$response <- NULL
+    nn$coveriate <- NULL
+    nn$data <- NULL
+    nn$covariate <- NULL
+    nn$net.result <- NULL
+    nn$generalized.weights <- NULL
+    nn
+  },
+  warning = function(w) {
+    print(w)
+    NA
+  },
+  error = function(e) {
+    print(e)
+    NA
+  })
 }
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
 getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
-  #trycatch
-  
-  out <- tryCatch({
   if(hlOptimization) #when optimal number of hidden nodes must be retrieved
   {
     if(is.null(neuralNetwork.hlOptimizationNN[[id]]))
     {
       neuralNetwork.hlOptimizationNN[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hlOptimization)    
       return(neuralNetwork.hlOptimizationNN[[id]])
-    } 
-    else 
+    }
+    else
     {
       neuralNetwork.hlOptimizationNN.old[[id]] <<- neuralNetwork.hlOptimizationNN[[id]]
       neuralNetwork.hlOptimizationNN[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hlOptimization)    
       return(neuralNetwork.hlOptimizationNN[[id]])
     }
   }
+  
   if (is.null(id))
   {
-    trainSetsCombined <- getAllTrainSetsCombined()
     if (hiddenLayers)
     {
       if (is.null(neuralNetwork.forAll.hiddenLayers))
       {
-        print('train for all with hidden layers')
+        print('train nn for all with hidden layers')
+        trainSetsCombined <- getAllTrainSetsCombined()
         neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
       }
       return(neuralNetwork.forAll.hiddenLayers)
@@ -200,7 +205,8 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
     {
       if (is.null(neuralNetwork.forAll))
       {
-        print('train for all without hidden layers')
+        print('train nn for all without hidden layers')
+        trainSetsCombined <- getAllTrainSetsCombined()
         neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined)
       }
       return(neuralNetwork.forAll)
@@ -213,7 +219,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
     {
       if (is.null(neuralNetwork.forEach.hiddenLayers[[id]]))
       {
-        print(paste('train for id', id ,'with hidden layers'))
+        print(paste('train nn for id', id ,'with hidden layers'))
         neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
       }
       return(neuralNetwork.forEach.hiddenLayers[[id]])
@@ -222,27 +228,12 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
     {
       if (is.null(neuralNetwork.forEach[[id]]))
       {
-        print(paste('train for id', id ,'without hidden layers'))
+        print(paste('train nn for id', id ,'without hidden layers'))
         neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(getTrainSet(id))
       }
       return(neuralNetwork.forEach[[id]])
     }
   }
-  }, 
-#  error=function(cond) {
-#    message(paste("Error:", id))
-#    message("Here's the original error message:")
-#    message(cond)
-#    return(NA)
-#  },
-  warning=function(cond) {
-   
-    message(paste("Warning:", id, hiddenLayers))
-    message("Here's the original warning message:")
-    message(cond)
-    return(NULL)
-  }
-  )    
   return(out)
 }
 
@@ -250,16 +241,22 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 
 testNeuralNetwork <- function(neuralNetwork, testSetID)
 {
+  if (is.atomic(neuralNetwork)) # neuralNetwork is NA
+  {
+    return (NA)
+  }
+  
   testData <- getTestSet(testSetID)
   expected <- testData$xt0
   testData$xt0 <- NULL
   
   #compute = boese
   n <- compute(neuralNetwork, testData)
+  result <- n$net.result[,1]
   
-  mse   <- sum((expected - n$net.result)^2)/nrow(n$net.result)
-  smape <- sMAPE(expected, n$net.result)
-  structure(list(expected = expected, result = n$net.result, mse = mse, smape = smape), class = 'TestResults')
+  mse   <- sum((expected - result)^2)/length(result)
+  smape <- sMAPE(expected, result)
+  structure(list(expected = expected, result = result, mse = mse, smape = smape), class = 'TestResults')
 }
 
 # Get test result of the neural network for the given parameters
@@ -368,7 +365,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
       if(!is.null(oldModel))
       {
         stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors), class = 'TestExclusion')
-        stats$nodes[[1]] <- 'Ø'
+        stats$nodes[[1]] <- '?'
         pos <- (as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers) * 2) + 1)
         print(pos)
         neuralNetwork.excluded.statistics[[pos]] <<- stats

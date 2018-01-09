@@ -1,10 +1,20 @@
 plot.rsnns <- function(x, labels = NULL)
 {
+  nn <<- x
   netInfo <<- extractNetInfo(x)
   unitDefinitions <- netInfo$unitDefinitions
   types <- unitDefinitions$type
-  posX <- unitDefinitions$posX
-  posY <- unitDefinitions$posY
+  
+  if (inherits(x, 'mlp'))
+  {
+    posX <- unitDefinitions$posY + 1
+    posY <- unitDefinitions$posX
+  }
+  else
+  {
+    posX <- unitDefinitions$posX
+    posY <- unitDefinitions$posY
+  }
   numNeurons <- length(posX)
   
   if (!is.null(labels))
@@ -42,12 +52,20 @@ plot.rsnns <- function(x, labels = NULL)
     }
   }
   
-  minContextY <- min(contextY)
-  normalYWidth = max(normalY) - min(normalY)
-  contextYWidth = max(contextY) - minContextY
+  maxX <- max(posX) + 1
   
-  maxX <- max(unitDefinitions$posX) + 1
-  maxY <- normalYWidth + contextYWidth + 3
+  normalYWidth <- max(normalY) - min(normalY)
+  if (length(contextY) > 0)
+  {
+    minContextY <- min(contextY)
+    contextYWidth <- max(contextY) - minContextY
+    
+    maxY <- normalYWidth + contextYWidth + 3
+  }
+  else
+  {
+    maxY <- normalYWidth + 1
+  }
   
   radius <- 1 / max(maxX, maxY) / 2
   
