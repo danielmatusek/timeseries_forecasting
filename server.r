@@ -129,8 +129,9 @@ server <- function(input, output) {
 	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
 	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
 	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
-		rsnns.rnn <<- 'rsnns_rnn' %in% input$variable_nn
-		rsnns.mlp <<- 'rsnns_mlp' %in% input$variable_nn
+		rsnns.rnn <<- TRUE #'rsnns_rnn' %in% input$variable_nn
+		rsnns.mlp <<- TRUE #'rsnns_mlp' %in% input$variable_nn
+		rsnns.mlph <<- TRUE #'rsnns_mlph' %in% input$variable_nn
 		resetComparison()
 	})
 	
@@ -302,12 +303,9 @@ server <- function(input, output) {
 	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"))
 	    }
 	  })
-	 	
-	 	
-	 	myTabs <- c(myTabs, lapply(input$variable_nn, function(x){
-	 	  
-	 	 if(neuralNetwork.isInputExcluded)
-	 	 {
+	 	if(neuralNetwork.isInputExcluded)
+	 	{
+	 	 	myTabs <- c(myTabs, lapply(input$variable_nn, function(x){
 	 	    if(x == "forecast_one" )
 	 	    {
   	 	   panels[[length(panels) + 1]] <- tabPanel('Forecast /1 Ex. Inp.',
@@ -332,11 +330,11 @@ server <- function(input, output) {
 	 	                                              plotOutput("nnhfacei", height = "600px"),
 	 	                                              dataTableOutput("nnhfaeidt"))
 	 	   }
-	   }
-	 	}))
+	  }))
+	 	}
 	 	
-	  myTabs$width = "100%"
-	  do.call(tabBox, myTabs)
+	 myTabs$width = "100%"
+	 do.call(tabBox, myTabs)
 	})
 	
 	output$neuralNetwork_hlOptimization <- renderUI({

@@ -2,8 +2,8 @@ library(ggplot2)
 library(plotly)
 
 errorTable <- NULL
-errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA")
 
+errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA","RNN","MLP","MLPH")
 
 
 error_metric <- function(testResults)
@@ -28,12 +28,10 @@ applyMetric <- function(getTestResultsFUN, FUN)
       }))
     }))
   }else{
-
       testResults <- getTestResultsFUN(data.idSelected)
       unlist(lapply(1:length(testResults$expected), function(i) {
         FUN(testResults$expected[[i]], testResults$result[[i]])
       }))
-
   }
 }
 
@@ -59,6 +57,19 @@ getErrorMetric <- function(FUN)
   if(neuralNetwork.enableForAll.hidden)
   {
     metric$nnfah <- applyMetric(function(id) { getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE) }, FUN)
+  }
+  if(rsnns.rnn)
+  {
+    metric$rnn <- applyMetric(function(id) { testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id) }, FUN)
+  }
+  if(rsnns.mlp)
+  {
+    metric$mlp <- applyMetric(function(id) { testMLP(trainMLP(id, hiddenLayers = FALSE), id) }, FUN)
+    #(testMLP(trainMLP("1000", FALSE),"1000")$result)[,1]
+  }
+  if(rsnns.mlph)
+  {
+    metric$mlph <- applyMetric(function(id) { testMLP(trainMLP(id, hiddenLayers = TRUE), id) }, FUN)
   }
   
   metric
@@ -120,7 +131,29 @@ getBoxplot <- function(errorName)
     p <- p %>%  add_boxplot(y = errorMetrics$nnfah, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
                 line = list(color = 'rgb(0,200,200)'),
-                name = " NNHFA")
+                name = "NNHFA")
+  }
+  
+  if(rsnns.rnn)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$rnn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(0,200,200)'),
+                            name = "RNN", boxmean = TRUE)    
+  }
+  if(rsnns.mlp)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$mlp, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(0,100,0)'),
+                            name = "MLP", boxmean = TRUE)    
+  }
+  if(rsnns.mlph)
+  {
+    p <- p %>%  add_boxplot(y = errorMetrics$mlph, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
+                            marker = list(color = 'rgb(7,40,89)'),
+                            line = list(color = 'rgb(100,0,0)'),
+                            name = "MLPH", boxmean = TRUE)    
   }
     
     
@@ -138,6 +171,10 @@ getMeanErrorVectorFromModels <- function(errorName)
   if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
   if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
   if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
+  #für RSNNS auch noch
+  if(rsnns.rnn) errorMean = c(errorMean, mean(errorTable[[errorName]][['rnn']]))#names = c(names, errorModelNames[6])
+  if(rsnns.mlp) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlp']]))
+  if(rsnns.mlph) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlph']]))  
   errorMean
 }
 
@@ -151,7 +188,9 @@ getErrorMetricCompare <- function()
   if(neuralNetwork.enableForEach.hidden) names = c(names, errorModelNames[3])
   if(neuralNetwork.enableForAll) names = c(names, errorModelNames[4])
   if(neuralNetwork.enableForAll.hidden) names = c(names, errorModelNames[5])
-  
+  if(rsnns.rnn) names = c(names, errorModelNames[6])
+  if(rsnns.mlp) names = c(names, errorModelNames[7])
+  if(rsnns.mlph) names = c(names, errorModelNames[8])
   data.table(NAME = names, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
 }
 
@@ -216,6 +255,7 @@ getCoef <- function(id)
     names <- c(names, 'NN for all hidden')
   }
   
+
   names(dt) <- names
   
   dt
@@ -267,19 +307,27 @@ getForecastComparisionPlot <- function(id) {
   }
 
   #Add RNN from RSNNS Package
-  prediction$rsnnsrnn <- append(rep(NA, data.horizon),
-    testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$result)
-    prediction$rsnnsrnn[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  if(rsnns.rnn)
+  {
+    prediction$rsnnsrnn <- append(rep(NA, data.horizon),
+      testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$result)
+      prediction$rsnnsrnn[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
 
   #Add MLP with hidden Layer from RSNNS Package
-  prediction$rsnnsmlp <- append(rep(NA, data.horizon),
-    testMLP(trainMLP(id, hiddenLayers = TRUE), id)$result)
-    prediction$rsnnsmlp[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+  if(rsnns.mlph){
+    prediction$rsnnsmlp <- append(rep(NA, data.horizon),
+      testMLP(trainMLP(id, hiddenLayers = TRUE), id)$result)
+      prediction$rsnnsmlp[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
 
   #Add MLP without hidden Layer from RSNNS Package
-  prediction$rsnnsmlp_nhl <- append(rep(NA, data.horizon),
-    testMLP(trainMLP(id, hiddenLayers = FALSE), id)$result)
-    prediction$rrsnnsmlp_nhl[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+
+  if(rsnns.mlp){
+    prediction$rsnnsmlp_nhl <- append(rep(NA, data.horizon),
+      testMLP(trainMLP(id, hiddenLayers = FALSE), id)$result)
+      prediction$rrsnnsmlp_nhl[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
+  }
 
   #Add Jordan Network from RSNNS Package
   prediction$rsnnsjordan <- append(rep(NA, data.horizon),
@@ -305,10 +353,22 @@ getForecastComparisionPlot <- function(id) {
   {
     p <- p %>% add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(255, 0, 225)'))
   }
-  p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS rnn', line = list(color = 'rgb(0, 128, 128)'))
-  p <- p %>% add_trace(y = ~rsnnsmlp, name = 'RSNNS mlp', line = list(color = 'rgb(145, 30, 180)'))
-  p <- p %>% add_trace(y = ~rsnnsmlp_nhl, name = 'RSNNS mlp without hidden', line = list(color = 'rgb(245, 130, 48)'))
+  if(rsnns.rnn)
+  {
+    p <- p %>% add_trace(y = ~rsnnsrnn, name = 'RSNNS rnn', line = list(color = 'rgb(0, 128, 128)'))
+  }
+  if(rsnns.mlph)
+  {
+    p <- p %>% add_trace(y = ~rsnnsmlp, name = 'RSNNS mlp', line = list(color = 'rgb(145, 30, 180)'))    
+  }
+
+  if(rsnns.mlp)
+  {
+    p <- p %>% add_trace(y = ~rsnnsmlp_nhl, name = 'RSNNS mlp without hidden', line = list(color = 'rgb(245, 130, 48)'))
+  }
+  
   p <- p %>% add_trace(y = ~rsnnsjordan, name = 'RSNNS jordan', line = list(color = 'rgb(250, 190, 190)'))
+
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
   p
 }
