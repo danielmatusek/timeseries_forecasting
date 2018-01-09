@@ -29,9 +29,9 @@ testRNN <- function(model, id)
 {
   testset <- getTestSet(id)
   print(testset)
-  expected <- testset[,1]
+  expected <- unlist(testset[,1])
   
-  result <- predict(model, testset[,2 : length(testset)])
+  result <- predict(model, testset[,2 : length(testset)])[,1]
   
   
   mse <- sum((expected - result)^2) / nrow(result)
@@ -84,9 +84,9 @@ trainMLP <- function(id, hiddenLayers = TRUE)
 testMLP <- function(model, id)
 {
   testset <- getTestSet(id)
-  expected <- testset[,1]
+  expected <- unlist(testset[,1])
   
-  result <- predict(model, testset[,2 : length(testset)])
+  result <- predict(model, testset[,2 : length(testset)])[,1]
   
   
   mse <- sum((expected - result)^2) / nrow(result)
