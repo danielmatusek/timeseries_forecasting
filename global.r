@@ -80,7 +80,7 @@ createWindows <- function(id) {
     names(win) <- paste0('xt', data.windowSize:0)
     setcolorder(win, paste0('xt', 0:data.windowSize))
     index <- 1:(nrow(win) - (data.horizon + 1)) # to calculate the difference you need the last point of train data
-    data.inputDifference.testSets[[id]] <<-  win[-index, ]
+    data.inputDifference.testSets[[id]] <<- win[-index, ]
     dataSet <- diff(dataSet)
   }
   

@@ -53,13 +53,13 @@ getTestResults.ar <- function(id)
 
   testSet[['xt0']] <- NULL
   testSet[['bias']] <- 1
-  result <- as.matrix(testSet) %*% getARCoef(id)
+  predicted <- as.matrix(testSet) %*% getARCoef(id)
   
   if(neuralNetwork.inputDifference)
   {
-    result <-  setOffsetToResultSet(id, result)
+    predicted <-  setOffsetToResultSet(id, predicted)
     expected <- getOrgiginalTestSet(id)
   }
   
-  structure(list(expected = expected, result = result[,1]), class = 'TestResults')
+  structure(list(expected = expected, predicted = predicted[,1]), class = 'TestResults')
 }

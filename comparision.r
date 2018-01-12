@@ -10,7 +10,7 @@ error_metric <- function(testResults)
 {
   #forecast_set ist von Datentyp matrix, muss aber numeric sein
   test_set <- as.numeric(testResults$expected)
-  forecast_set <- as.numeric(testResults$result)
+  forecast_set <- as.numeric(testResults$predicted)
   
   data.frame(mse = unlist(lapply(1:length(test_set), function(i) { mse(test_set[[i]], forecast_set[[i]]) })),
     rmse = unlist(lapply(1:length(test_set), function(i) { rmse(test_set[[i]], forecast_set[[i]]) })),
@@ -30,7 +30,7 @@ applyMetric <- function(getTestResultsFUN, FUN)
   #}else{
       testResults <- getTestResultsFUN(data.idSelected)
       unlist(lapply(1:length(testResults$expected), function(i) {
-        FUN(testResults$expected[[i]], testResults$result[[i]])
+        FUN(testResults$expected[[i]], testResults$predicted[[i]])
       }))
   #}
 }
@@ -39,22 +39,22 @@ getErrorMetric <- function(FUN)
 {
   metric <- data.table(ar = applyMetric(function(id) { getTestResults('ar', id) }, FUN))
   
-  if(neuralNetwork.enableForEach)
+  if('nnfe' %in% vars$enabledModels)
   {
     metric$nn <- applyMetric(function(id) { getTestResults('nnfe', id) }, FUN)
   }
   
-  if(neuralNetwork.enableForEach.hidden)
+  if('nnfeh' %in% vars$enabledModels)
   {
     metric$nnh <- applyMetric(function(id) { getTestResults('nnfeh', id) }, FUN)
   }
   
-  if(neuralNetwork.enableForAll)
+  if('nnfa' %in% vars$enabledModels)
   {
     metric$nnfa <- applyMetric(function(id) { getTestResults('nnfa', id) }, FUN)
   }
   
-  if(neuralNetwork.enableForAll.hidden)
+  if('nnfah' %in% vars$enabledModels)
   {
     metric$nnfah <- applyMetric(function(id) { getTestResults('nnfah', id) }, FUN)
   }
@@ -105,7 +105,7 @@ getBoxplot <- function(errorName)
     line = list(color = 'rgb(193,5,52)'),
     name = "AR", boxmean = TRUE)
   
-  if(neuralNetwork.enableForEach)
+  if('nnfe' %in% vars$enabledModels)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
@@ -113,7 +113,7 @@ getBoxplot <- function(errorName)
                 name = "NN", boxmean = TRUE)
   }
   
-  if(neuralNetwork.enableForEach.hidden)
+  if('nnfeh' %in% vars$enabledModels)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nnh, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
@@ -121,7 +121,7 @@ getBoxplot <- function(errorName)
                 name = "NNH", boxmean = TRUE)
   }
   
-  if(neuralNetwork.enableForAll)
+  if('nnfa' %in% vars$enabledModels)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
@@ -129,7 +129,7 @@ getBoxplot <- function(errorName)
                 name = "NNFA", boxmean = TRUE)
   }
     
-  if(neuralNetwork.enableForAll.hidden)
+  if('nnfah' %in% vars$enabledModels)
   {
     p <- p %>%  add_boxplot(y = errorMetrics$nnfah, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
                 marker = list(color = 'rgb(7,40,89)'),
@@ -176,10 +176,10 @@ getMeanErrorVectorFromModels <- function(errorName)
   comparison()
   
   errorMean = mean(errorTable[[errorName]][['ar']])
-  if(neuralNetwork.enableForEach) errorMean = c(errorMean, mean(errorTable[[errorName]][['nn']]))
-  if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
-  if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
-  if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
+  if('nnfe' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nn']]))
+  if('nnfeh' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
+  if('nnfa' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
+  if('nnfah' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
   #für RSNNS auch noch
   if(rsnns.rnn) errorMean = c(errorMean, mean(errorTable[[errorName]][['rnn']]))#names = c(names, errorModelNames[6])
   if(rsnns.mlp) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlp']]))
@@ -194,10 +194,10 @@ getErrorMetricCompare <- function()
   comparison()
   
   names = c(errorModelNames[1])
-  if(neuralNetwork.enableForEach) names = c(names, errorModelNames[2])
-  if(neuralNetwork.enableForEach.hidden) names = c(names, errorModelNames[3])
-  if(neuralNetwork.enableForAll) names = c(names, errorModelNames[4])
-  if(neuralNetwork.enableForAll.hidden) names = c(names, errorModelNames[5])
+  if('nnfe' %in% vars$enabledModels) names = c(names, errorModelNames[2])
+  if('nnfeh' %in% vars$enabledModels) names = c(names, errorModelNames[3])
+  if('nnfa' %in% vars$enabledModels) names = c(names, errorModelNames[4])
+  if('nnfah' %in% vars$enabledModels) names = c(names, errorModelNames[5])
   if(rsnns.rnn) names = c(names, errorModelNames[6])
   if(rsnns.mlp) names = c(names, errorModelNames[7])
   if(rsnns.mlph) names = c(names, errorModelNames[8])
@@ -223,7 +223,7 @@ getCoef <- function(id)
   
   
   # Add Auto Regression for each
-  if(neuralNetwork.enableForEach)
+  if('nnfe' %in% vars$enabledModels)
   {
     coef <- getReducedNeuralNetworkWeights(getModel('nnfe', id))[[1]][[1]][,1]
     bias <- coef[1]
@@ -234,7 +234,7 @@ getCoef <- function(id)
   }
   
   # Add Auto Regression for each with hidden layers
-  if(neuralNetwork.enableForEach.hidden)
+  if('nnfeh' %in% vars$enabledModels)
   {
     coef <- getReducedNeuralNetworkWeights(getModel('nnfeh', id))[[1]][[1]][,1]
     bias <- coef[1]
@@ -245,7 +245,7 @@ getCoef <- function(id)
   }
   
   # Add Auto Regression for all
-  if(neuralNetwork.enableForAll)
+  if('nnfa' %in% vars$enabledModels)
   {
     coef <- getReducedNeuralNetworkWeights(getModel('nnfa'))[[1]][[1]][,1]
     bias <- coef[1]
@@ -256,7 +256,7 @@ getCoef <- function(id)
   }
   
   # Add Auto Regression for all with hidden layers
-  if(neuralNetwork.enableForAll.hidden)
+  if('nnfah' %in% vars$enabledModels)
   {
     coef <- getReducedNeuralNetworkWeights(getModel('nnfah'))[[1]][[1]][,1]
     bias <- coef[1]
@@ -312,19 +312,19 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
   
   diffs <- lapply(names(data.sets), function(id) {
     tryCatch({
-      results1 <- getTestResults1(id)$result
-      if (is.atomic(results1))
+      predicted1 <- getTestResults1(id)$predicted
+      if (is.atomic(predicted1))
       {
         list(id = id, diff = -1)
       }
-      results2 <- getTestResults2(id)$result
-      if (is.atomic(results2))
+      predicted2 <- getTestResults2(id)$predicted
+      if (is.atomic(predicted2))
       {
         list(id = id, diff = -1)
       }
       valueSpan <- getTimeSeriesValueSpan(id)
       
-      diffRelative <- abs((results1 - results2) / valueSpan)
+      diffRelative <- abs((predicted1 - predicted2) / valueSpan)
       
       list(id = id, diff = sum(diffRelative > threshold))
     },
@@ -352,48 +352,25 @@ getForecastComparisionPlot <- function(id) {
   prediction <- data.table(x = data.sets[[id]]$x[startRealData:data.length],
     y = data.sets[[id]]$y[startRealData:data.length])
   
-  # Add Auto Regression
-  prediction$ar <- append(rep(NA, data.horizon), getTestResults('ar', id)$result)
-  prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
-  
-  # Add Neural Network for each
-  prediction$nnfe <- append(rep(NA, data.horizon), getTestResults('nnfe', id)$result)
-  prediction$nnfe[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
-  
-  # Add Auto Regression for each with hidden layers
-  if(neuralNetwork.enableForEach.hidden)
+  #lapply(vars$enabledModels, function(modelName) {
+  for (modelName in vars$enabledModels)
   {
-    prediction$nnfeh <- append(rep(NA, data.horizon), getTestResults('nnfeh', id)$result)
-    prediction$nnfeh[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
-  }
-  
-  # Add Auto Regression for all
-  if(neuralNetwork.enableForAll)
-  {
-    prediction$nnfa <- append(rep(NA, data.horizon), getTestResults('nnfa', id)$result)
-    prediction$nnfa[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
-  }
-  
-  # Add Auto Regression for all with hidden layers
-  if(neuralNetwork.enableForAll.hidden)
-  {
-    prediction$nnfah <- append(rep(NA, data.horizon),
-      getTestResults('nnfah', id)$result)
-    prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
+    prediction[[modelName]] <- append(rep(NA, data.horizon), getTestResults(modelName, id)$predicted)
+    prediction[[modelName]][[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
 
   #Add RNN from RSNNS Package
   if(rsnns.rnn)
   {
     prediction$rsnnsrnn <- append(rep(NA, data.horizon),
-      testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$result)
+      testRNN(trainRNN(id, neuralNetwork.hiddenLayers), id)$predicted)
       prediction$rsnnsrnn[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
   }
 
   #Add MLP with hidden Layer from RSNNS Package
   if(rsnns.mlph){
     prediction$rsnnsmlp <- append(rep(NA, data.horizon),
-      testMLP(trainMLP(id, hiddenLayers = TRUE), id)$result)
+      testMLP(trainMLP(id, hiddenLayers = TRUE), id)$predicted)
       prediction$rsnnsmlp[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
   }
 
@@ -401,14 +378,14 @@ getForecastComparisionPlot <- function(id) {
 
   if(rsnns.mlp){
     prediction$rsnnsmlp_nhl <- append(rep(NA, data.horizon),
-      testMLP(trainMLP(id, hiddenLayers = FALSE), id)$result)
+      testMLP(trainMLP(id, hiddenLayers = FALSE), id)$predicted)
       prediction$rrsnnsmlp_nhl[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
   }
 
   #Add Jordan Network from RSNNS Package
   if(rsnns.jordan){
     prediction$rsnnsjordan <- append(rep(NA, data.horizon),
-      testJordan(trainJordan(id, neuralNetwork.hiddenLayers), id)$result)
+      testJordan(trainJordan(id, neuralNetwork.hiddenLayers), id)$predicted)
       prediction$rsnnsjordan[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]    
   }
 
@@ -416,19 +393,19 @@ getForecastComparisionPlot <- function(id) {
   # Plot the data
   p <- plot_ly(prediction, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)')) %>%
     add_trace(y = ~ar, name = 'Auto Regression', line = list(color = 'rgb(193,5,52)'))
-  if(neuralNetwork.enableForEach)
+  if('nnfe' %in% vars$enabledModels)
   {
     p <- p %>% add_trace(y = ~nnfe, name = 'Neural Network /1', line = list(color = 'rgb(0,0,255)'))
   }
-  if(neuralNetwork.enableForEach.hidden)
+  if('nnfeh' %in% vars$enabledModels)
   {
     p <- p %>% add_trace(y = ~nnfeh, name = 'Neural Network /1 hidden', line = list(color = 'rgb(0, 255, 255)'))
   }
-  if(neuralNetwork.enableForAll)
+  if('nnfa' %in% vars$enabledModels)
   {
     p <- p %>% add_trace(y = ~nnfa, name = 'Neural Network /n', line = list(color = 'rgb(255, 0, 128)'))
   }
-  if(neuralNetwork.enableForAll.hidden)
+  if('nnfah' %in% vars$enabledModels)
   {
     p <- p %>% add_trace(y = ~nnfah, name = 'Neural Network /n hidden', line = list(color = 'rgb(128, 0, 128)'))
   }

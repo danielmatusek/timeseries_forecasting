@@ -15,11 +15,6 @@ neuralnetwork.strategies <<- c("Greedy") # "Min", "Max",
 neuralNetwork.excluded.statistics <<- list()
 neuralnetwork.greedyErrorType <<- NULL
 
-neuralNetwork.enableForEach <<- TRUE
-neuralNetwork.enableForEach.hidden <<- TRUE
-neuralNetwork.enableForAll <<- FALSE
-neuralNetwork.enableForAll.hidden <<- FALSE
-
 neuralNetwork.hlOptimization <<- c(0)
 neuralNetwork.hlOptimizationErrorVector <<- c(0)
 neuralnetwork.tempHiddenNodes <<- c(0)
@@ -219,15 +214,15 @@ testNeuralNetwork <- function(neuralNetwork, testSetID)
   
 
   n <- compute(neuralNetwork, testData)
-  result <- n$net.result[,1]
+  predicted <- n$net.result[,1]
   
   if(neuralNetwork.inputDifference)
   {
-    n$net.result <-  setOffsetToResultSet(testSetID, n$net.result)
+    predicted <- setOffsetToResultSet(testSetID, predicted)
     expected <- getOrgiginalTestSet(testSetID)
   }
   
-  structure(list(expected = expected, result = result), class = 'TestResults')
+  structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
 
 getTestResults.nnfe <- function(id)
@@ -291,7 +286,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
   {
     bestModel <- NULL
     #calculate the first model
-    neuralNetwork.excludedPastModels[[1]] <<- getNeuralNetwork(id, hiddenLayers, FALSE)
+    neuralNetwork.excludedPastModels[[1]] <<- if (hiddenLayers) { getModel('nnfeh', id) } else { getModel('nnfe', id) }
     neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[1]]$result.matrix[1])
     neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, testNeuralNetwork(neuralNetwork.excludedPastModels[[1]], data.idSelected)$smape)
     neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- '?'
@@ -419,7 +414,7 @@ createModels <- function(path, id, hiddenLayers)
     {
       resetNeuralNetworks()
       neuralNetwork.excludeInputNodes <<- c(path, i)
-      neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels) + 1]] <<- getNeuralNetwork(id, hiddenLayers, FALSE)
+      neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels) + 1]] <<- if (hiddenLayers) { getModel('nnfeh', id) } else { getModel('nnfe', id) }
       neuralNetwork.excludedInternalErrors <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels)]]$result.matrix[1])
       neuralNetwork.excludedPastErrors <<- c(neuralNetwork.excludedPastErrors, testNeuralNetwork(neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels)]], data.idSelected)$smape)
       neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- c(path, i)
@@ -469,8 +464,8 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function()
   tolerance <- 1e-5
   
   idsNNsDiffer <- unlist(lapply(names(data.sets), function(id) {
-    reducedWeightsNN <- getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1]
-    reducedWeightsNNH <- getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1]
+    reducedWeightsNN <- getReducedNeuralNetworkWeights(getModel('nnfe', id))[[1]][[1]][,1]
+    reducedWeightsNNH <- getReducedNeuralNetworkWeights(getModel('nnfeh', id))[[1]][[1]][,1]
     
     dif <- reducedWeightsNN - reducedWeightsNNH
     
@@ -507,7 +502,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
     neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
 
-    last_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$smape
+    last_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
     
     #add first layer incrementally
@@ -518,7 +513,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$smape
+      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
       neuralNetwork.hlOptimizationErrorVector[i+1] <<- current_error
 
       #break from optimization when error rises again
