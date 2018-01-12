@@ -172,6 +172,32 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0))
   })
 }
 
+getModel.nnfe <- function(id)
+{
+  print(paste('train nn for id', id ,'without hidden layers'))
+  trainNeuralNetwork(getTrainSet(id))
+}
+
+getModel.nnfeh <- function(id)
+{
+  print(paste('train nn for id', id ,'with hidden layers'))
+  trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
+}
+
+getModel.nnfa <- function()
+{
+  print('train nn for all without hidden layers')
+  trainSetsCombined <- getAllTrainSetsCombined()
+  trainNeuralNetwork(trainSetsCombined)
+}
+
+getModel.nnfah <- function()
+{
+  print('train nn for all with hidden layers')
+  trainSetsCombined <- getAllTrainSetsCombined()
+  trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
+}
+
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
 getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
@@ -267,50 +293,24 @@ testNeuralNetwork <- function(neuralNetwork, testSetID)
   structure(list(expected = expected, result = result, mse = mse, smape = smape), class = 'TestResults')
 }
 
-# Get test result of the neural network for the given parameters
-getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE) {  
-  if (forAll)
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.testResults.forAll.hiddenLayers[[id]]))
-      {
-        neuralNetwork.testResults.forAll.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(NULL, hiddenLayers = TRUE), id)
-      }
-      
-      return(neuralNetwork.testResults.forAll.hiddenLayers[[id]])
-    }
-    else
-    {
-      if (is.null(neuralNetwork.testResults.forAll[[id]]))
-      {
-        neuralNetwork.testResults.forAll[[id]] <<- testNeuralNetwork(getNeuralNetwork(NULL), id)
-      }
-      
-      return(neuralNetwork.testResults.forAll[[id]])
-    }
-  }
-  else
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.testResults.forEach.hiddenLayers[[id]]))
-      {
-        neuralNetwork.testResults.forEach.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hiddenLayers = TRUE), id)
-      }
-      
-      return(neuralNetwork.testResults.forEach.hiddenLayers[[id]])
-    }
-    else
-    {
-      if (is.null(neuralNetwork.testResults.forEach[[id]]))
-      {
-        neuralNetwork.testResults.forEach[[id]] <<- testNeuralNetwork(getNeuralNetwork(id), id)
-      }
-      
-      return(neuralNetwork.testResults.forEach[[id]])
-    }
-  }
+getTestResults.nnfe <- function(id)
+{
+  testNeuralNetwork(getModel('nnfe', id), id)
+}
+
+getTestResults.nnfeh <- function(id)
+{
+  testNeuralNetwork(getModel('nnfeh', id), id)
+}
+
+getTestResults.nnfa <- function(id)
+{
+  testNeuralNetwork(getModel('nnfa', id), id)
+}
+
+getTestResults.nnfah <- function(id)
+{
+  testNeuralNetwork(getModel('nnfah', id), id)
 }
 
 getReducedNeuralNetworkWeights <- function(nn) {

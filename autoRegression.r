@@ -5,7 +5,7 @@ library(data.table)
 
 aRModelName <- NULL
 
-learnARModel <- function(id)
+getModel.ar <- function(id)
 {
   print(paste('train ar for id', id))
 
@@ -24,23 +24,12 @@ learnARModel <- function(id)
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
   }
   
-  autoRegressiveModels[[id]] <<- arModel
-}
-
-getARModel <- function(id)
-{
-  if (is.null(autoRegressiveModels[[id]]))
-  {
-    learnARModel(id)
-    
-  }
-  
-  return (autoRegressiveModels[[id]])
+  return (arModel)
 }
 
 getARCoef <- function(id)
 {
-  arModel <- getARModel(id)
+  arModel <- getModel('ar', id)
   
   if (inherits(arModel, 'ar'))
   {
@@ -56,9 +45,8 @@ getARCoef <- function(id)
   }
 }
 
-testAR <- function(id)
+getTestResults.ar <- function(id)
 {
-  
   testSet <- getTestSet(id)
   expected <- testSet[['xt0']]
   
@@ -73,17 +61,7 @@ testAR <- function(id)
     expected <- getOrgiginalTestSet(id)
   }
   
-  autoRegressiveTestResults[[id]] <<- structure(list(expected = expected, result = result[,1]), class = 'TestResults')
-}
-
-getARTestResults <- function(id)
-{
-  if (is.null(autoRegressiveTestResults[[id]]))
-  {
-    testAR(id)
-  }
-  
-  return (autoRegressiveTestResults[[id]])
+  structure(list(expected = expected, result = result[,1]), class = 'TestResults')
 }
 
 resetARModels <- function()

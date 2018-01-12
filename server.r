@@ -11,6 +11,7 @@ source('neuralNetwork.r')
 source('comparision.r')
 source('recNeuralNetwork.r')
 source('plot.rsnns.r')
+source('model.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 cpu_time <- list()
@@ -788,44 +789,35 @@ server <- function(input, output) {
 	output$data_cpu_time <- renderPlotly({
 	  arModelBaseChanged()
 	  windowsChanged()
-	  
-	  resetARModels()
-	  resetNeuralNetworks()
 
 	  nnTypChanged()
-    x <- list()
-	  if(neuralNetwork.enableForEach){
-	    cpu_time[1] <- system.time(getNeuralNetwork(input$idSelect))[3] +0
-	    x <- c(x,"one modell")
-	  } 
-	  if(neuralNetwork.enableForEach.hidden){
-	    cpu_time[2] <- system.time(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE))[3] +0
-	    x <- c(x,"one modell hidden") 
-	  } 
-	  if(neuralNetwork.enableForAll){
-	    cpu_time[3] <- system.time(getNeuralNetwork(NULL))[3] +0
-	    x <- c(x,"all time series without hidden") 
-	  } 
-	  if(neuralNetwork.enableForAll.hidden){
-	    cpu_time[4] <- as.numeric(system.time(getNeuralNetwork(NULL, hiddenLayers = TRUE))[3])*100
-	    x <- c(x,"all time series with hidden") 
-	  }     
-    resetARModels()
-#	  cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
-#	  resetARModels()
-#   getARModel(input$idSelect)
-    cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
-    x <- c(x,"AR")
-    data <- unlist(cpu_time)
+	  
+	  id <- input$idSelect
+	  
+	  
+	  x <- vars$enabledModels
+    cpu_times <- unlist(lapply(vars$enabledModels, function(modelName) {
+      if (modelName %in% oneForAllModels)
+      {
+        getModel(modelName) # make sure the model is computed
+        vars$cpuTimes[[modelName]]
+      }
+      else
+      {
+        getModel(modelName, id) # make sure the model is computed
+        vars$cpuTimes[[modelName]][[id]]
+      }
+    }))
     
     #sort x
-    x <- factor(x, levels = unique(x)[order(c(data), decreasing = TRUE)])
+    x <- factor(x, levels = unique(x)[order(cpu_times, decreasing = TRUE)])
 	  
 	  p <- plot_ly(
 	    x = x, #c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
-	    y = c(data),
+	    y = cpu_times,
 	    type = "bar"
 	  )
+	  p$elementId <- NULL
 	  p
 	  })
 }

@@ -37,26 +37,26 @@ applyMetric <- function(getTestResultsFUN, FUN)
 
 getErrorMetric <- function(FUN)
 {
-  metric <- data.table(ar = applyMetric(getARTestResults, FUN))
+  metric <- data.table(ar = applyMetric(function(id) { getTestResults('ar', id) }, FUN))
   
   if(neuralNetwork.enableForEach)
   {
-    metric$nn <- applyMetric(getNeuralNetworkTestResults, FUN)
+    metric$nn <- applyMetric(function(id) { getTestResults('nnfe', id) }, FUN)
   }
   
   if(neuralNetwork.enableForEach.hidden)
   {
-    metric$nnh <- applyMetric(function(id) { getNeuralNetworkTestResults(id, hiddenLayers = TRUE) }, FUN)
+    metric$nnh <- applyMetric(function(id) { getTestResults('nnfeh', id) }, FUN)
   }
   
   if(neuralNetwork.enableForAll)
   {
-    metric$nnfa <- applyMetric(function(id) { getNeuralNetworkTestResults(id, forAll = TRUE) }, FUN)
+    metric$nnfa <- applyMetric(function(id) { getTestResults('nnfa', id) }, FUN)
   }
   
   if(neuralNetwork.enableForAll.hidden)
   {
-    metric$nnfah <- applyMetric(function(id) { getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE) }, FUN)
+    metric$nnfah <- applyMetric(function(id) { getTestResults('nnfah', id) }, FUN)
   }
   if(rsnns.rnn)
   {
@@ -285,11 +285,11 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
   
   getTestResultsFUN <- function(modelName) {
     switch (modelName,
-      ar = { getARTestResults },
-      nnfe = { getNeuralNetworkTestResults },
-      nnfeh = { function(id) { getNeuralNetworkTestResults(id, hiddenLayers = TRUE) } },
-      nnfa = { function(id) { getNeuralNetworkTestResults(id, forAll = TRUE) } },
-      nnfah = { function(id) { getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE) } },
+      ar = { function(id) { getTestResults('ar', id) } },
+      nnfe = { function(id) { getTestResults('nnfe', id) } },
+      nnfeh = { function(id) { getTestResults('nnfeh', id) } },
+      nnfa = { function(id) { getTestResults('nnfa', id) } },
+      nnfah = { function(id) { getTestResults('nnfah', id) } },
       jordan = { getJordanTestResults },
       elman = { getElmanTestResults },
       mlp = { getMLPTestResults },
@@ -353,28 +353,24 @@ getForecastComparisionPlot <- function(id) {
     y = data.sets[[id]]$y[startRealData:data.length])
   
   # Add Auto Regression
-  prediction$ar <- append(rep(NA, data.horizon), getARTestResults(id)$result)
+  prediction$ar <- append(rep(NA, data.horizon), getTestResults('ar', id)$result)
   prediction$ar[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Neural Network for each
-  
-  prediction$nnfe <- append(rep(NA, data.horizon),
-    getNeuralNetworkTestResults(id)$result)
+  prediction$nnfe <- append(rep(NA, data.horizon), getTestResults('nnfe', id)$result)
   prediction$nnfe[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   
   # Add Auto Regression for each with hidden layers
   if(neuralNetwork.enableForEach.hidden)
   {
-    prediction$nnfeh <- append(rep(NA, data.horizon),
-      getNeuralNetworkTestResults(id, hiddenLayers = TRUE)$result)
+    prediction$nnfeh <- append(rep(NA, data.horizon), getTestResults('nnfeh', id)$result)
     prediction$nnfeh[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
   
   # Add Auto Regression for all
   if(neuralNetwork.enableForAll)
   {
-    prediction$nnfa <- append(rep(NA, data.horizon),
-      getNeuralNetworkTestResults(id, forAll = TRUE)$result)
+    prediction$nnfa <- append(rep(NA, data.horizon), getTestResults('nnfa', id)$result)
     prediction$nnfa[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
   
@@ -382,7 +378,7 @@ getForecastComparisionPlot <- function(id) {
   if(neuralNetwork.enableForAll.hidden)
   {
     prediction$nnfah <- append(rep(NA, data.horizon),
-      getNeuralNetworkTestResults(id, forAll = TRUE, hiddenLayers = TRUE)$result)
+      getTestResults('nnfah', id)$result)
     prediction$nnfah[[startPredictionIndex]] <- prediction$y[[startPredictionIndex]]
   }
 
