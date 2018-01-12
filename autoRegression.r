@@ -63,14 +63,3 @@ getTestResults.ar <- function(id)
   
   structure(list(expected = expected, result = result[,1]), class = 'TestResults')
 }
-
-resetARModels <- function()
-{
-  autoRegressiveModels <<- NULL
-  resetARTestResults()
-}
-
-resetARTestResults <- function()
-{
-  autoRegressiveTestResults <<- NULL
-}

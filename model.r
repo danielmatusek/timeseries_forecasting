@@ -116,3 +116,15 @@ getTestResults.default <- function(modelName, id)
   
   return (vars$testResults[[modelName]][[id]])
 }
+
+
+###
+### Resetting
+###
+
+resetModels <- function(modelName)
+{
+  vars$models[[modelName]] <<- NULL
+  vars$testResults[[modelName]] <<- NULL
+  vars$cpuTimes[[modelName]] <<- NULL
+}

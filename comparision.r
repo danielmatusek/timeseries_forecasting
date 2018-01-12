@@ -180,7 +180,7 @@ getMeanErrorVectorFromModels <- function(errorName)
   if(neuralNetwork.enableForEach.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
   if(neuralNetwork.enableForAll) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
   if(neuralNetwork.enableForAll.hidden) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
-  #f�r RSNNS auch noch
+  #für RSNNS auch noch
   if(rsnns.rnn) errorMean = c(errorMean, mean(errorTable[[errorName]][['rnn']]))#names = c(names, errorModelNames[6])
   if(rsnns.mlp) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlp']]))
   if(rsnns.mlph) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlph']]))
@@ -225,7 +225,7 @@ getCoef <- function(id)
   # Add Auto Regression for each
   if(neuralNetwork.enableForEach)
   {
-    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1]
+    coef <- getReducedNeuralNetworkWeights(getModel('nnfe', id))[[1]][[1]][,1]
     bias <- coef[1]
     coef <- coef[-1]
     coef[length(coef)+1] <- bias
@@ -236,7 +236,7 @@ getCoef <- function(id)
   # Add Auto Regression for each with hidden layers
   if(neuralNetwork.enableForEach.hidden)
   {
-    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1]
+    coef <- getReducedNeuralNetworkWeights(getModel('nnfeh', id))[[1]][[1]][,1]
     bias <- coef[1]
     coef <- coef[-1]
     coef[length(coef)+1] <- bias
@@ -247,7 +247,7 @@ getCoef <- function(id)
   # Add Auto Regression for all
   if(neuralNetwork.enableForAll)
   {
-    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(NULL))[[1]][[1]][,1]
+    coef <- getReducedNeuralNetworkWeights(getModel('nnfa'))[[1]][[1]][,1]
     bias <- coef[1]
     coef <- coef[-1]
     coef[length(coef)+1] <- bias
@@ -258,7 +258,7 @@ getCoef <- function(id)
   # Add Auto Regression for all with hidden layers
   if(neuralNetwork.enableForAll.hidden)
   {
-    coef <- getReducedNeuralNetworkWeights(getNeuralNetwork(NULL, TRUE))[[1]][[1]][,1]
+    coef <- getReducedNeuralNetworkWeights(getModel('nnfah'))[[1]][[1]][,1]
     bias <- coef[1]
     coef <- coef[-1]
     coef[length(coef)+1] <- bias

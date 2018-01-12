@@ -26,11 +26,8 @@ neuralnetwork.tempHiddenNodes <<- c(0)
 
 resetNeuralNetworks.hidden <- function()
 {
-  neuralNetwork.forEach.hiddenLayers <<- NULL
-  neuralNetwork.forAll.hiddenLayers <<- NULL
-  
-  neuralNetwork.testResults.forEach.hiddenLayers <<- NULL
-  neuralNetwork.testResults.forAll.hiddenLayers <<- NULL
+  resetModels('nnfeh')
+  resetModels('nnfah')
 }
 
 resetNeuralNetworks <- function()
@@ -38,13 +35,8 @@ resetNeuralNetworks <- function()
   resetNeuralNetworks.hidden()
   resetNeuralNetworks.hlOptimizationNN()
   
-  neuralNetwork.forEach <<- NULL
-  neuralNetwork.forAll <<- NULL
-  
-  neuralNetwork.testResults.forEach <<- NULL
-  neuralNetwork.testResults.forAll <<- NULL
-  
-  
+  resetModels('nnfe')
+  resetModels('nnfa')
 }
 
 
@@ -215,70 +207,17 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
       return(neuralNetwork.hlOptimizationNN[[id]])
     }
   }
-  
-  if (is.null(id))
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.forAll.hiddenLayers))
-      {
-        print('train nn for all with hidden layers')
-        trainSetsCombined <- getAllTrainSetsCombined()
-        neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
-      }
-      return(neuralNetwork.forAll.hiddenLayers)
-    }
-    else
-    {
-      if (is.null(neuralNetwork.forAll))
-      {
-        print('train nn for all without hidden layers')
-        trainSetsCombined <- getAllTrainSetsCombined()
-        neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined)
-      }
-      return(neuralNetwork.forAll)
-    }
-
-  }
-  else
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.forEach.hiddenLayers[[id]]))
-      {
-        print(paste('train nn for id', id ,'with hidden layers'))
-        neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
-      }
-      return(neuralNetwork.forEach.hiddenLayers[[id]])
-    }
-    else
-    {
-      if (is.null(neuralNetwork.forEach[[id]]))
-      {
-        print(paste('train nn for id', id ,'without hidden layers'))
-        neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(getTrainSet(id))
-      }
-      return(neuralNetwork.forEach[[id]])
-    }
-  }
-  return(out)
 }
 
 
 
 testNeuralNetwork <- function(neuralNetwork, testSetID)
 {
-  if (is.atomic(neuralNetwork)) # neuralNetwork is NA
-  {
-    return (NA)
-  }
-  
   testData <- getTestSet(testSetID)
   expected <- testData$xt0
   testData$xt0 <- NULL
   
 
-  #compute = boese
   n <- compute(neuralNetwork, testData)
   result <- n$net.result[,1]
   
@@ -288,9 +227,7 @@ testNeuralNetwork <- function(neuralNetwork, testSetID)
     expected <- getOrgiginalTestSet(testSetID)
   }
   
-  mse   <- sum((expected - result)^2)/length(result)
-  smape <- sMAPE(expected, n$net.result)
-  structure(list(expected = expected, result = result, mse = mse, smape = smape), class = 'TestResults')
+  structure(list(expected = expected, result = result), class = 'TestResults')
 }
 
 getTestResults.nnfe <- function(id)

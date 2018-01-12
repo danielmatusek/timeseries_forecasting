@@ -56,7 +56,7 @@ server <- function(input, output) {
 	  data.horizon <<- input$horizonSlider
 	  excludeInputChanged()
 	  resetWindows()
-	  resetARModels()
+	  resetModels('ar')
 	  resetComparison()
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
@@ -73,7 +73,7 @@ server <- function(input, output) {
 	  data.windowSize <<- input$windowSizeSlider
 	  neuralNetwork.inputDifference <<- input$inputDifferenceCheckbox
 	  resetWindows()
-	  resetARModels()
+	  resetModels('ar')
 	  resetComparison()
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
@@ -83,7 +83,7 @@ server <- function(input, output) {
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
 	  
-	  resetARModels()
+	  resetModels('ar')
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
 	})
@@ -140,7 +140,7 @@ server <- function(input, output) {
 	arModelBaseChanged <- reactive({
 	  aRModelName <<- input$aRModelName
 	  
-	  resetARModels()
+	  resetModels('ar')
 	})
 	
 	errorTypChanged <- reactive({
@@ -360,7 +360,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  
-		plot(getNeuralNetwork(input$idSelect, FALSE), rep = 'best')
+		plot(getModel('nnfe', input$idSelect), rep = 'best')
 	})
 	
 	output$neuralNetworkHiddenChart <- renderPlot({
@@ -370,7 +370,7 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
-	  plot(getNeuralNetwork(input$idSelect, TRUE), rep = 'best')
+	  plot(getModel('nnfeh', input$idSelect), rep = 'best')
 	})
 	
 	output$neuralNetworkChartForAll <- renderPlot({
@@ -379,7 +379,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  
-	  plot(getNeuralNetwork(NULL, FALSE), rep = 'best')
+	  plot(getModel('nnfa'), rep = 'best')
 	})
 	
 	output$neuralNetworkHiddenChartForALL <- renderPlot({
@@ -389,7 +389,7 @@ server <- function(input, output) {
 	  inputDifferenceChanged()
 	  hiddenLayersChanged()
 	  
-	  plot(getNeuralNetwork(NULL, TRUE), rep = 'best')
+	  plot(getModel('nnfah'), rep = 'best')
 	})
 	
 	
