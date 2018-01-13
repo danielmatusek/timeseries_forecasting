@@ -1,4 +1,5 @@
 library(data.table)
+if (!require("DT")) install.packages('DT')
 library(forecast)
 library(hydroGOF) #rmse function
 library(neuralnet)
@@ -391,7 +392,7 @@ server <- function(input, output) {
 	  plot(getNeuralNetwork(NULL, TRUE), rep = 'best')
 	})
 	
-	
+	# Exclude Inputs Plot
 	
 	output$nncei <- renderPlot({
 	  idChanged()
@@ -444,8 +445,21 @@ server <- function(input, output) {
 	})
 	
 	
+	# Exclude Inputs Data
 	
-	output$nneidt <- renderDataTable({
+	getExcludedInputTable <- function(number)
+	{
+	  s <- neuralNetwork.excluded.statistics[[number]]
+	  
+	  datatable(head(data.table("Excluded Nodes" = s$nodes, "sMAPE" = s$smape, "Sampling Error" = s$internalE, taken = s$pathAsIndices), 50),
+	            class = 'cell-border stripe',
+	            options = list(
+	              columnDefs = list(list(targets = 4, visible = FALSE)),
+	              pageLength = 50))%>%
+	    formatStyle("taken",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1), c('gray', 'yellow'))) 
+	}
+	
+	output$nneidt <- DT::renderDataTable({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -455,9 +469,9 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 	  
-    s <- neuralNetwork.excluded.statistics[[2]]
-    data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
+	  getExcludedInputTable(2)
 	})
+	
 	
 	output$nnheidt <- renderDataTable({
 	  idChanged()
@@ -468,8 +482,7 @@ server <- function(input, output) {
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
 	  
-	  s <- neuralNetwork.excluded.statistics[[4]]
-	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
+	  getExcludedInputTable(4)
 	})
 	
 	output$nnfaeidt <- renderDataTable({
@@ -482,8 +495,7 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 	  
-	  s <- neuralNetwork.excluded.statistics[[1]]
-	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
+	  getExcludedInputTable(1)
 	})
 	
 	output$nnhfaeidt <- renderDataTable({
@@ -496,8 +508,7 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 	  
-	  s <- neuralNetwork.excluded.statistics[[3]]
-	  data.table("Excluded Nodes" = s$nodes, sMAPE = s$smape, "Sampling Error" = s$internalE)
+	  getExcludedInputTable(3)
 	})
 
 	

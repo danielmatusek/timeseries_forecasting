@@ -14,6 +14,7 @@ neuralNetwork.excludedInternalErrors <<- vector()
 neuralnetwork.strategies <<- c("Greedy") # "Min", "Max",
 neuralNetwork.excluded.statistics <<- list()
 neuralnetwork.greedyErrorType <<- NULL
+neuralnetwork.excludedPathAsIndices <<- NULL
 
 neuralNetwork.enableForEach <<- TRUE
 neuralNetwork.enableForEach.hidden <<- TRUE
@@ -357,9 +358,11 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
     neuralNetwork.excludedPastModels[[1]] <<- getNeuralNetwork(id, hiddenLayers, FALSE)
     neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[1]]$result.matrix[1])
     neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, testNeuralNetwork(neuralNetwork.excludedPastModels[[1]], data.idSelected)$smape)
-    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- '?'
+    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- 'ø'
+    
     
     path = c(0)
+    excludedPathAsIndices <- c(1)
     from <- 0
     to <- 1
     
@@ -367,6 +370,9 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
     {
       
       createModels(path, id, hiddenLayers)
+      
+      if(!(length(path)) == data.windowSize) excludedPathAsIndices <- c(excludedPathAsIndices, rep(0, data.windowSize))
+
       from <- to + 1
       to <- from + data.windowSize - 1
      
@@ -376,26 +382,27 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
       
       if(!is.null(oldModel))
       {
-        stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors), class = 'TestExclusion')
-        stats$nodes[[1]] <- '?'
+        stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors, pathAsIndices = excludedPathAsIndices), class = 'TestExclusion')
         pos <- (as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers) * 2) + 1)
         neuralNetwork.excluded.statistics[[pos]] <<- stats
         resetGlobalModel(id, hiddenLayers)
-        
-        
+
         return(oldModel)
       }
+      
       # search for the next best input
-      #browser()
+      idx <- NULL
       if(neuralnetwork.greedyErrorType == "Outsample")
       {
-        path <- c(path, getIdxOfMinErr(neuralNetwork.excludedPastErrors[from : to]))
+        idx <- getIdxOfMinErr(neuralNetwork.excludedPastErrors[from : to])
       }
       else if(neuralnetwork.greedyErrorType == "Insample")
       {
-        path <- c(path, getIdxOfMinErr(neuralNetwork.excludedInternalErrors[from : to]))
+        idx <- getIdxOfMinErr(neuralNetwork.excludedInternalErrors[from : to])
+        
       }
-      
+      path <- c(path, idx)
+      excludedPathAsIndices[((from + idx) - 1)] <- 1
     }
   }
   
@@ -454,7 +461,8 @@ compareOldModel <- function(path, from, to)
   {
     pos <- from - data.windowSize  + (path[length(path)] - 1)
   }
-  if(length(path) >= (data.windowSize - 1)) return(neuralNetwork.excludedPastModels[[pos]])
+  
+  if((length(path)) == (data.windowSize)) return(neuralNetwork.excludedPastModels[[pos]])
   
   for(i in 1 : data.windowSize)
   {
@@ -473,6 +481,8 @@ compareOldModel <- function(path, from, to)
 # it saves the exluded Vector, model, internal error, crossvalidation and 
 createModels <- function(path, id, hiddenLayers)
 {
+  
+  if((length(path)) == data.windowSize) return(NULL)
   
   print(path)
   path = setdiff(path, 0) # don't consider 0 -> it's the bias
@@ -494,6 +504,7 @@ createModels <- function(path, id, hiddenLayers)
       neuralNetwork.excludedPastErrors <<- c(neuralNetwork.excludedPastErrors, NaN)
       neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- NaN
     }
+    neuralnetwork.excludedPathAsIndices <<- c(neuralnetwork.excludedPathAsIndices, 0)
   }
 }
 
