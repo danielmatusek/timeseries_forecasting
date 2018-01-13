@@ -56,7 +56,7 @@ server <- function(input, output) {
 	  data.horizon <<- input$horizonSlider
 	  excludeInputChanged()
 	  resetWindows()
-	  resetARModels()
+	  resetModels('ar')
 	  resetComparison()
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
@@ -73,7 +73,7 @@ server <- function(input, output) {
 	  data.windowSize <<- input$windowSizeSlider
 	  neuralNetwork.inputDifference <<- input$inputDifferenceCheckbox
 	  resetWindows()
-	  resetARModels()
+	  resetModels('ar')
 	  resetComparison()
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
@@ -83,7 +83,7 @@ server <- function(input, output) {
 	excludeBiasChanged <- reactive({
 	  neuralNetwork.excludeBias <<- input$biasCheckbox
 	  
-	  resetARModels()
+	  resetModels('ar')
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
 	})
@@ -125,22 +125,15 @@ server <- function(input, output) {
 	})
 	
 	
-	nnTypChanged <- reactive({
-	  neuralNetwork.enableForEach <<- 'forecast_one' %in% input$variable_nn
-	  neuralNetwork.enableForEach.hidden <<- 'forecast_one_hidden' %in% input$variable_nn
-	  neuralNetwork.enableForAll <<- 'forecast_all' %in% input$variable_nn
-	  neuralNetwork.enableForAll.hidden <<- 'forecast_all_hidden' %in% input$variable_nn
-		rsnns.rnn <<- TRUE #'rsnns_rnn' %in% input$variable_nn
-		rsnns.mlp <<- TRUE #'rsnns_mlp' %in% input$variable_nn
-		rsnns.mlph <<- TRUE #'rsnns_mlph' %in% input$variable_nn
-		rsnns.jordan <<- TRUE #'rsnns_jordan' %in% input$variable_nn
+	enabledModelsChanged <- reactive({
+	  vars$enabledModels <<- input$enabledModels
 		resetComparison()
 	})
 	
 	arModelBaseChanged <- reactive({
 	  aRModelName <<- input$aRModelName
 	  
-	  resetARModels()
+	  resetModels('ar')
 	})
 	
 	errorTypChanged <- reactive({
@@ -280,63 +273,28 @@ server <- function(input, output) {
 	
 	
 	output$neuralNetwork_tabs <- renderUI({
+	  enabledModelsChanged()
 	  excludeInputChanged()
-	  panels <- list()
 	  
-	 	myTabs <- lapply(input$variable_nn, function(x){
-	 	  
-	    if(x == "forecast_one")
-	    {
-	      panels[[length(panels) + 1]] <- tabPanel('Forecast /1', 
-	                                             plotOutput("neuralNetworkChart", height = "600px")) 
-	    }
-	    else if(x == "forecast_one_hidden")
-	    {
-	      panels[[length(panels) + 1]] <- tabPanel('Forecast /1 hidden', 
-	                                             plotOutput("neuralNetworkHiddenChart", height = "600px"))
-	    }
-	    else if(x == "forecast_all"){
-	      panels[[length(panels) + 1]] <- tabPanel('Forecast /n', 
-	                                             plotOutput("neuralNetworkChartForAll", height = "600px"))
-	    } 
-	    else if(x == "forecast_all_hidden")
-	    {
-	      panels[[length(panels) + 1]] <- tabPanel('Forecast /n hidden',
-	                                             plotOutput("neuralNetworkHiddenChartForALL", height = "600px"))
-	    }
+	  supportedNeuralNetworks <- c('nnfe', 'nnfeh', 'nnfa', 'nnfah')
+	  enabledNeuralNetworks <- intersect(vars$enabledModels, supportedNeuralNetworks)
+	  
+	  tabs <- lapply(enabledNeuralNetworks, function(nnName) {
+	    tabPanel(nnName, plotOutput(paste0(nnName, 'Plot'), height = '600px'))
 	  })
+	 	
 	 	if(neuralNetwork.isInputExcluded)
 	 	{
-	 	 	myTabs <- c(myTabs, lapply(input$variable_nn, function(x){
-	 	    if(x == "forecast_one" )
-	 	    {
-  	 	   panels[[length(panels) + 1]] <- tabPanel('Forecast /1 Ex. Inp.',
-  	 	                                            plotOutput("nncei", height = "600px"),
-  	 	                                            dataTableOutput("nneidt"))
-	 	    }
-	 	    else if(x == "forecast_one_hidden")
-	 	    {
-	 	      panels[[length(panels) + 1]] <- tabPanel('Forecast /1 hidden Ex. Inp.',
-	 	                                               plotOutput("nnhcei", height = "600px"),
-	 	                                               dataTableOutput("nnheidt"))
-	 	    }
-	 	   else if(x == "forecast_all")
-	 	   {
-	 	     panels[[length(panels) + 1]] <- tabPanel('Forecast /n Ex. Inp.',
-	 	                                              plotOutput("nnfacei", height = "600px"),
-	 	                                              dataTableOutput("nnfaeidt"))
-	 	   }
-	 	   else if(x == "forecast_all_hidden")
-	 	   {
-	 	     panels[[length(panels) + 1]] <- tabPanel('Forecast /n hidden Ex. Inp.',
-	 	                                              plotOutput("nnhfacei", height = "600px"),
-	 	                                              dataTableOutput("nnhfaeidt"))
-	 	   }
-	  }))
+	 	  tabsInputExcluded <- lapply(enabledNeuralNetworks, function(nnName) {
+	 	    tabPanel(paste(nnName, 'Ex. Inp.'), plotOutput(paste0(nnName, 'InputExcludedPlot'), height = '600px'),
+	 	      dataTableOutput(paste0(nnName, 'InputExcludedTable')))
+	 	  })
+	 	  
+	 	  tabs <- append(tabs, tabsInputExcluded)
 	 	}
 	 	
-	 myTabs$width = "100%"
-	 do.call(tabBox, myTabs)
+	 tabs$width = "100%"
+	 do.call(tabBox, tabs)
 	})
 	
 	output$neuralNetwork_hlOptimization <- renderUI({
@@ -354,47 +312,47 @@ server <- function(input, output) {
 	  do.call(tabBox, myhlOptimizationTabs)
 	})
 	
-	output$neuralNetworkChart <- renderPlot({
+	output$nnfePlot <- renderPlot({
 	  idChanged()
 	  inputDifferenceChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  
-		plot(getNeuralNetwork(input$idSelect, FALSE), rep = 'best')
+		plot(getModel('nnfe', input$idSelect), rep = 'best')
 	})
 	
-	output$neuralNetworkHiddenChart <- renderPlot({
+	output$nnfehPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  
-	  plot(getNeuralNetwork(input$idSelect, TRUE), rep = 'best')
+	  plot(getModel('nnfeh', input$idSelect), rep = 'best')
 	})
 	
-	output$neuralNetworkChartForAll <- renderPlot({
+	output$nnfaPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  inputDifferenceChanged()
 	  excludeBiasChanged()
 	  
-	  plot(getNeuralNetwork(NULL, FALSE), rep = 'best')
+	  plot(getModel('nnfa'), rep = 'best')
 	})
 	
-	output$neuralNetworkHiddenChartForALL <- renderPlot({
+	output$nnfahPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  inputDifferenceChanged()
 	  hiddenLayersChanged()
 	  
-	  plot(getNeuralNetwork(NULL, TRUE), rep = 'best')
+	  plot(getModel('nnfah'), rep = 'best')
 	})
 	
 	# Exclude Inputs Plot
 	
-	output$nncei <- renderPlot({
+	output$nnfeInputExcludedPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -406,7 +364,7 @@ server <- function(input, output) {
 	  plot(getExcludedInputNeuralNetwork(input$idSelect, hiddenLayers = FALSE, input$inputStrategy), rep = 'best')
 	})
 	
-	output$nnhcei <- renderPlot({
+	output$nnfehInputExcludedPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -419,7 +377,7 @@ server <- function(input, output) {
 	  plot(getExcludedInputNeuralNetwork(input$idSelect, TRUE, input$inputStrategy), rep = 'best')
 	})
 	
-	output$nnfacei <- renderPlot({
+	output$nnfaInputExcludedPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -431,7 +389,7 @@ server <- function(input, output) {
 	  plot(getExcludedInputNeuralNetwork(NULL, FALSE, input$inputStrategy), rep = 'best')
 	})
 	
-	output$nnhfacei <- renderPlot({
+	output$nnfahInputExcludedPlot <- renderPlot({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -459,7 +417,8 @@ server <- function(input, output) {
 	    formatStyle("taken",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1), c('gray', 'yellow'))) 
 	}
 	
-	output$nneidt <- DT::renderDataTable({
+
+	output$nnfeInputExcludedTable <- DT::renderDataTable({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -472,8 +431,8 @@ server <- function(input, output) {
 	  getExcludedInputTable(2)
 	})
 	
-	
-	output$nnheidt <- renderDataTable({
+
+	output$nnfehInputExcludedTable <- DT::renderDataTable({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -485,7 +444,7 @@ server <- function(input, output) {
 	  getExcludedInputTable(4)
 	})
 	
-	output$nnfaeidt <- renderDataTable({
+	output$nnfaInputExcludedTable <- DT::renderDataTable({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -498,7 +457,7 @@ server <- function(input, output) {
 	  getExcludedInputTable(1)
 	})
 	
-	output$nnhfaeidt <- renderDataTable({
+	output$nnfahInputExcludedTable <- DT::renderDataTable({
 	  idChanged()
 	  windowsChanged()
 	  excludeInputChanged()
@@ -552,10 +511,9 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainRNN(input$idSelect, input$hiddenSliderInput)
-		t <- testRNN(m, input$idSelect)
+		t <- getTestResults('elman', input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)		
+		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	#MLP with RSNNS and with Hidden Layer
@@ -567,10 +525,9 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlp', input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)		
+		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	#MLP with RSNSS and without Hidden Layer
@@ -581,10 +538,9 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlp', input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)		
+		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	output$recPlot <- renderPlot({
@@ -594,7 +550,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+  	plot(getModel('elman', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -604,10 +560,9 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = TRUE)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)		
+		data.table(result = t$result, expected = t$expected)
 	})
 
 	output$mlp_plot <- renderPlot({
@@ -617,7 +572,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(trainMLP(input$idSelect), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlp', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -627,10 +582,9 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)		
+		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	output$mlp_plot_without_hidden <- renderPlot({
@@ -640,7 +594,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlph', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_jordan_tab <- renderDataTable({
@@ -650,10 +604,9 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainJordan(input$idSelect, hiddenLayers = input$hiddenSliderInput)
-		t <- testJordan(m, input$idSelect)
+		t <- getTestResults('jordan', input$idSelect)
 		
-		data.table(result = t$result, expected = t$expected)		
+		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	output$rsnns_jordan_plot <- renderPlot({
@@ -663,7 +616,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
 
-		plot(trainJordan(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+		plot(getModel('jordan', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 	
 	
@@ -696,7 +649,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  inputDifferenceChanged()
 	  
@@ -705,7 +658,7 @@ server <- function(input, output) {
 	
 	output$compareMSE <- renderPlotly({
 	  windowsChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
 	  inputDifferenceChanged()
@@ -715,7 +668,7 @@ server <- function(input, output) {
 	
 	output$compareRMSE <- renderPlotly({
 	  windowsChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
 	  inputDifferenceChanged()
@@ -725,7 +678,7 @@ server <- function(input, output) {
 	
 	output$compareSMAPE <- renderPlotly({
 	  windowsChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  errorTypChanged()
 	  inputDifferenceChanged()
@@ -736,7 +689,7 @@ server <- function(input, output) {
 	output$compareError <- renderDataTable({
 	  idChanged()
 	  windowsChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  inputDifferenceChanged()
 	  
@@ -748,7 +701,7 @@ server <- function(input, output) {
 	  databaseChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  inputDifferenceChanged()
 	  
@@ -760,7 +713,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  
 	  findDifferenceInNeuralNetworksWrtHiddenLayers()
 	})
@@ -770,7 +723,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  
 	  if (is.null(data.sets))
 	  {
@@ -786,7 +739,7 @@ server <- function(input, output) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
-	  nnTypChanged()
+	  enabledModelsChanged()
 	  
 	  if (is.null(data.sets))
 	  {
@@ -799,44 +752,35 @@ server <- function(input, output) {
 	output$data_cpu_time <- renderPlotly({
 	  arModelBaseChanged()
 	  windowsChanged()
-	  
-	  resetARModels()
-	  resetNeuralNetworks()
 
-	  nnTypChanged()
-    x <- list()
-	  if(neuralNetwork.enableForEach){
-	    cpu_time[1] <- system.time(getNeuralNetwork(input$idSelect))[3] +0
-	    x <- c(x,"one modell")
-	  } 
-	  if(neuralNetwork.enableForEach.hidden){
-	    cpu_time[2] <- system.time(getNeuralNetwork(input$idSelect, hiddenLayers = TRUE))[3] +0
-	    x <- c(x,"one modell hidden") 
-	  } 
-	  if(neuralNetwork.enableForAll){
-	    cpu_time[3] <- system.time(getNeuralNetwork(NULL))[3] +0
-	    x <- c(x,"all time series without hidden") 
-	  } 
-	  if(neuralNetwork.enableForAll.hidden){
-	    cpu_time[4] <- as.numeric(system.time(getNeuralNetwork(NULL, hiddenLayers = TRUE))[3])*100
-	    x <- c(x,"all time series with hidden") 
-	  }     
-    resetARModels()
-#	  cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
-#	  resetARModels()
-#   getARModel(input$idSelect)
-    cpu_time[5] <- system.time(getARModel(input$idSelect))[3] +0
-    x <- c(x,"AR")
-    data <- unlist(cpu_time)
+	  enabledModelsChanged()
+	  
+	  id <- input$idSelect
+	  
+	  
+	  x <- vars$enabledModels
+    cpu_times <- unlist(lapply(vars$enabledModels, function(modelName) {
+      if (modelName %in% oneForAllModels)
+      {
+        getModel(modelName) # make sure the model is computed
+        vars$cpuTimes[[modelName]]
+      }
+      else
+      {
+        getModel(modelName, id) # make sure the model is computed
+        vars$cpuTimes[[modelName]][[id]]
+      }
+    }))
     
     #sort x
-    x <- factor(x, levels = unique(x)[order(c(data), decreasing = TRUE)])
+    x <- factor(x, levels = unique(x)[order(cpu_times, decreasing = TRUE)])
 	  
 	  p <- plot_ly(
 	    x = x, #c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
-	    y = c(data),
+	    y = cpu_times,
 	    type = "bar"
 	  )
+	  p$elementId <- NULL
 	  p
 	  })
 }

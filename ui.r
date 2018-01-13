@@ -1,6 +1,8 @@
 library(plotly)
 library(shinydashboard)
 
+source('model.r')
+
 ui <- dashboardPage(skin = 'purple',
 	dashboardHeader(title = 'FPADB',
 	  tags$li(a(
@@ -51,7 +53,8 @@ ui <- dashboardPage(skin = 'purple',
 		      column(3,
 		        h3('General', style = 'margin-bottom: 20px;'),
 		        uiOutput('windowSizeSlider'),
-		        uiOutput('horizonSlider')
+		        uiOutput('horizonSlider'),
+		        checkboxGroupInput('enabledModels', 'Enable Models', availableModels, selected = vars$enabledModels)
 		      ),
 		      column(3, 
 		        h3('Neural Network', style = 'margin-bottom: 10px;'),
@@ -61,12 +64,6 @@ ui <- dashboardPage(skin = 'purple',
 		        uiOutput('inputStrategy'),
 		        uiOutput('inputSelectedErrorType'),
 		        uiOutput('hiddenSliderInput'),
-		        checkboxGroupInput("variable_nn", "neural network forecast for",
-		                           c("one Time Series" = "forecast_one",
-		                             "one TS with hidden" = "forecast_one_hidden",
-		                             "all Time Series" = "forecast_all",
-		                             "all TS with hidden" = "forecast_all_hidden"),
-		                           selected= c("forecast_one","forecast_one_hidden")),
 						checkboxGroupInput("variable_nn_hidden", "neural network hidden nodes optimization",
 																c("Optimize" = "optimize_hidden_layer"),
 																selected= c("optimize_hidden_layer"))
@@ -74,7 +71,7 @@ ui <- dashboardPage(skin = 'purple',
 		      column(3,
 		        h3('Autoregression', style = 'margin-bottom: 20px;'),
 		        radioButtons('aRModelName', 'Arima Models',
-		          c(AR='AR', AutoArima='AutoArima', ManualAutoArima='ManualAutoArima', ManualAR='ManualAR'), 'AR')
+		          c(AR='AR', AutoArima='AutoArima'), 'AR')
 		      )
 		    )
 		  ),
@@ -157,28 +154,10 @@ ui <- dashboardPage(skin = 'purple',
 			          tabPanel('Model Prodictions',
 			            fluidRow(
 			              column(width = 5,
-			                selectInput('model1Select', 'Model 1',
-			                  c('Auto-Regeressives Modell' = 'ar',
-			                    'Neural Netzwerk: Eigenes Modell für jedes' = 'nnfe',
-			                    'Neural Netzwerk: Eigenes Modell für jedes mit Hidden Layer' = 'nnfeh',
-			                    'Neural Netzwerk: Ein Modell für alle' = 'nnfa',
-			                    'Neural Netzwerk: Ein Modell für alle mit Hidden Layer' = 'nnfah',
-			                    'Jordan-Netzwerk' = 'jordan',
-			                    'Elman-Netzwerk' = 'elman',
-			                    'MLP' = 'mlp',
-			                    'MLP mit Hidden Layer' = 'mlph'), selected ='ar')
+			                selectInput('model1Select', 'Model 1', availableModels, selected ='ar')
 			              ),
 			              column(width = 5,
-			                selectInput('model2Select', 'Model 2',
-			                  c('Auto-Regeressives Modell' = 'ar',
-			                    'Neural Netzwerk: Eigenes Modell für jedes' = 'nnfe',
-			                    'Neural Netzwerk: Eigenes Modell für jedes mit Hidden Layer' = 'nnfeh',
-			                    'Neural Netzwerk: Ein Modell für alle' = 'nnfa',
-			                    'Neural Netzwerk: Ein Modell für alle mit Hidden Layer' = 'nnfah',
-			                    'Jordan-Netzwerk' = 'jordan',
-			                    'Elman-Netzwerk' = 'elman',
-			                    'MLP' = 'mlp',
-			                    'MLP mit Hidden Layer' = 'mlph'), selected = 'nnfe')
+			                selectInput('model2Select', 'Model 2', availableModels, selected = 'nnfe')
 			              ),
 			              column(width = 2,
 			                actionButton('compareModels', 'Vergleichen')

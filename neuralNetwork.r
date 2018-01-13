@@ -16,22 +16,14 @@ neuralNetwork.excluded.statistics <<- list()
 neuralnetwork.greedyErrorType <<- NULL
 neuralnetwork.excludedPathAsIndices <<- NULL
 
-neuralNetwork.enableForEach <<- TRUE
-neuralNetwork.enableForEach.hidden <<- TRUE
-neuralNetwork.enableForAll <<- FALSE
-neuralNetwork.enableForAll.hidden <<- FALSE
-
 neuralNetwork.hlOptimization <<- c(0)
 neuralNetwork.hlOptimizationErrorVector <<- c(0)
 neuralnetwork.tempHiddenNodes <<- c(0)
 
 resetNeuralNetworks.hidden <- function()
 {
-  neuralNetwork.forEach.hiddenLayers <<- NULL
-  neuralNetwork.forAll.hiddenLayers <<- NULL
-  
-  neuralNetwork.testResults.forEach.hiddenLayers <<- NULL
-  neuralNetwork.testResults.forAll.hiddenLayers <<- NULL
+  resetModels('nnfeh')
+  resetModels('nnfah')
 }
 
 resetNeuralNetworks <- function()
@@ -39,13 +31,8 @@ resetNeuralNetworks <- function()
   resetNeuralNetworks.hidden()
   resetNeuralNetworks.hlOptimizationNN()
   
-  neuralNetwork.forEach <<- NULL
-  neuralNetwork.forAll <<- NULL
-  
-  neuralNetwork.testResults.forEach <<- NULL
-  neuralNetwork.testResults.forAll <<- NULL
-  
-  
+  resetModels('nnfe')
+  resetModels('nnfa')
 }
 
 
@@ -173,6 +160,28 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0))
   })
 }
 
+getModel.nnfe <- function(id)
+{
+  trainNeuralNetwork(getTrainSet(id))
+}
+
+getModel.nnfeh <- function(id)
+{
+  trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
+}
+
+getModel.nnfa <- function()
+{
+  trainSetsCombined <- getAllTrainSetsCombined()
+  trainNeuralNetwork(trainSetsCombined)
+}
+
+getModel.nnfah <- function()
+{
+  trainSetsCombined <- getAllTrainSetsCombined()
+  trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
+}
+
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
 # Compute the neural network if necessary
 getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
@@ -190,128 +199,47 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
       return(neuralNetwork.hlOptimizationNN[[id]])
     }
   }
-  
-  if (is.null(id))
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.forAll.hiddenLayers))
-      {
-        print('train nn for all with hidden layers')
-        trainSetsCombined <- getAllTrainSetsCombined()
-        neuralNetwork.forAll.hiddenLayers <<- trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
-      }
-      return(neuralNetwork.forAll.hiddenLayers)
-    }
-    else
-    {
-      if (is.null(neuralNetwork.forAll))
-      {
-        print('train nn for all without hidden layers')
-        trainSetsCombined <- getAllTrainSetsCombined()
-        neuralNetwork.forAll <<- trainNeuralNetwork(trainSetsCombined)
-      }
-      return(neuralNetwork.forAll)
-    }
-
-  }
-  else
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.forEach.hiddenLayers[[id]]))
-      {
-        print(paste('train nn for id', id ,'with hidden layers'))
-        neuralNetwork.forEach.hiddenLayers[[id]] <<- trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
-      }
-      return(neuralNetwork.forEach.hiddenLayers[[id]])
-    }
-    else
-    {
-      if (is.null(neuralNetwork.forEach[[id]]))
-      {
-        print(paste('train nn for id', id ,'without hidden layers'))
-        neuralNetwork.forEach[[id]] <<- trainNeuralNetwork(getTrainSet(id))
-      }
-      return(neuralNetwork.forEach[[id]])
-    }
-  }
-  return(out)
 }
 
 
 
 testNeuralNetwork <- function(neuralNetwork, testSetID)
 {
-  if (is.atomic(neuralNetwork)) # neuralNetwork is NA
-  {
-    return (NA)
-  }
-  
   testData <- getTestSet(testSetID)
   expected <- testData$xt0
   testData$xt0 <- NULL
   
 
-  #compute = boese
   n <- compute(neuralNetwork, testData)
-  result <- n$net.result[,1]
+  predicted <- n$net.result[,1]
   
   if(neuralNetwork.inputDifference)
   {
-    n$net.result <-  setOffsetToResultSet(testSetID, n$net.result)
+    predicted <- setOffsetToResultSet(testSetID, predicted)
     expected <- getOrgiginalTestSet(testSetID)
   }
   
-  mse   <- sum((expected - result)^2)/length(result)
-  smape <- sMAPE(expected, n$net.result)
-  structure(list(expected = expected, result = result, mse = mse, smape = smape), class = 'TestResults')
+  structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
 
-# Get test result of the neural network for the given parameters
-getNeuralNetworkTestResults <- function(id, forAll = FALSE, hiddenLayers = FALSE) {  
-  if (forAll)
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.testResults.forAll.hiddenLayers[[id]]))
-      {
-        neuralNetwork.testResults.forAll.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(NULL, hiddenLayers = TRUE), id)
-      }
-      
-      return(neuralNetwork.testResults.forAll.hiddenLayers[[id]])
-    }
-    else
-    {
-      if (is.null(neuralNetwork.testResults.forAll[[id]]))
-      {
-        neuralNetwork.testResults.forAll[[id]] <<- testNeuralNetwork(getNeuralNetwork(NULL), id)
-      }
-      
-      return(neuralNetwork.testResults.forAll[[id]])
-    }
-  }
-  else
-  {
-    if (hiddenLayers)
-    {
-      if (is.null(neuralNetwork.testResults.forEach.hiddenLayers[[id]]))
-      {
-        neuralNetwork.testResults.forEach.hiddenLayers[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hiddenLayers = TRUE), id)
-      }
-      
-      return(neuralNetwork.testResults.forEach.hiddenLayers[[id]])
-    }
-    else
-    {
-      if (is.null(neuralNetwork.testResults.forEach[[id]]))
-      {
-        neuralNetwork.testResults.forEach[[id]] <<- testNeuralNetwork(getNeuralNetwork(id), id)
-      }
-      
-      return(neuralNetwork.testResults.forEach[[id]])
-    }
-  }
+getTestResults.nnfe <- function(id)
+{
+  testNeuralNetwork(getModel('nnfe', id), id)
+}
+
+getTestResults.nnfeh <- function(id)
+{
+  testNeuralNetwork(getModel('nnfeh', id), id)
+}
+
+getTestResults.nnfa <- function(id)
+{
+  testNeuralNetwork(getModel('nnfa', id), id)
+}
+
+getTestResults.nnfah <- function(id)
+{
+  testNeuralNetwork(getModel('nnfah', id), id)
 }
 
 getReducedNeuralNetworkWeights <- function(nn) {
@@ -355,9 +283,10 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
   {
     bestModel <- NULL
     #calculate the first model
-    neuralNetwork.excludedPastModels[[1]] <<- getNeuralNetwork(id, hiddenLayers, FALSE)
+    neuralNetwork.excludedPastModels[[1]] <<- if (hiddenLayers) { getModel('nnfeh', id) } else { getModel('nnfe', id) }
     neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[1]]$result.matrix[1])
-    neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, testNeuralNetwork(neuralNetwork.excludedPastModels[[1]], data.idSelected)$smape)
+    results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[1]], data.idSelected)
+    neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
     neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- 'ø'
     
     
@@ -492,9 +421,10 @@ createModels <- function(path, id, hiddenLayers)
     {
       resetNeuralNetworks()
       neuralNetwork.excludeInputNodes <<- c(path, i)
-      neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels) + 1]] <<- getNeuralNetwork(id, hiddenLayers, FALSE)
+      neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels) + 1]] <<- if (hiddenLayers) { getModel('nnfeh', id) } else { getModel('nnfe', id) }
       neuralNetwork.excludedInternalErrors <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels)]]$result.matrix[1])
-      neuralNetwork.excludedPastErrors <<- c(neuralNetwork.excludedPastErrors, testNeuralNetwork(neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels)]], data.idSelected)$smape)
+      results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels)]], data.idSelected)
+      neuralNetwork.excludedPastErrors<<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
       neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- c(path, i)
     }
     else
@@ -534,17 +464,13 @@ getIdxOfMinErr <- function(errors)
 }
 
 
-
-
-
-
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() 
   {
   tolerance <- 1e-5
   
   idsNNsDiffer <- unlist(lapply(names(data.sets), function(id) {
-    reducedWeightsNN <- getReducedNeuralNetworkWeights(getNeuralNetwork(id))[[1]][[1]][,1]
-    reducedWeightsNNH <- getReducedNeuralNetworkWeights(getNeuralNetwork(id, TRUE))[[1]][[1]][,1]
+    reducedWeightsNN <- getReducedNeuralNetworkWeights(getModel('nnfe', id))[[1]][[1]][,1]
+    reducedWeightsNNH <- getReducedNeuralNetworkWeights(getModel('nnfeh', id))[[1]][[1]][,1]
     
     dif <- reducedWeightsNN - reducedWeightsNNH
     
@@ -581,7 +507,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
     neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
 
-    last_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$smape
+    last_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
     
     #add first layer incrementally
@@ -592,7 +518,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$smape
+      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
       neuralNetwork.hlOptimizationErrorVector[i+1] <<- current_error
 
       #break from optimization when error rises again

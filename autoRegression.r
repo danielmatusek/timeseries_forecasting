@@ -5,10 +5,8 @@ library(data.table)
 
 aRModelName <- NULL
 
-learnARModel <- function(id)
+getModel.ar <- function(id)
 {
-  print(paste('train ar for id', id))
-
   y <- data.sets[[id]]$y
   if(neuralNetwork.inputDifference) y <- diff(data.sets[[id]]$y)
     
@@ -24,23 +22,12 @@ learnARModel <- function(id)
     arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
   }
   
-  autoRegressiveModels[[id]] <<- arModel
-}
-
-getARModel <- function(id)
-{
-  if (is.null(autoRegressiveModels[[id]]))
-  {
-    learnARModel(id)
-    
-  }
-  
-  return (autoRegressiveModels[[id]])
+  return (arModel)
 }
 
 getARCoef <- function(id)
 {
-  arModel <- getARModel(id)
+  arModel <- getModel('ar', id)
   
   if (inherits(arModel, 'ar'))
   {
@@ -56,43 +43,20 @@ getARCoef <- function(id)
   }
 }
 
-testAR <- function(id)
+getTestResults.ar <- function(id)
 {
-  
   testSet <- getTestSet(id)
   expected <- testSet[['xt0']]
   
-
   testSet[['xt0']] <- NULL
   testSet[['bias']] <- 1
-  result <- as.matrix(testSet) %*% getARCoef(id)
+  predicted <- as.matrix(testSet) %*% getARCoef(id)
   
   if(neuralNetwork.inputDifference)
   {
-    result <-  setOffsetToResultSet(id, result)
+    predicted <-  setOffsetToResultSet(id, predicted)
     expected <- getOrgiginalTestSet(id)
   }
   
-  autoRegressiveTestResults[[id]] <<- structure(list(expected = expected, result = result[,1]), class = 'TestResults')
-}
-
-getARTestResults <- function(id)
-{
-  if (is.null(autoRegressiveTestResults[[id]]))
-  {
-    testAR(id)
-  }
-  
-  return (autoRegressiveTestResults[[id]])
-}
-
-resetARModels <- function()
-{
-  autoRegressiveModels <<- NULL
-  resetARTestResults()
-}
-
-resetARTestResults <- function()
-{
-  autoRegressiveTestResults <<- NULL
+  structure(list(expected = expected, predicted = predicted[,1]), class = 'TestResults')
 }
