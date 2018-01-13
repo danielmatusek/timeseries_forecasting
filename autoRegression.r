@@ -7,8 +7,6 @@ aRModelName <- NULL
 
 getModel.ar <- function(id)
 {
-  print(paste('train ar for id', id))
-
   y <- data.sets[[id]]$y
   if(neuralNetwork.inputDifference) y <- diff(data.sets[[id]]$y)
     

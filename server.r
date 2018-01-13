@@ -538,7 +538,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(getModel('elman'), paste0('xt', 1:data.windowSize))
+  	plot(getModel('elman', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -582,7 +582,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(getModel('mlp', input$idSelect), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlph', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_jordan_tab <- renderDataTable({
@@ -604,7 +604,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
 
-		plot(getTestResults('jordan', input$idSelect), paste0('xt', 1:data.windowSize))
+		plot(getModel('jordan', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 	
 	

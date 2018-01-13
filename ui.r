@@ -154,28 +154,10 @@ ui <- dashboardPage(skin = 'purple',
 			          tabPanel('Model Prodictions',
 			            fluidRow(
 			              column(width = 5,
-			                selectInput('model1Select', 'Model 1',
-			                  c('Auto-Regeressives Modell' = 'ar',
-			                    'Neural Netzwerk: Eigenes Modell für jedes' = 'nnfe',
-			                    'Neural Netzwerk: Eigenes Modell für jedes mit Hidden Layer' = 'nnfeh',
-			                    'Neural Netzwerk: Ein Modell für alle' = 'nnfa',
-			                    'Neural Netzwerk: Ein Modell für alle mit Hidden Layer' = 'nnfah',
-			                    'Jordan-Netzwerk' = 'jordan',
-			                    'Elman-Netzwerk' = 'elman',
-			                    'MLP' = 'mlp',
-			                    'MLP mit Hidden Layer' = 'mlph'), selected ='ar')
+			                selectInput('model1Select', 'Model 1', availableModels, selected ='ar')
 			              ),
 			              column(width = 5,
-			                selectInput('model2Select', 'Model 2',
-			                  c('Auto-Regeressives Modell' = 'ar',
-			                    'Neural Netzwerk: Eigenes Modell für jedes' = 'nnfe',
-			                    'Neural Netzwerk: Eigenes Modell für jedes mit Hidden Layer' = 'nnfeh',
-			                    'Neural Netzwerk: Ein Modell für alle' = 'nnfa',
-			                    'Neural Netzwerk: Ein Modell für alle mit Hidden Layer' = 'nnfah',
-			                    'Jordan-Netzwerk' = 'jordan',
-			                    'Elman-Netzwerk' = 'elman',
-			                    'MLP' = 'mlp',
-			                    'MLP mit Hidden Layer' = 'mlph'), selected = 'nnfe')
+			                selectInput('model2Select', 'Model 2', availableModels, selected = 'nnfe')
 			              ),
 			              column(width = 2,
 			                actionButton('compareModels', 'Vergleichen')

@@ -3,77 +3,15 @@ library(plotly)
 
 errorTable <- NULL
 
-errorModelNames <- c("AR", "NN","NNH","NNFA", "NNHFA","ELMAN","MLP","MLPH","JORDAN")
-
-
-error_metric <- function(testResults)
-{
-  #forecast_set ist von Datentyp matrix, muss aber numeric sein
-  test_set <- as.numeric(testResults$expected)
-  forecast_set <- as.numeric(testResults$predicted)
-  
-  data.frame(mse = unlist(lapply(1:length(test_set), function(i) { mse(test_set[[i]], forecast_set[[i]]) })),
-    rmse = unlist(lapply(1:length(test_set), function(i) { rmse(test_set[[i]], forecast_set[[i]]) })),
-    smape = unlist(lapply(1:length(test_set), function(i) { sMAPE(test_set[[i]], forecast_set[[i]]) })),
-    diff = unlist(lapply(1:length(test_set), function(i) { abs(test_set[[i]] - forecast_set[[i]]) })))
-}
-
-applyMetric <- function(getTestResultsFUN, FUN)
-{
-  #if(!errorTypCheck){
-  #  unlist(lapply(names(data.sets), function(id) {
-  #    testResults <- getTestResultsFUN(id)
-  #    unlist(lapply(1:length(testResults$expected), function(i) {
-  #      FUN(testResults$expected[[i]], testResults$result[[i]])
-  #    }))
-  #  }))
-  #}else{
-      testResults <- getTestResultsFUN(data.idSelected)
-      unlist(lapply(1:length(testResults$expected), function(i) {
-        FUN(testResults$expected[[i]], testResults$predicted[[i]])
-      }))
-  #}
-}
-
 getErrorMetric <- function(FUN)
 {
-  metric <- data.table(ar = applyMetric(function(id) { getTestResults('ar', id) }, FUN))
-  
-  if('nnfe' %in% vars$enabledModels)
-  {
-    metric$nn <- applyMetric(function(id) { getTestResults('nnfe', id) }, FUN)
-  }
-  
-  if('nnfeh' %in% vars$enabledModels)
-  {
-    metric$nnh <- applyMetric(function(id) { getTestResults('nnfeh', id) }, FUN)
-  }
-  
-  if('nnfa' %in% vars$enabledModels)
-  {
-    metric$nnfa <- applyMetric(function(id) { getTestResults('nnfa', id) }, FUN)
-  }
-  
-  if('nnfah' %in% vars$enabledModels)
-  {
-    metric$nnfah <- applyMetric(function(id) { getTestResults('nnfah', id) }, FUN)
-  }
-  if(rsnns.rnn)
-  {
-    metric$rnn <- applyMetric(function(id) { getTestResults('elman', id) }, FUN)
-  }
-  if(rsnns.mlp)
-  {
-    metric$mlp <- applyMetric(function(id) { getTestResults('mlp', id) }, FUN)
-  }
-  if(rsnns.mlph)
-  {
-    metric$mlph <- applyMetric(function(id) { getTestResults('mlph', id) }, FUN)
-  }
-  if(rsnns.jordan)
-  {
-    metric$jordan <- applyMetric(function(id) { getTestResults('jordan', id) }, FUN)
-  }
+  metric <- lapply(vars$enabledModels, function(modelName) {
+    testResults <- getTestResults(modelName, data.idSelected)
+    unlist(lapply(1:length(testResults$expected), function(i) {
+      FUN(testResults$expected[[i]], testResults$predicted[[i]])
+    }))
+  })
+  names(metric) <- vars$enabledModels
   
   metric
 }
@@ -100,72 +38,12 @@ getBoxplot <- function(errorName)
   errorMetrics <- errorTable[[errorName]]
   p <- plot_ly(type = "box")
   
-  p <- p %>% add_boxplot(y = errorMetrics$ar,  jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-    marker = list(color = 'rgb(7,40,89)'),
-    line = list(color = 'rgb(193,5,52)'),
-    name = "AR", boxmean = TRUE)
-  
-  if('nnfe' %in% vars$enabledModels)
+  for (modelName in vars$enabledModels)
   {
-    p <- p %>%  add_boxplot(y = errorMetrics$nn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(0,0,255)'),
-                name = "NN", boxmean = TRUE)
+    p <- p %>%  add_boxplot(y = errorMetrics[[modelName]], line = list(color = modelColors[[modelName]]),
+      name = modelName, boxmean = TRUE)
   }
-  
-  if('nnfeh' %in% vars$enabledModels)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$nnh, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(0, 255, 255)'),
-                name = "NNH", boxmean = TRUE)
-  }
-  
-  if('nnfa' %in% vars$enabledModels)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$nnfa, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(255, 0, 128)'),
-                name = "NNFA", boxmean = TRUE)
-  }
-    
-  if('nnfah' %in% vars$enabledModels)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$nnfah, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                marker = list(color = 'rgb(7,40,89)'),
-                line = list(color = 'rgb(128, 0, 128)'),
-                name = "NNHFA")
-  }
-  
-  if('elman' %in% vars$enabledModels)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$rnn, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                            marker = list(color = 'rgb(7,40,89)'),
-                            line = list(color = 'rgb(255, 127, 0)'),
-                            name = "ELMAN", boxmean = TRUE)    
-  }
-  if(rsnns.mlp)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$mlp, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                            marker = list(color = 'rgb(7,40,89)'),
-                            line = list(color = 'rgb(255, 0, 0)'),
-                            name = "MLP", boxmean = TRUE)    
-  }
-  if(rsnns.mlph)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$mlph, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                            marker = list(color = 'rgb(7,40,89)'),
-                            line = list(color = 'rgb(0,96,0)'),
-                            name = "MLPH", boxmean = TRUE)    
-  }
-  if(rsnns.jordan)
-  {
-    p <- p %>%  add_boxplot(y = errorMetrics$jordan, jitter = 0.3, pointpos = -1.8, boxpoints = FALSE,
-                            marker = list(color = 'rgb(7,40,89)'),
-                            line = list(color = 'rgb(0, 255, 128)'),
-                            name = "JORDAN", boxmean = TRUE)    
-  }    
-    
+
   p$elementId <- NULL
   p
 }
@@ -175,17 +53,9 @@ getMeanErrorVectorFromModels <- function(errorName)
 {
   comparison()
   
-  errorMean = mean(errorTable[[errorName]][['ar']])
-  if('nnfe' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nn']]))
-  if('nnfeh' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnh']]))
-  if('nnfa' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfa']]))
-  if('nnfah' %in% vars$enabledModels) errorMean = c(errorMean, mean(errorTable[[errorName]][['nnfah']]))
-  #für RSNNS auch noch
-  if(rsnns.rnn) errorMean = c(errorMean, mean(errorTable[[errorName]][['rnn']]))#names = c(names, errorModelNames[6])
-  if(rsnns.mlp) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlp']]))
-  if(rsnns.mlph) errorMean = c(errorMean, mean(errorTable[[errorName]][['mlph']]))
-  if(rsnns.jordan) errorMean = c(errorMean, mean(errorTable[[errorName]][['jordan']]))
-  errorMean
+  unlist(lapply(vars$enabledModels, function(modelName) {
+    mean(errorTable[[errorName]][[modelName]])
+  }))
 }
 
 
@@ -193,16 +63,7 @@ getErrorMetricCompare <- function()
 {
   comparison()
   
-  names = c(errorModelNames[1])
-  if('nnfe' %in% vars$enabledModels) names = c(names, errorModelNames[2])
-  if('nnfeh' %in% vars$enabledModels) names = c(names, errorModelNames[3])
-  if('nnfa' %in% vars$enabledModels) names = c(names, errorModelNames[4])
-  if('nnfah' %in% vars$enabledModels) names = c(names, errorModelNames[5])
-  if(rsnns.rnn) names = c(names, errorModelNames[6])
-  if(rsnns.mlp) names = c(names, errorModelNames[7])
-  if(rsnns.mlph) names = c(names, errorModelNames[8])
-  if(rsnns.jordan) names = c(names, errorModelNames[9])
-  data.table(NAME = names, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
+  data.table(NAME = vars$enabledModels, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
 }
 
 getCoef <- function(id)
@@ -283,41 +144,23 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
     stop('Cannot compare one model with itself.')
   }
   
-  getTestResultsFUN <- function(modelName) {
-    switch (modelName,
-      ar = { function(id) { getTestResults('ar', id) } },
-      nnfe = { function(id) { getTestResults('nnfe', id) } },
-      nnfeh = { function(id) { getTestResults('nnfeh', id) } },
-      nnfa = { function(id) { getTestResults('nnfa', id) } },
-      nnfah = { function(id) { getTestResults('nnfah', id) } },
-      jordan = { function(id) { getTestResults('jordan', id) } },
-      elman = { function(id) { getTestResults('elman', id) } },
-      mlp = { function(id) { getTestResults('mlp', id) } },
-      mlph = { function(id) { getTestResults('mlph', id) } },
-      { NULL }
-    )
-  }
-  
-  getTestResults1 <- getTestResultsFUN(modelName1)
-  getTestResults2 <- getTestResultsFUN(modelName2)
-  
-  if (is.null(getTestResults1))
+  if (!modelName1 %in% availableModels)
   {
     stop(paste0("Model '", modelName1, "' unknown"))
   }
-  if (is.null(getTestResults2))
+  if (!modelName2 %in% availableModels)
   {
     stop(paste0("Model '", modelName2, "' unknown"))
   }
   
   diffs <- lapply(names(data.sets), function(id) {
     tryCatch({
-      predicted1 <- getTestResults1(id)$predicted
+      predicted1 <- getTestResults(modelName1, id)$predicted
       if (is.atomic(predicted1))
       {
         list(id = id, diff = -1)
       }
-      predicted2 <- getTestResults2(id)$predicted
+      predicted2 <- getTestResults(modelName2, id)$predicted
       if (is.atomic(predicted2))
       {
         list(id = id, diff = -1)

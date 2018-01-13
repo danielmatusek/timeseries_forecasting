@@ -13,7 +13,7 @@ availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'm
 oneForAllModels <<- c('nnfa', 'nnfah')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
-  'mlph' ='rgb(255, 0, 0)', 'jordan' ='rgb(0, 255, 128)')
+  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)')
 
 ###
 ### Prediction Models
