@@ -1,12 +1,5 @@
  library(RSNNS)
  
- reccurentNeuralNetwork <- NULL
-
- rsnns.rnn <<- TRUE
- rsnns.mlp <<- TRUE
- rsnns.mlph <<- TRUE
- rsnns.jordan <<- TRUE
- 
  validationset.ratio <<- 0.05
  
  
@@ -29,6 +22,11 @@ trainRNN <- function(id, hiddenLayers = c(0))
   return(rnn)
 }
 
+getModel.elman <- function(id)
+{
+  trainRNN(id, neuralNetwork.hiddenLayers)
+}
+
 testRNN <- function(model, id)
 {
   testset <- getTestSet(id)
@@ -45,20 +43,9 @@ testRNN <- function(model, id)
   structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
 
-
-getRNN <- function(id)
+getTestResults.elman <- function(id)
 {
-  
-}
-
-getRNNPlot <- function()
-{
-  
-}
-
-resetRNN <- function()
-{
-  
+  testRNN(getModel('elman', id), id)
 }
 
 # Multilayer Perceptron (Feed Forward Network) with the RSNNS Package to compare with neuralnet
@@ -88,6 +75,16 @@ trainMLP <- function(id, hiddenLayers = TRUE)
   return(mlp)
 }
 
+getModel.mlp <- function(id)
+{
+  trainMLP(id, FALSE)
+}
+
+getModel.mlph <- function(id)
+{
+  trainMLP(id, TRUE)
+}
+
 testMLP <- function(model, id)
 {
   testset <- getTestSet(id)
@@ -104,19 +101,14 @@ testMLP <- function(model, id)
   structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
 
-getMLP <- function(x)
+getTestResults.mlp <- function(id)
 {
-
+  testMLP(getModel('mlp', id), id)
 }
 
-getMLPPlot <- function(x)
+getTestResults.mlph <- function(id)
 {
-
-}
-
-resetMLP <- function(x)
-{
-
+  testMLP(getModel('mlph', id), id)
 }
 
 ####### Train and Test Jordan Network
@@ -140,6 +132,11 @@ trainJordan <- function(id, hiddenLayers = c(0))
   return(jordan)
 }
 
+getModel.jordan <- function(id)
+{
+  trainJordan(id, neuralNetwork.hiddenLayers)
+}
+
 testJordan <- function(model, id)
 {
   testset <- getTestSet(id)
@@ -156,17 +153,7 @@ testJordan <- function(model, id)
   structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
 
-getJordan <- function(x)
+getTestResults.jordan <- function(id)
 {
-
-}
-
-getJordanPlot <- function(x)
-{
-
-}
-
-resetJordan <- function(x)
-{
-
+  testJordan(getModel('jordan', id), id)
 }

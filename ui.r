@@ -1,6 +1,8 @@
 library(plotly)
 library(shinydashboard)
 
+source('model.r')
+
 ui <- dashboardPage(skin = 'purple',
 	dashboardHeader(title = 'FPADB',
 	  tags$li(a(
@@ -52,13 +54,7 @@ ui <- dashboardPage(skin = 'purple',
 		        h3('General', style = 'margin-bottom: 20px;'),
 		        uiOutput('windowSizeSlider'),
 		        uiOutput('horizonSlider'),
-		        checkboxGroupInput('enabledModels', 'Enable Models',
-		          c('ar' = 'ar',
-		            "one Time Series" = "nnfe",
-		            "one TS with hidden" = "nnfeh",
-		            "all Time Series" = "nnfa",
-		            "all TS with hidden" = "nnfah"),
-		          selected = c('ar', 'nnfe', 'nnfeh'))
+		        checkboxGroupInput('enabledModels', 'Enable Models', availableModels, selected = vars$enabledModels)
 		      ),
 		      column(3, 
 		        h3('Neural Network', style = 'margin-bottom: 10px;'),
@@ -75,7 +71,7 @@ ui <- dashboardPage(skin = 'purple',
 		      column(3,
 		        h3('Autoregression', style = 'margin-bottom: 20px;'),
 		        radioButtons('aRModelName', 'Arima Models',
-		          c(AR='AR', AutoArima='AutoArima', ManualAutoArima='ManualAutoArima', ManualAR='ManualAR'), 'AR')
+		          c(AR='AR', AutoArima='AutoArima'), 'AR')
 		      )
 		    )
 		  ),

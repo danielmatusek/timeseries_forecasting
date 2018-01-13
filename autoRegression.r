@@ -50,7 +50,6 @@ getTestResults.ar <- function(id)
   testSet <- getTestSet(id)
   expected <- testSet[['xt0']]
   
-
   testSet[['xt0']] <- NULL
   testSet[['bias']] <- 1
   predicted <- as.matrix(testSet) %*% getARCoef(id)

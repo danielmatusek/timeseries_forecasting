@@ -161,26 +161,22 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0))
 
 getModel.nnfe <- function(id)
 {
-  print(paste('train nn for id', id ,'without hidden layers'))
   trainNeuralNetwork(getTrainSet(id))
 }
 
 getModel.nnfeh <- function(id)
 {
-  print(paste('train nn for id', id ,'with hidden layers'))
   trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
 }
 
 getModel.nnfa <- function()
 {
-  print('train nn for all without hidden layers')
   trainSetsCombined <- getAllTrainSetsCombined()
   trainNeuralNetwork(trainSetsCombined)
 }
 
 getModel.nnfah <- function()
 {
-  print('train nn for all with hidden layers')
   trainSetsCombined <- getAllTrainSetsCombined()
   trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
 }

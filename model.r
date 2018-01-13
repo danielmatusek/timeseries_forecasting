@@ -1,16 +1,19 @@
 # vars is a list of all variables worth saving in an extra file
-# it will continue:
+# it will contain:
 # vars$timeSeries[[id]]
 # vars$enabledModels
 # vars$models[[modelName]][[id]]
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
-  enabledModels = c('ar', 'nnfe', 'nnfeh') #, 'elman', 'mlp', 'mlph', 'jordan'
+  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan')
 )
 
 availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan')
 oneForAllModels <<- c('nnfa', 'nnfah')
+modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
+  'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
+  'mlph' ='rgb(255, 0, 0)', 'jordan' ='rgb(0, 255, 128)')
 
 ###
 ### Prediction Models
@@ -28,6 +31,7 @@ getModel <- function(modelName, id = NULL)
   {
     if (is.null(vars$models[[modelName]]))
     {
+      print(paste('train', modelName))
       times <- system.time(model <- do.call(paste0('getModel.', modelName), list()))
       
       if (is.null(vars$models))
@@ -45,6 +49,7 @@ getModel <- function(modelName, id = NULL)
   {
     if (is.null(vars$models[[modelName]][[id]]))
     {
+      print(paste('train', modelName, 'for id', id))
       times <- system.time(model <- do.call(paste0('getModel.', modelName), list(id)))
       
       if (is.null(vars$models[[modelName]]))

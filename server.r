@@ -11,7 +11,6 @@ source('neuralNetwork.r')
 source('comparision.r')
 source('recNeuralNetwork.r')
 source('plot.rsnns.r')
-source('model.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 cpu_time <- list()
@@ -127,10 +126,6 @@ server <- function(input, output) {
 	
 	enabledModelsChanged <- reactive({
 	  vars$enabledModels <<- input$enabledModels
-		rsnns.rnn <<- TRUE #'rsnns_rnn' %in% input$variable_nn
-		rsnns.mlp <<- TRUE #'rsnns_mlp' %in% input$variable_nn
-		rsnns.mlph <<- TRUE #'rsnns_mlph' %in% input$variable_nn
-		rsnns.jordan <<- TRUE #'rsnns_jordan' %in% input$variable_nn
 		resetComparison()
 	})
 	
@@ -504,8 +499,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainRNN(input$idSelect, input$hiddenSliderInput)
-		t <- testRNN(m, input$idSelect)
+		t <- getTestResults('elman', input$idSelect)
 		
 		data.table(predicted = t$predicted, expected = t$expected)
 	})
@@ -519,8 +513,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlp', input$idSelect)
 		
 		data.table(predicted = t$predicted, expected = t$expected)
 	})
@@ -533,8 +526,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlp', input$idSelect)
 		
 		data.table(predicted = t$predicted, expected = t$expected)
 	})
@@ -546,7 +538,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(trainRNN(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+  	plot(getModel('elman'), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -556,8 +548,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = TRUE)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
 		data.table(result = t$result, expected = t$expected)
 	})
@@ -569,7 +560,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(trainMLP(input$idSelect), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlp', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -579,8 +570,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainMLP(input$idSelect, hiddenLayers = FALSE)
-		t <- testMLP(m, input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
 		data.table(predicted = t$predicted, expected = t$expected)
 	})
@@ -592,7 +582,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(trainMLP(input$idSelect, hiddenLayers = FALSE), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlp', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 
 	output$rsnns_jordan_tab <- renderDataTable({
@@ -602,8 +592,7 @@ server <- function(input, output) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		m <- trainJordan(input$idSelect, hiddenLayers = input$hiddenSliderInput)
-		t <- testJordan(m, input$idSelect)
+		t <- getTestResults('jordan', input$idSelect)
 		
 		data.table(predicted = t$predicted, expected = t$expected)
 	})
@@ -615,7 +604,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
 
-		plot(trainJordan(input$idSelect, input$hiddenSliderInput), paste0('xt', 1:data.windowSize))
+		plot(getTestResults('jordan', input$idSelect), paste0('xt', 1:data.windowSize))
 	})
 	
 	
