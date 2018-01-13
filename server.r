@@ -14,7 +14,6 @@ source('recNeuralNetwork.r')
 source('plot.rsnns.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
-cpu_time <- list()
 
 server <- function(input, output) {
   
@@ -752,8 +751,11 @@ server <- function(input, output) {
 	output$data_cpu_time <- renderPlotly({
 	  arModelBaseChanged()
 	  windowsChanged()
-
 	  enabledModelsChanged()
+	  hiddenLayersChanged()
+	  excludeBiasChanged()
+	  arModelBaseChanged()
+	  inputDifferenceChanged()
 	  
 	  id <- input$idSelect
 	  

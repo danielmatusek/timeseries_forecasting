@@ -103,11 +103,11 @@ ui <- dashboardPage(skin = 'purple',
 			        dataTableOutput("reccurentNeuralNetwork_tab"),
 							plotOutput('recPlot', height = '600px')
 					),
-					tabPanel("MLP with Hidden Layer",
+					tabPanel("MLP",
 							dataTableOutput("rsnns_mlp_tab"),
 							plotOutput('mlp_plot')
 					),
-					tabPanel("MLP without Hidden Layer",
+					tabPanel("MLP wit Hidden Layer",
 							dataTableOutput("rsnns_mlp_tab_without_hidden"),
 							plotOutput('mlp_plot_without_hidden')
 					),
@@ -151,7 +151,7 @@ ui <- dashboardPage(skin = 'purple',
 			          #tabPanel('NN Dif. wrt HL',
 			          #  dataTableOutput('neuralNetworkDifferenceWRTHiddenLayers')
 			          #),
-			          tabPanel('Model Prodictions',
+			          tabPanel('Model Predictions',
 			            fluidRow(
 			              column(width = 5,
 			                selectInput('model1Select', 'Model 1', availableModels, selected ='ar')
