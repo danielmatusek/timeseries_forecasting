@@ -117,7 +117,6 @@ server <- function(input, output) {
 	excludeInputErrorChanged <- reactive({
 	  
 	  neuralnetwork.greedyErrorType <<- input$inputSelectedErrorType
-	  print(neuralnetwork.greedyErrorType)
 	  resetNeuralNetworks()
 	  resetNeuralNetworks.InputExclusion()
 	  
@@ -213,14 +212,18 @@ server <- function(input, output) {
 	
 	
 	output$inputStrategy <- renderUI({
-	 if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
+	  
+	  if (is.null(input$windowSizeSlider)) return()
+	  if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
 	  {
 	      selectInput("inputStrategy", "Strategy", neuralnetwork.strategies)
 	  }
 	})
 	
 	output$inputSelectedErrorType <- renderUI({
-	  if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
+	  
+	  if (is.null(input$windowSizeSlider)) return()
+	   if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
 	  {
 	    selectInput("inputSelectedErrorType", "Error Type", c("Outsample", "Insample"))
 	    
@@ -401,13 +404,15 @@ server <- function(input, output) {
 	getExcludedInputTable <- function(number)
 	{
 	  s <- neuralNetwork.excluded.statistics[[number]]
-	  
-	  datatable(head(data.table("Excluded Nodes" = s$nodes, "sMAPE" = s$smape, "Sampling Error" = s$internalE, taken = s$pathAsIndices), 50),
+	  dt <- data.table("Excluded Nodes" = s$nodes, "sMAPE" = s$smape, "Sampling Error" = s$internalE, taken = s$pathAsIndices)
+	  dt <- dt[rowSums(is.na(dt)) == 0,]
+	  datatable(head(dt, 50),
 	            class = 'cell-border stripe',
 	            options = list(
 	              columnDefs = list(list(targets = 4, visible = FALSE)),
 	              pageLength = 50))%>%
-	    formatStyle("taken",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1), c('gray', 'yellow'))) 
+	    formatStyle("taken",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1,2), c('gray', 'yellow','green')), fontWeight = styleEqual(c(2), c('bold')))
+	  
 	}
 	
 

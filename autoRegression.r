@@ -7,8 +7,8 @@ aRModelName <- NULL
 
 getModel.ar <- function(id)
 {
+ 
   y <- data.sets[[id]]$y
-  if(neuralNetwork.inputDifference) y <- diff(data.sets[[id]]$y)
     
   spl <<- length(y) - data.horizon
   trainData <- y[(1 : spl)]
@@ -49,14 +49,10 @@ getTestResults.ar <- function(id)
   expected <- testSet[['xt0']]
   
   testSet[['xt0']] <- NULL
+  testSet <- testSet[, 1 : data.windowSize]
   testSet[['bias']] <- 1
   predicted <- as.matrix(testSet) %*% getARCoef(id)
-  
-  if(neuralNetwork.inputDifference)
-  {
-    predicted <-  setOffsetToResultSet(id, predicted)
-    expected <- getOrgiginalTestSet(id)
-  }
+
   
   structure(list(expected = expected, predicted = predicted[,1]), class = 'TestResults')
 }

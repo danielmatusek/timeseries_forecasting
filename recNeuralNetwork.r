@@ -29,16 +29,12 @@ getModel.elman <- function(id)
 
 testRNN <- function(model, id)
 {
+  
   testset <- getTestSet(id)
   expected <- unlist(testset[,1])
   
   predicted <- predict(model, testset[,2 : length(testset)])[,1]
   
-  if(neuralNetwork.inputDifference)
-  {
-    predicted <-  setOffsetToResultSet(id, predicted)
-    expected <- getOrgiginalTestSet(id)
-  }
   
   structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
@@ -92,11 +88,6 @@ testMLP <- function(model, id)
   
   predicted <- predict(model, testset[,2 : length(testset)])[,1]
   
-  if(neuralNetwork.inputDifference)
-  {
-    predicted <-  setOffsetToResultSet(id, predicted)
-    expected <- getOrgiginalTestSet(id)
-  }
   
   structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
@@ -144,12 +135,7 @@ testJordan <- function(model, id)
   
   predicted <- predict(model, testset[,2 : length(testset)])[,1]
   
-  if(neuralNetwork.inputDifference)
-  {
-    predicted <-  setOffsetToResultSet(id, predicted)
-    expected <- getOrgiginalTestSet(id)
-  }
-  
+
   structure(list(expected = expected, predicted = predicted), class = 'TestResults')
 }
 
