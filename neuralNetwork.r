@@ -278,7 +278,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
     neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[1]]$result.matrix[1])
     results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[1]], data.idSelected)
     neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
-    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- 'ø'
+    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- '?'
     
     path = c(0)
     excludedPathAsIndices <- c(1)
@@ -517,7 +517,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- neuralNetwork.testResults.hlOptimizationNN[[id]]$smape
+      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted, neuralNetwork.testResults.hlOptimizationNN[[id]]$expected)
       neuralNetwork.hlOptimizationErrorVector[m+j+1] <<- current_error
 
       #break from optimization when error rises again
