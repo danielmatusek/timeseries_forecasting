@@ -3,6 +3,8 @@ data.sets <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
+data.diff.trainSets <- NULL
+data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
 
 data.windowSize <- NULL
@@ -68,32 +70,16 @@ getTimeSeriesValueSpan <- function(id)
 resetWindows <- function() {
   data.trainSets <<- NULL
   data.testSets <<- NULL
+  data.diff.trainSets <<- NULL
+  data.diff.testSets <<- NULL
 }
+
 
 createWindows <- function(id) {
   
   dataSet <- data.sets[[id]]$y
   
   windows <- NULL
-  if(neuralNetwork.inputDifference)
-  {
-    
-    win <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
-    names(win) <- paste0('xt', data.windowSize : 0)
-    setcolorder(win, paste0('xt', 0 : data.windowSize))
-  
-    winDt <- as.data.table(rollapply(diff(dataSet), width = data.windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
-    names(winDt) <- paste0('dt', (data.windowSize - 1) : 1)
-    setcolorder(winDt, paste0('dt', 1 : (data.windowSize - 1)))
-    winDt <- winDt[-nrow(winDt),]
-    
-    win <- cbind(win, winDt)
-    
-    index <- 1:(nrow(win) - (data.horizon)) 
-    data.trainSets[[id]] <<- win[index, ]
-    data.testSets[[id]] <<- win[-index, ]
-    return()
-  }
   
   windows <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
   names(windows) <- paste0('xt', data.windowSize:0)
@@ -104,13 +90,53 @@ createWindows <- function(id) {
   data.testSets[[id]] <<- windows[-index, ]
 }
 
-getTrainSet <- function(id) {
+
+createDifferentableWindow <- function(id)
+{
+  dataSet <- data.sets[[id]]$y
+  win <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+  names(win) <- paste0('xt', data.windowSize : 0)
+  setcolorder(win, paste0('xt', 0 : data.windowSize))
+  
+  winDt <- as.data.table(rollapply(diff(dataSet), width = data.windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
+  names(winDt) <- paste0('dt', (data.windowSize - 1) : 1)
+  setcolorder(winDt, paste0('dt', 1 : (data.windowSize - 1)))
+  winDt <- winDt[-nrow(winDt),]
+  
+  win <- cbind(win, winDt)
+  
+  index <- 1:(nrow(win) - (data.horizon)) 
+  data.diff.trainSets[[id]] <<- win[index, ]
+  data.diff.testSets[[id]] <<- win[-index, ]
+}
+
+
+getTrainSet <- function(id) 
+{
   if (is.null(data.trainSets[[id]]))
   {
     createWindows(id)
   }
-  
   return(data.trainSets[[id]])
+}
+
+
+getDiffTrainSet <- function(id)
+{
+  if(is.null(data.diff.trainSets[[id]]))
+  {
+    createDifferentableWindow(id)
+  }
+  return(data.diff.trainSets[[id]])
+}
+
+getDiffTestSet <- function(id)
+{
+  if(is.null(data.diff.testSets[[id]]))
+  {
+    createDifferentableWindow(id)
+  }
+  return(data.diff.testSets[[id]])
 }
 
 getAllTrainSetsCombined <- function() {
