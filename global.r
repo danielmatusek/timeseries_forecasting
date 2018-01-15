@@ -76,12 +76,22 @@ createWindows <- function(id) {
   windows <- NULL
   if(neuralNetwork.inputDifference)
   {
+    
     win <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
-    names(win) <- paste0('xt', data.windowSize:0)
-    setcolorder(win, paste0('xt', 0:data.windowSize))
-    index <- 1:(nrow(win) - (data.horizon + 1)) # to calculate the difference you need the last point of train data
-    data.inputDifference.testSets[[id]] <<- win[-index, ]
-    dataSet <- diff(dataSet)
+    names(win) <- paste0('xt', data.windowSize : 0)
+    setcolorder(win, paste0('xt', 0 : data.windowSize))
+  
+    winDt <- as.data.table(rollapply(diff(dataSet), width = data.windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
+    names(winDt) <- paste0('dt', (data.windowSize - 1) : 1)
+    setcolorder(winDt, paste0('dt', 1 : (data.windowSize - 1)))
+    winDt <- winDt[-nrow(winDt),]
+    
+    win <- cbind(win, winDt)
+    
+    index <- 1:(nrow(win) - (data.horizon)) 
+    data.trainSets[[id]] <<- win[index, ]
+    data.testSets[[id]] <<- win[-index, ]
+    return()
   }
   
   windows <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
@@ -93,17 +103,7 @@ createWindows <- function(id) {
   data.testSets[[id]] <<- windows[-index, ]
 }
 
-getDiffereceVector <- function(x)
-{
-  if(length(x) < 2) return(NULL)
-  vDiff <- vector()
-  
-  for(i in 1 : (length(x) - 1))
-  {
-    vDiff <- c(vDiff, (x[i + 1] - x[i]))
-  }
-  return(vDiff)
-}
+
 
 
 
@@ -126,21 +126,7 @@ getAllTrainSetsCombined <- function() {
   return(rbindlist(data.trainSets))
 }
 
-setOffsetToResultSet <- function(id, resultSet)
-{
-  if(neuralNetwork.inputDifference)
-  {
-    return( data.inputDifference.testSets[[id]]$xt0[1 : length(resultSet)] + resultSet)
-  }
-}
 
-getOrgiginalTestSet <- function(id)
-{
-  if(neuralNetwork.inputDifference)
-  {
-    return(c(data.inputDifference.testSets[[id]]$xt0[2 : length(data.inputDifference.testSets[[id]]$xt0)]))
-  }
-}
 
 getTestSet <- function(id) {
   if (is.null(data.testSets[[id]]))
