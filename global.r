@@ -55,6 +55,7 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
     
     # split data into sets with the same id
     data.sets <<- split(data, by = 'id')
+    vars$timeSeries <<- data.sets
   }
 }
 
@@ -92,20 +93,6 @@ createWindows <- function(id) {
   data.trainSets[[id]] <<- windows[index, ]
   data.testSets[[id]] <<- windows[-index, ]
 }
-
-getDiffereceVector <- function(x)
-{
-  if(length(x) < 2) return(NULL)
-  vDiff <- vector()
-  
-  for(i in 1 : (length(x) - 1))
-  {
-    vDiff <- c(vDiff, (x[i + 1] - x[i]))
-  }
-  return(vDiff)
-}
-
-
 
 getTrainSet <- function(id) {
   if (is.null(data.trainSets[[id]]))

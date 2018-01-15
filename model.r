@@ -124,6 +124,60 @@ getTestResults.default <- function(modelName, id)
 
 
 ###
+### CPU Times
+###
+
+getCpuTimes <- function(modelName, id = NULL, na.rm = TRUE)
+{
+  if (modelName %in% oneForAllModels)
+  {
+    # learn the model if not already done
+    if (is.null(vars$cpuTimes[[modelName]]))
+    {
+      getModel(modelName)
+    }
+    
+    if (na.rm && mode(vars$models[[modelName]]) == 'logical')
+    {
+      return (NA)
+    }
+    else
+    {
+      return (vars$cpuTimes[[modelName]])
+    }
+  }
+  else
+  {
+    if (is.null(id))
+    {
+      cpuTimes <- unlist(lapply(names(vars$timeSeries), function(id) {
+        getCpuTimes(modelName, id)
+      }))
+      
+      return (cpuTimes)
+    }
+    else
+    {
+      # learn the model if not already done
+      if (is.null(vars$cpuTimes[[modelName]][[id]]))
+      {
+        getModel(modelName, id)
+      }
+      
+      if (na.rm && mode(vars$models[[modelName]][[id]]) == 'logical')
+      {
+        return (NA)
+      }
+      else
+      {
+        return (vars$cpuTimes[[modelName]][[id]])
+      }
+    }
+  }
+}
+
+
+###
 ### Resetting
 ###
 

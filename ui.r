@@ -25,8 +25,7 @@ ui <- dashboardPage(skin = 'purple',
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
 	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
 	      hr(),
-		            uiOutput("idSelectBox"),
-	              checkboxInput('errorTypCheck', 'Error eine Zeitreihe', TRUE)
+		            uiOutput("idSelectBox")
 		  )
 	  )
 	),
@@ -132,16 +131,18 @@ ui <- dashboardPage(skin = 'purple',
 			          tabPanel('Result',
 			            plotlyOutput('forecastComparisionPlot', height = '600px')
 			         ),
-			               tabPanel("MSE",
-			                        plotlyOutput("compareMSE", height = "600px")
+			               tabPanel('Error',
+			                 fluidRow(
+			                   column(width = 6,
+			                     selectInput('errorMetricName', 'Error metric', c('smape', 'mse', 'rmse'), selected = 'smape')
+			                   ),
+			                   column(width = 6,
+			                     checkboxInput('errorOfAllTimeseries', 'Display error of all time series')
+			                   )
+			                 ),
+			                 plotlyOutput('errorMetricPlot', height = '600px')
 			               ),
-			               tabPanel("RMSE",
-			                        plotlyOutput("compareRMSE", height = "600px")
-			               ),
-			               tabPanel("SMAPE",
-			                        plotlyOutput("compareSMAPE", height = "600px")
-			               ),
-			               tabPanel("Average Error",
+			               tabPanel("Mean Error",
 			                        dataTableOutput("compareError")
 			               ),
 			          
@@ -154,7 +155,7 @@ ui <- dashboardPage(skin = 'purple',
 			          tabPanel('Model Predictions',
 			            fluidRow(
 			              column(width = 5,
-			                selectInput('model1Select', 'Model 1', availableModels, selected ='ar')
+			                selectInput('model1Select', 'Model 1', availableModels, selected = 'ar')
 			              ),
 			              column(width = 5,
 			                selectInput('model2Select', 'Model 2', availableModels, selected = 'nnfe')
@@ -166,7 +167,15 @@ ui <- dashboardPage(skin = 'purple',
 			            dataTableOutput('ModelPredictionsCompareTable')
 			          ),
 			         tabPanel('CPU time',
-			                  plotlyOutput('data_cpu_time')
+			           fluidRow(
+			             column(width = 6,
+			               checkboxInput('cpuTimeOfAllTimeseries', 'CPU time of all time series')
+			             ),
+			             column(width = 6,
+			               checkboxInput('excludeNAModels', 'Exclude non-converging models', TRUE)
+			             )
+			           ),
+			           plotlyOutput('data_cpu_time')
 			         )
 			        )
 			),

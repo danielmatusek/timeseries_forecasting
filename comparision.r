@@ -32,15 +32,24 @@ comparison <- function()
 
 
 
-getBoxplot <- function(errorName)
+getModelErrorPlot <- function(errorMetricName, id)
 {
-  comparison()
-  errorMetrics <- errorTable[[errorName]]
-  p <- plot_ly(type = "box")
+  FUN <- switch(errorMetricName,
+    'smape' = { sMAPE },
+    'mse' = { mse },
+    'rmse' = { rmse }
+  )
   
+  p <- plot_ly(type = 'box')
+
   for (modelName in vars$enabledModels)
   {
-    p <- p %>%  add_boxplot(y = errorMetrics[[modelName]], line = list(color = modelColors[[modelName]]),
+    testResults <- getTestResults(modelName, id)
+    errors <- unlist(lapply(1:length(testResults$expected), function(i) {
+      FUN(testResults$expected[[i]], testResults$predicted[[i]])
+    }))
+    
+    p <- p %>% add_boxplot(y = errors, line = list(color = modelColors[[modelName]]),
       name = modelName, boxmean = TRUE)
   }
 

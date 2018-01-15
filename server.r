@@ -8,7 +8,7 @@ library(TSPred) #sMape function
 library(zoo)
 
 source('autoRegression.r')
-source('neuralNetwork.r')
+source('neuralNetwork.r', encoding = 'UTF-8')
 source('comparision.r')
 source('recNeuralNetwork.r')
 source('plot.rsnns.r')
@@ -99,7 +99,7 @@ server <- function(input, output) {
 	  
 	  neuralNetwork.isInputExcluded <<- input$inputCheckbox
 	  
-	  if(neuralNetwork.isInputExcluded == TRUE)
+	  if(neuralNetwork.isInputExcluded)
 	  {
 	    neuralNetwork.excludedMaxInputs <<- input$hiddenSliderInput
 	    neuralNetwork.excludedInput <<- input$hiddenSliderInput
@@ -133,12 +133,6 @@ server <- function(input, output) {
 	  aRModelName <<- input$aRModelName
 	  
 	  resetModels('ar')
-	})
-	
-	errorTypChanged <- reactive({
-	  idChanged()
-	  resetComparison()
-	  errorTypCheck <<- input$errorTypCheck
 	})
 	
 	
@@ -655,34 +649,13 @@ server <- function(input, output) {
 	  getForecastComparisionPlot(input$idSelect)
 	})
 	
-	output$compareMSE <- renderPlotly({
+	output$errorMetricPlot <- renderPlotly({
 	  windowsChanged()
 	  enabledModelsChanged()
 	  arModelBaseChanged()
-	  errorTypChanged()
 	  inputDifferenceChanged()
 	  
-	  getBoxplot('mse')
-	})
-	
-	output$compareRMSE <- renderPlotly({
-	  windowsChanged()
-	  enabledModelsChanged()
-	  arModelBaseChanged()
-	  errorTypChanged()
-	  inputDifferenceChanged()
-	  
-	  getBoxplot('rmse')
-	})
-	
-	output$compareSMAPE <- renderPlotly({
-	  windowsChanged()
-	  enabledModelsChanged()
-	  arModelBaseChanged()
-	  errorTypChanged()
-	  inputDifferenceChanged()
-	  
-	  getBoxplot('smape')
+	  getModelErrorPlot(input$errorMetricName, if(input$errorOfAllTimeseries) { NULL } else { input$idSelect })
 	})
 	
 	output$compareError <- renderDataTable({
@@ -759,30 +732,34 @@ server <- function(input, output) {
 	  
 	  id <- input$idSelect
 	  
+	  if (input$cpuTimeOfAllTimeseries)
+	  {
+	    p <- plot_ly(type = 'box')
+	    
+	    for (modelName in vars$enabledModels)
+	    {
+	      p <- p %>% add_boxplot(y = getCpuTimes(modelName, na.rm = input$excludeNAModels),
+	        line = list(color = modelColors[[modelName]]), name = modelName, boxmean = TRUE)
+	    }
+	  }
+	  else
+	  {
+	    x <- vars$enabledModels
+	    cpu_times <- unlist(lapply(vars$enabledModels, function(modelName) {
+	      getCpuTimes(modelName, input$idSelect, na.rm = input$excludeNAModels)
+	    }))
+	    
+	    #sort x
+	    x <- factor(x, levels = unique(x)[order(cpu_times, decreasing = TRUE)])
+	    
+	    p <- plot_ly(
+	      x = x, #c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
+	      y = cpu_times,
+	      type = "bar"
+	    )
+	  }
 	  
-	  x <- vars$enabledModels
-    cpu_times <- unlist(lapply(vars$enabledModels, function(modelName) {
-      if (modelName %in% oneForAllModels)
-      {
-        getModel(modelName) # make sure the model is computed
-        vars$cpuTimes[[modelName]]
-      }
-      else
-      {
-        getModel(modelName, id) # make sure the model is computed
-        vars$cpuTimes[[modelName]][[id]]
-      }
-    }))
-    
-    #sort x
-    x <- factor(x, levels = unique(x)[order(cpu_times, decreasing = TRUE)])
-	  
-	  p <- plot_ly(
-	    x = x, #c("one modell", "one modell hidden","AR"),# "all time series without hidden","AR"),# "all time series with hidden"),
-	    y = cpu_times,
-	    type = "bar"
-	  )
 	  p$elementId <- NULL
 	  p
-	  })
+	})
 }

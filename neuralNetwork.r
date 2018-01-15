@@ -246,19 +246,10 @@ getReducedNeuralNetworkWeights <- function(nn) {
   lapply(nn$weights, function(repetition) {
     repetition <- lapply(repetition, function(layer) {
       # Change all NA weights to 0
-      matrixData <- unlist(lapply(layer, function(weight) {
-        if (is.na(weight))
-        {
-          return (0)
-        }
-        else
-        {
-          return (weight)
-        }
-      }))
+      layer[is.na(layer)] <- 0
       
       # Extend the matrix data with a bias column to be able to use simple matrix multiplication
-      matrixData <- c(1, rep(0, NROW(layer) - 1), matrixData)
+      matrixData <- c(1, rep(0, NROW(layer) - 1), layer[,1])
       
       matrix(matrixData, ncol = NCOL(layer) + 1)
     })
@@ -287,7 +278,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
     neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[1]]$result.matrix[1])
     results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[1]], data.idSelected)
     neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
-    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- '?'
+    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- 'ø'
     
     
     path = c(0)
@@ -300,10 +291,10 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
       
       createModels(path, id, hiddenLayers)
       
-      if(!(length(path)) == data.windowSize) excludedPathAsIndices <- c(excludedPathAsIndices, rep(0, data.windowSize))
+      if(length(path) != data.windowSize) excludedPathAsIndices <- c(excludedPathAsIndices, rep(0, data.windowSize))
 
       from <- to + 1
-      to <- from + data.windowSize - 1
+      to <- to + data.windowSize
      
       # check, weather the old best model is better than all new calculated models
       
@@ -312,7 +303,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
       if(!is.null(oldModel))
       {
         stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors, pathAsIndices = excludedPathAsIndices), class = 'TestExclusion')
-        pos <- (as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers) * 2) + 1)
+        pos <- as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers) * 2) + 1
         neuralNetwork.excluded.statistics[[pos]] <<- stats
         resetGlobalModel(id, hiddenLayers)
 
@@ -323,15 +314,16 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE, strategy)
       idx <- NULL
       if(neuralnetwork.greedyErrorType == "Outsample")
       {
-        idx <- getIdxOfMinErr(neuralNetwork.excludedPastErrors[from : to])
+        min <- min(neuralNetwork.excludedPastErrors[from : to], na.rm = TRUE)
+        idx <- match(min, neuralNetwork.excludedPastErrors[from : to])
       }
       else if(neuralnetwork.greedyErrorType == "Insample")
       {
-        idx <- getIdxOfMinErr(neuralNetwork.excludedInternalErrors[from : to])
-        
+        min <- min(neuralNetwork.excludedInternalErrors[from : to], na.rm = TRUE)
+        idx <- match(min, neuralNetwork.excludedInternalErrors[from : to])
       }
       path <- c(path, idx)
-      excludedPathAsIndices[((from + idx) - 1)] <- 1
+      excludedPathAsIndices[from + idx - 1] <- 1
     }
   }
   
@@ -345,11 +337,12 @@ resetGlobalModel <- function(id, hiddenLayers)
     if (hiddenLayers)
     {
       neuralNetwork.forAll.hiddenLayers <<- neuralNetwork.excludedPastModels[[1]]
-      
+      resetModels('nnfah')
     }
     else
     {
       neuralNetwork.forAll <<- neuralNetwork.excludedPastModels[[1]]
+      resetModels('nnfa')
     }
   }
   else
@@ -357,7 +350,7 @@ resetGlobalModel <- function(id, hiddenLayers)
     if (hiddenLayers)
     {
       neuralNetwork.forEach.hiddenLayers[[id]] <<- neuralNetwork.excludedPastModels[[1]]
-      
+      resetModels('nnfah')
     }
     else
     {
@@ -438,34 +431,9 @@ createModels <- function(path, id, hiddenLayers)
   }
 }
 
-getIdxOfMinErr <- function(errors)
-{
-  tmpErr = 0
-  idx = 0
-  flag = TRUE
-  for(i in 1 : length(errors))
-  {
-    if(flag && !is.na(errors[i]))
-    {
-      tmpErr = errors[i]
-      idx = i
-      flag = FALSE
-    }
-    else if(!is.na(errors[i]))
-    {
-      if(errors[i] < tmpErr)
-      {
-        tmpErr = errors[i]
-        idx = i
-      }
-    }
-  }
-  return(idx)
-}
-
 
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() 
-  {
+{
   tolerance <- 1e-5
   
   idsNNsDiffer <- unlist(lapply(names(data.sets), function(id) {
