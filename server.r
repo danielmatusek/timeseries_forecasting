@@ -666,7 +666,7 @@ server <- function(input, output, session) {
 	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  
-	  getErrorMetricCompare()
+	  getErrorMetricCompare(input$idSelect)
 	})
 	
 	output$compareCoefficient <- renderDataTable({
