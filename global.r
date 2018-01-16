@@ -25,11 +25,11 @@ modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' =
   'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)' )
 
 
-
 data.names <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
+data.expecetedTestResults <- NULL
 data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
@@ -88,7 +88,7 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
     
     for (id in names(data))
     {
-      #data[[id]]$id <- NULL
+      data[[id]]$id <- NULL
     }
     
     vars$timeSeries <<- data
@@ -124,9 +124,8 @@ loadResults <- function(name)
   path <- paste0('../results/', name, '.rdata')
   if (file.access(path, 4) == 0)
   {
-    vars <- readRDS(path)
+    vars <<- readRDS(path)
     print(paste0("loaded results from 'results/", name, ".rdata'"))
-    return (vars)
   }
   else
   {
@@ -159,6 +158,8 @@ createWindows <- function(id)
   index <- 1:(nrow(windows) - vars$options$horizon)
   data.trainSets[[id]] <<- windows[index, ]
   data.testSets[[id]] <<- windows[-index, ]
+  data.expecetedTestResults[[id]] <<- data.testSets[[id]]$xt0
+  data.testSets[[id]]$xt0 <<- NULL
 }
 
 

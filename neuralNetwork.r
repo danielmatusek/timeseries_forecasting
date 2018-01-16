@@ -241,13 +241,8 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 testNeuralNetwork <- function(neuralNetwork, testSetID, isDiffInput = FALSE)
 {
   testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)} 
-  expected <- testData$xt0
-  testData$xt0 <- NULL
 
-  n <- compute(neuralNetwork, testData)
-  predicted <- n$net.result[,1]
-  
-  structure(list(expected = expected, predicted = predicted), class = 'TestResults')
+  compute(neuralNetwork, testData)$net.result[,1]
 }
 
 getTestResults.nnfe <- function(id)

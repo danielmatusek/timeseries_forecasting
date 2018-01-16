@@ -44,13 +44,8 @@ getARCoef <- function(id)
 getTestResults.ar <- function(id)
 {
   testSet <- getTestSet(id)
-  expected <- testSet[['xt0']]
-  
-  testSet[['xt0']] <- NULL
   testSet <- testSet[, 1 : vars$options$windowSize]
   testSet[['bias']] <- 1
-  predicted <- as.matrix(testSet) %*% getARCoef(id)
-
   
-  structure(list(expected = expected, predicted = predicted[,1]), class = 'TestResults')
+  as.matrix(testSet) %*% getARCoef(id)
 }

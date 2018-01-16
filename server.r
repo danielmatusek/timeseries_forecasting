@@ -230,7 +230,7 @@ server <- function(input, output, session) {
 	
 	observeEvent(input$loadResults, {
 	  removeModal()
-	  vars <<- loadResults(input$savedResults)
+	  loadResults(input$savedResults)
 	  
 	  updateSliderInput(session, 'windowSize', value = vars$options$windowSize)
 	  updateSliderInput(session, 'horizon', value = vars$options$horizon)

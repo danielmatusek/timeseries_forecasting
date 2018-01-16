@@ -29,14 +29,7 @@ getModel.elman <- function(id)
 
 testRNN <- function(model, id)
 {
-  
-  testset <- getTestSet(id)
-  expected <- unlist(testset[,1])
-  
-  predicted <- predict(model, testset[,2 : length(testset)])[,1]
-  
-  
-  structure(list(expected = expected, predicted = predicted), class = 'TestResults')
+  predict(model, getTestSet(id))[,1]
 }
 
 getTestResults.elman <- function(id)
@@ -83,13 +76,7 @@ getModel.mlph <- function(id)
 
 testMLP <- function(model, id)
 {
-  testset <- getTestSet(id)
-  expected <- unlist(testset[,1])
-  
-  predicted <- predict(model, testset[,2 : length(testset)])[,1]
-  
-  
-  structure(list(expected = expected, predicted = predicted), class = 'TestResults')
+  predict(model, getTestSet(id))[,1]
 }
 
 getTestResults.mlp <- function(id)
@@ -130,13 +117,7 @@ getModel.jordan <- function(id)
 
 testJordan <- function(model, id)
 {
-  testset <- getTestSet(id)
-  expected <- unlist(testset[,1])
-  
-  predicted <- predict(model, testset[,2 : length(testset)])[,1]
-  
-
-  structure(list(expected = expected, predicted = predicted), class = 'TestResults')
+  predict(model, getTestSet(id))[,1]
 }
 
 getTestResults.jordan <- function(id)

@@ -1,3 +1,10 @@
+library(foreach)
+library(doParallel)
+
+# set cluster for parallel execution
+setDefaultCluster(makeCluster(detectCores()))
+
+
 ###
 ### Prediction Models
 ###
@@ -71,7 +78,7 @@ getTestResults.default <- function(modelName, id)
   # if id is null get the test results of all time series
   if (is.null(id))
   {
-    results <- lapply(names(vars$timeSeries), function(id) { getTestResults(modelName, id) })
+    results <- foreach(id = names(vars$timeSeries)) %dopar% getTestResults(modelName, id)
     
     # remove not valid test results
     results[sapply(results, function(r) { !inherits(r, 'TestResults') })] <- NULL
@@ -81,28 +88,55 @@ getTestResults.default <- function(modelName, id)
     pred <- unlist(lapply(results, function(r) { r$predicted }))
     return (structure(list(expected = exp, predicted = pred), class = 'TestResults'))
   }
-  else if (is.null(vars$testResults[[modelName]][[id]]))
+  else if (is.null(vars$predictions[[modelName]][[id]]))
   {
     # compute test results
     model <- getModel(modelName, id)
     
     if (!is.atomic(model))
     {
-      vars$testResults[[modelName]][[id]] <<- do.call(paste0('getTestResults.', modelName), list(id))
+      testResults <- do.call(paste0('getTestResults.', modelName), list(id))
+      if (mode(testResults) == 'numeric')
+      {
+        vars$predictions[[modelName]][[id]] <<- testResults
+        return (structure(list(expected = data.expecetedTestResults[[id]], predicted = testResults), class = 'TestResults'))
+      }
+      else
+      {
+        # make sure that vars$predictions[[modelName]] is a list otherwise it will be NA
+        if (is.null(vars$predictions[[modelName]]))
+        {
+          vars$predictions[[modelName]] <<- list()
+        }
+        
+        vars$predictions[[modelName]][[id]] <- NA
+        
+        return (NA)
+      }
     }
     else
     {
-      # make sure that vars$testResults[[modelName]] is a list otherwise it will be NA
-      if (is.null(vars$testResults[[modelName]]))
+      # make sure that vars$predictions[[modelName]] is a list otherwise it will be NA
+      if (is.null(vars$predictions[[modelName]]))
       {
-        vars$testResults[[modelName]] <<- list()
+        vars$predictions[[modelName]] <<- list()
       }
       
-      vars$testResults[[modelName]][[id]] <<- NA
+      vars$predictions[[modelName]][[id]] <<- NA
     }
   }
-  
-  return (vars$testResults[[modelName]][[id]])
+  else
+  {
+    testResults <- vars$predictions[[modelName]][[id]]
+    if (mode(testResults) == 'numeric')
+    {
+      return (structure(list(expected = data.expecetedTestResults[[id]], predicted = testResults), class = 'TestResults'))
+    }
+    else
+    {
+      return (NA)
+    }
+  }
 }
 
 
@@ -133,9 +167,7 @@ getCpuTimes <- function(modelName, id = NULL, na.rm = TRUE)
   {
     if (is.null(id))
     {
-      cpuTimes <- unlist(lapply(names(vars$timeSeries), function(id) {
-        getCpuTimes(modelName, id)
-      }))
+      cpuTimes <- foreach(id = names(vars$timeSeries), .combine = 'c') %dopar% getCpuTimes(modelName, id)
       
       return (cpuTimes)
     }
@@ -169,7 +201,7 @@ resetModels <- function(...)
   for (modelName in c(...))
   {
     vars$models[[modelName]] <<- NULL
-    vars$testResults[[modelName]] <<- NULL
+    vars$predictions[[modelName]] <<- NULL
     vars$cpuTimes[[modelName]] <<- NULL
   }
 }
