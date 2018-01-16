@@ -15,11 +15,13 @@ vars <<- list(
   )
 )
 
-availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan')
-oneForAllModels <<- c('nnfa', 'nnfah')
+availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan',
+  'nnfeei', 'nnfehei', 'nnfed', 'nnfehd', 'nnfeeic', 'nnfeheic')
+oneForAllModels <<- c('nnfa', 'nnfah', 'nnfeeic', 'nnfeheic')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
-  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)')
+  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)', 'nnfehei' = 'rgb(50,50,50)',
+  'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)' )
 
 
 
@@ -27,6 +29,8 @@ data.names <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
+data.diff.trainSets <- NULL
+data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
 
 data.idSelected <- NULL
@@ -128,32 +132,14 @@ getTimeSeriesValueSpan <- function(id)
 resetWindows <- function() {
   data.trainSets <<- NULL
   data.testSets <<- NULL
+  data.diff.trainSets <<- NULL
+  data.diff.testSets <<- NULL
 }
 
-createWindows <- function(id) {
-  
+
+createWindows <- function(id)
+{
   dataSet <- vars$timeSeries[[id]]$y
-  
-  windows <- NULL
-  if(neuralNetwork.inputDifference)
-  {
-    
-    win <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
-    names(win) <- paste0('xt', vars$options$windowSize : 0)
-    setcolorder(win, paste0('xt', 0 : vars$options$windowSize))
-  
-    winDt <- as.data.table(rollapply(diff(dataSet), width = vars$options$windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
-    names(winDt) <- paste0('dt', (vars$options$windowSize - 1) : 1)
-    setcolorder(winDt, paste0('dt', 1 : (vars$options$windowSize - 1)))
-    winDt <- winDt[-nrow(winDt),]
-    
-    win <- cbind(win, winDt)
-    
-    index <- 1:(nrow(win) - (vars$options$horizon)) 
-    data.trainSets[[id]] <<- win[index, ]
-    data.testSets[[id]] <<- win[-index, ]
-    return()
-  }
   
   windows <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
   names(windows) <- paste0('xt', vars$options$windowSize:0)
@@ -164,13 +150,53 @@ createWindows <- function(id) {
   data.testSets[[id]] <<- windows[-index, ]
 }
 
-getTrainSet <- function(id) {
+
+createDifferentableWindow <- function(id)
+{
+  dataSet <- vars$timeSeries[[id]]$y
+  win <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+  names(win) <- paste0('xt', vars$options$windowSize : 0)
+  setcolorder(win, paste0('xt', 0 : vars$options$windowSize))
+  
+  winDt <- as.data.table(rollapply(diff(dataSet), width = vars$options$windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
+  names(winDt) <- paste0('dt', (vars$options$windowSize - 1) : 1)
+  setcolorder(winDt, paste0('dt', 1 : (vars$options$windowSize - 1)))
+  winDt <- winDt[-nrow(winDt),]
+  
+  win <- cbind(win, winDt)
+  
+  index <- 1:(nrow(win) - (vars$options$horizon)) 
+  data.diff.trainSets[[id]] <<- win[index, ]
+  data.diff.testSets[[id]] <<- win[-index, ]
+}
+
+
+getTrainSet <- function(id) 
+{
   if (is.null(data.trainSets[[id]]))
   {
     createWindows(id)
   }
-  
   return(data.trainSets[[id]])
+}
+
+
+getDiffTrainSet <- function(id)
+{
+  if(is.null(data.diff.trainSets[[id]]))
+  {
+    createDifferentableWindow(id)
+  }
+  return(data.diff.trainSets[[id]])
+}
+
+getDiffTestSet <- function(id)
+{
+  if(is.null(data.diff.testSets[[id]]))
+  {
+    createDifferentableWindow(id)
+  }
+  return(data.diff.testSets[[id]])
 }
 
 getAllTrainSetsCombined <- function() {
