@@ -1,5 +1,31 @@
+# vars is a list of all variables worth saving in an extra file
+# it will contain:
+# vars$timeSeries[[id]]
+# vars$enabledModels
+# vars$models[[modelName]][[id]]
+# vars$testResults[[modelName]][[id]]
+# vars$cpuTimes[[modelName]][[id]]
+vars <<- list(
+  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
+  options = list(
+    windowSize = 7,
+    horizon = 7,
+    excludeBias = TRUE,
+    arModelName = 'ar'
+  )
+)
+
+availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan',
+  'nnfeei', 'nnfehei', 'nnfed', 'nnfehd', 'nnfeeic', 'nnfeheic')
+oneForAllModels <<- c('nnfa', 'nnfah', 'nnfeeic', 'nnfeheic')
+modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
+  'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
+  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)', 'nnfehei' = 'rgb(50,50,50)',
+  'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)' )
+
+
+
 data.names <- NULL
-data.sets <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
@@ -7,8 +33,10 @@ data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
 
+
 data.windowSize <- NULL
 data.horizon <- NULL
+
 
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names
@@ -48,21 +76,59 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   if (is.null(data.names$id))
   {
     data <- data.table(x = data$x, y = data$y)
-    data.sets <<- data
+    vars$timeSeries <<- data
   }
   else
   {
     data <- data.table(id = data$id, x = data$x, y = data$y)
     
     # split data into sets with the same id
-    data.sets <<- split(data, by = 'id')
-    vars$timeSeries <<- data.sets
+    vars$timeSeries <<- split(data, by = 'id')
+  }
+}
+
+saveResults <- function(name)
+{
+  # create dir if not already present
+  # dir.create will not crash if it already exists
+  dir.create(file.path('..', 'results'), showWarnings = FALSE)
+  
+  path = paste0('../results/', name, '.rdata')
+  saveRDS(vars, path)
+  print(paste0("saved results to 'results/", name, ".rdata'"))
+}
+
+getAvailableResuls <- function()
+{
+  unlist(lapply(list.files('../results'), function(filename) {
+    length <- nchar(filename)
+    dotPos <- length - 5
+    
+    if (substr(filename, dotPos, length) == '.rdata')
+    {
+      substr(filename, 1, dotPos - 1)
+    }
+  }))
+}
+
+loadResults <- function(name)
+{
+  path <- paste0('../results/', name, '.rdata')
+  if (file.access(path, 4) == 0)
+  {
+    vars <- readRDS(path)
+    print(paste0("loaded results from 'results/", name, ".rdata'"))
+    return (vars)
+  }
+  else
+  {
+    warning(paste0("Cannot read file 'results/", name, ".rdata'"))
   }
 }
 
 getTimeSeriesValueSpan <- function(id)
 {
-  values <- data.sets[[id]]$y
+  values <- vars$timeSeries[[id]]$y
   max(values) - min(values)
 }
 
@@ -74,17 +140,15 @@ resetWindows <- function() {
 }
 
 
-createWindows <- function(id) {
-
-  dataSet <- data.sets[[id]]$y
+createWindows <- function(id)
+{
+  dataSet <- vars$timeSeries[[id]]$y
   
-  windows <- NULL
+  windows <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+  names(windows) <- paste0('xt', vars$options$windowSize:0)
+  setcolorder(windows, paste0('xt', 0:vars$options$windowSize))
   
-  windows <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
-  names(windows) <- paste0('xt', data.windowSize:0)
-  setcolorder(windows, paste0('xt', 0:data.windowSize))
-  
-  index <- 1:(nrow(windows) - data.horizon)
+  index <- 1:(nrow(windows) - vars$options$horizon)
   data.trainSets[[id]] <<- windows[index, ]
   data.testSets[[id]] <<- windows[-index, ]
 }
@@ -92,19 +156,19 @@ createWindows <- function(id) {
 
 createDifferentableWindow <- function(id)
 {
-  dataSet <- data.sets[[id]]$y
-  win <- as.data.table(rollapply(dataSet, width = data.windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
-  names(win) <- paste0('xt', data.windowSize : 0)
-  setcolorder(win, paste0('xt', 0 : data.windowSize))
+  dataSet <- vars$timeSeries[[id]]$y
+  win <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+  names(win) <- paste0('xt', vars$options$windowSize : 0)
+  setcolorder(win, paste0('xt', 0 : vars$options$windowSize))
   
-  winDt <- as.data.table(rollapply(diff(dataSet), width = data.windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
-  names(winDt) <- paste0('dt', (data.windowSize - 1) : 1)
-  setcolorder(winDt, paste0('dt', 1 : (data.windowSize - 1)))
+  winDt <- as.data.table(rollapply(diff(dataSet), width = vars$options$windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
+  names(winDt) <- paste0('dt', (vars$options$windowSize - 1) : 1)
+  setcolorder(winDt, paste0('dt', 1 : (vars$options$windowSize - 1)))
   winDt <- winDt[-nrow(winDt),]
   
   win <- cbind(win, winDt)
   
-  index <- 1:(nrow(win) - (data.horizon)) 
+  index <- 1:(nrow(win) - (vars$options$horizon)) 
   data.diff.trainSets[[id]] <<- win[index, ]
   data.diff.testSets[[id]] <<- win[-index, ]
 }
@@ -139,7 +203,7 @@ getDiffTestSet <- function(id)
 }
 
 getAllTrainSetsCombined <- function() {
-  ids <- names(data.sets)
+  ids <- names(vars$timeSeries)
   for (i in 1:length(ids))
   {
     getTrainSet(ids[i])

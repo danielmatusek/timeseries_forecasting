@@ -3,23 +3,21 @@ library(forecast)
 library(stats)
 library(data.table)
 
-aRModelName <- NULL
-
 getModel.ar <- function(id)
 {
  
-  y <- data.sets[[id]]$y
+  y <- vars$timeSeries[[id]]$y
     
-  spl <<- length(y) - data.horizon
-  trainData <- y[(1 : spl)]
+  spl <<- length(y) - vars$options$horizon
+  trainData <- y[1 : spl]
 
-  if(aRModelName == "AR" || aRModelName == "ManualAR")
+  if(vars$options$arModelName == 'ar')
   {
-    arModel <- stats::ar(ts(trainData), aic = FALSE, data.windowSize, method = "burg", demean = !neuralNetwork.excludeBias)
+    arModel <- stats::ar(ts(trainData), aic = FALSE, vars$options$windowSize, method = "burg", demean = !vars$options$excludeBias)
   }
-  else if (aRModelName == "AutoArima" || aRModelName == "ManualAutoArima")
+  else if (vars$options$arModelName == 'autoArima')
   {
-    arModel <- auto.arima(ts(trainData), start.p = data.windowSize, max.p = data.windowSize, d = 0, max.q = 0)
+    arModel <- auto.arima(ts(trainData), start.p = vars$options$windowSize, max.p = vars$options$windowSize, d = 0, max.q = 0)
   }
   
   return (arModel)
@@ -49,7 +47,7 @@ getTestResults.ar <- function(id)
   expected <- testSet[['xt0']]
   
   testSet[['xt0']] <- NULL
-  testSet <- testSet[, 1 : data.windowSize]
+  testSet <- testSet[, 1 : vars$options$windowSize]
   testSet[['bias']] <- 1
   predicted <- as.matrix(testSet) %*% getARCoef(id)
 

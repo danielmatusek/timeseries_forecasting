@@ -1,8 +1,5 @@
 library(neuralnet)
 
-source('global.r')
-
-neuralNetwork.excludeBias   <<- TRUE
 neuralNetwork.hiddenLayers  <<- c(0)
 
 #------- save greedy Models
@@ -14,7 +11,6 @@ neuralNetwork.excludedInternalErrors  <<- vector()
 neuralnetwork.strategies              <<- c("Greedy") 
 #---------------------------
 neuralnetwork.greedyErrorType     <<- NULL
-
 
 neuralNetwork.hlOptimization <<- c(0)
 neuralNetwork.hlOptimizationErrorVector <<- c(0)
@@ -61,7 +57,7 @@ getNeuralNetworkExcludeVector <- function(hidden, excludeVector = NULL, isDiffer
   excludedVectorPos <- vector()
   
   #exclude first bias
-  if(neuralNetwork.excludeBias)
+  if(vars$options$excludeBias)
   {
     excludedVectorPos <- c(1) # first bias needs to be excluded every time
   }
@@ -73,10 +69,10 @@ getNeuralNetworkExcludeVector <- function(hidden, excludeVector = NULL, isDiffer
   }
   
   #exclude bias with hidden layers
-  if(hidden[1] > 0 && neuralNetwork.excludeBias){ #only if hidden layer are present
+  if(hidden[1] > 0 && vars$options$excludeBias){ #only if hidden layer are present
     
     layer_vector <- NULL #we need the number of nodes in every vertical row (e.g. c(num(input_neuron), num(first_hiddenLayers)...))
-    layer_vector[1] <- if(isDifferantable){2 * data.windowSize - 1}else{data.windowSize} #number of input neurons
+    layer_vector[1] <- if(isDifferantable){2 * vars$options$windowSize - 1}else{vars$options$windowSize} #number of input neurons
     for(i in 1 : length(neuralNetwork.hiddenLayers))
     {
       layer_vector[i + 1] <- neuralNetwork.hiddenLayers[i] #create the layer vector
@@ -108,7 +104,7 @@ excludeInputs <- function(hidden, excludeVector)
     {
       for(i in 1 : neuralNetwork.hiddenLayers)
       {
-        from <- ((i - 1) * (data.windowSize + 1)) + 1
+        from <- ((i - 1) * (vars$options$windowSize + 1)) + 1
         vec <- c(vec, from + pos)
       }
     }
@@ -135,7 +131,7 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
   
   tryCatch({
     #if elements exist in excludevector then the condition is false
-    if(!is.logical(excludedVectorPos) || neuralNetwork.excludeBias) 
+    if(!is.logical(excludedVectorPos) || vars$options$excludeBias) 
     {
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
         exclude = excludedVectorPos)
@@ -345,14 +341,14 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
     from <- 0
     to <- 1
     
-    for(i in 1 : data.windowSize)
+    for(i in 1 : vars$options$windowSize)
     {
       createModels(path, id, hiddenLayers)
       
-      if(length(path) != data.windowSize) excludedPathAsIndices <- c(excludedPathAsIndices, rep(0, data.windowSize))
+      if(length(path) != vars$options$windowSize) excludedPathAsIndices <- c(excludedPathAsIndices, rep(0, vars$options$windowSize))
 
       from <- to + 1
-      to <- to + data.windowSize
+      to <- to + vars$options$windowSize
      
       # check, weather the old best model is better than all new calculated models
       oldModel <- compareOldModel(path, from, to) 
@@ -365,7 +361,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
         }
         else
         {
-          excludedPathAsIndices[from - data.windowSize  + (path[length(path)] - 1)] <- 2
+          excludedPathAsIndices[from - vars$options$windowSize  + (path[length(path)] - 1)] <- 2
         }
         
         neuralNetwork.excludedInputNodes[[1]] <<- 'ø'
@@ -414,12 +410,12 @@ compareOldModel <- function(path, from, to)
   }
   else
   {
-    pos <- from - data.windowSize  + (path[length(path)] - 1)
+    pos <- from - vars$options$windowSize  + (path[length(path)] - 1)
   }
   
-  if((length(path)) == (data.windowSize)) return(neuralNetwork.excludedPastModels[[pos]])
+  if((length(path)) == (vars$options$windowSize)) return(neuralNetwork.excludedPastModels[[pos]])
   
-  for(i in 1 : data.windowSize)
+  for(i in 1 : vars$options$windowSize)
   {
     if(!is.na(errors[[from + (i-1)]]))
     {
@@ -436,11 +432,10 @@ compareOldModel <- function(path, from, to)
 # it saves the exluded Vector, model, internal error, crossvalidation and 
 createModels <- function(path, id, hiddenLayers)
 {
-  if((length(path)) == data.windowSize) return(NULL)
+  if((length(path)) == vars$options$windowSize) return(NULL)
   
   path = setdiff(path, 0) # don't consider 0 -> it's the bias
-  
-  for(i in 1 : data.windowSize)
+  for(i in 1 : vars$options$windowSize)
   {
     if(!(i %in% path))
     {
@@ -477,11 +472,12 @@ saveExcludedInputModel <- function(model, id = NULL, path = NULL)
 
 getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
 {
-  ids <- names(data.sets)
-  excludedPathCounter <- c(rep(0,data.windowSize))
+
+
   excludedPathCombination <- list()
-  
-  
+  ids <- names(vars$timeSeries)
+  excludedPathCounter <- c(rep(0,vars$options$windowSize))
+
   for(id in ids)
   {
     
@@ -491,7 +487,7 @@ getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
     for(pathID in  excludedPathCombination[[id]]) excludedPathCounter[pathID] <- excludedPathCounter[pathID] + 1
     print(paste("ID: ", id, " path: ",excludedPathCombination[[id]], sep=""))
   }
-  
+
   
   ids <- names(vars$timeSeries)
   excludedVectors <- unlist(lapply(ids, function(id) {
@@ -513,7 +509,9 @@ getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
   dt <- data.table(excludedInputs = excludedVectors, id = ids)
   dt <- dt[, .(number = length(list(id))), by = excludedInputs]
   
-  return(structure(list(ids = ids, paths = excludedPathCombination,pExcluded = (1 : data.windowSize), excludedPathCounter = excludedPathCounter, pathsCombinedE = dt$excludedInputs, pathsCombinedN = dt$number ),class = 'EIStatistic'))
+  
+  return(structure(list(ids = ids, paths = excludedPathCombination, pExcluded = (1 : vars$options$windowSize), excludedPathCounter = excludedPathCounter, pathsCombinedE = dt$excludedInputs, pathsCombinedN = dt$number),class = 'EIStatistic'))
+
 }
 
 
@@ -525,7 +523,7 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function()
 {
   tolerance <- 1e-5
   
-  idsNNsDiffer <- unlist(lapply(names(data.sets), function(id) {
+  idsNNsDiffer <- unlist(lapply(names(vars$timeSeries), function(id) {
     reducedWeightsNN <- getReducedNeuralNetworkWeights(getModel('nnfe', id))[[1]][[1]][,1]
     reducedWeightsNNH <- getReducedNeuralNetworkWeights(getModel('nnfeh', id))[[1]][[1]][,1]
     
@@ -568,7 +566,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
     
     #add first layer incrementally
-    for (i in 1:data.windowSize){
+    for (i in 1:vars$options$windowSize){
       #Prepare environmental variables for nn calculation
       neuralNetwork.hlOptimization <<- c(i)
       neuralNetwork.hiddenLayers <<- c(i)
@@ -590,7 +588,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
       neuralNetwork.hlOptimization
     }
 
-    m <- data.windowSize
+    m <- vars$options$windowSize
     #add first layer incrementally
     for (j in 1:m){
       #Prepare environmental variables for nn calculation

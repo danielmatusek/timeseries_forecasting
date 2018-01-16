@@ -1,20 +1,3 @@
-# vars is a list of all variables worth saving in an extra file
-# it will contain:
-# vars$timeSeries[[id]]
-# vars$enabledModels
-# vars$models[[modelName]][[id]]
-# vars$testResults[[modelName]][[id]]
-# vars$cpuTimes[[modelName]][[id]]
-vars <<- list(
-  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan')
-)
-
-availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan', 'nnfeei', 'nnfehei', 'nnfed', 'nnfehd', 'nnfeeic', 'nnfeheic')
-oneForAllModels <<- c('nnfa', 'nnfah', 'nnfeeic', 'nnfeheic')
-modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
-  'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
-  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)', 'nnfehei' = 'rgb(50,50,50)', 'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)' )
-
 ###
 ### Prediction Models
 ###
@@ -181,9 +164,13 @@ getCpuTimes <- function(modelName, id = NULL, na.rm = TRUE)
 ### Resetting
 ###
 
-resetModels <- function(modelName)
+resetModels <- function(...)
 {
-  vars$models[[modelName]] <<- NULL
-  vars$testResults[[modelName]] <<- NULL
-  vars$cpuTimes[[modelName]] <<- NULL
+  for (modelName in c(...))
+  {
+    print(paste('reset', modelName))
+    vars$models[[modelName]] <<- NULL
+    vars$testResults[[modelName]] <<- NULL
+    vars$cpuTimes[[modelName]] <<- NULL
+  }
 }

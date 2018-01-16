@@ -15,7 +15,7 @@ source('plot.rsnns.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
-server <- function(input, output) {
+server <- function(input, output, session) {
   
   ### Settings Changed Events
   
@@ -47,26 +47,31 @@ server <- function(input, output) {
     {
       parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
     }
-    resetNeuralNetworks()
   })
 	
 	windowsChanged <- reactive({
-	  data.windowSize <<- input$windowSizeSlider
-	  data.horizon <<- input$horizonSlider
-	  resetWindows()
-	  resetModels('ar')
-	  resetComparison()
-	  resetNeuralNetworks()
-	  resetNeuralNetworks.InputExclusion()
+	  if (input$windowSize != vars$options$windowSize || input$horizon != vars$options$horizon)
+	  {
+	    vars$options$windowSize <<- input$windowSize
+	    vars$options$horizon <<- input$horizon
+	    
+	    resetModels(availableModels)
+	    resetWindows()
+	    resetComparison()
+	    resetNeuralNetworks.InputExclusion()
+	  }
 	})
 	
 
 	excludeBiasChanged <- reactive({
-	  neuralNetwork.excludeBias <<- input$biasCheckbox
-	  
-	  resetModels('ar')
-	  resetNeuralNetworks()
-	  resetNeuralNetworks.InputExclusion()
+	  if (input$excludeBias != vars$options$excludeBias)
+	  {
+	    vars$options$excludeBias <<- input$excludeBias
+	    
+	    resetModels('ar')
+	    resetNeuralNetworks()
+	    resetNeuralNetworks.InputExclusion()
+	  }
 	})
 	
 	hiddenLayersChanged <- reactive({
@@ -91,9 +96,12 @@ server <- function(input, output) {
 	})
 	
 	arModelBaseChanged <- reactive({
-	  aRModelName <<- input$aRModelName
-	  
-	  resetModels('ar')
+	  if (input$arModelName != vars$options$arModelName)
+	  {
+	    vars$options$arModelName <<- input$arModelName
+	    
+	    resetModels('ar')
+	  }
 	})
 	
 	
@@ -125,49 +133,49 @@ server <- function(input, output) {
 	output$idSelectBox <- renderUI({
 	  databaseChanged()
 	  
-	  if (!is.null(data.sets))
+	  if (!is.null(vars$timeSeries))
 	  {
-	    d <- data.sets[order(as.numeric(names(data.sets)))]   #sortieren von names(data.sets)
+	    d <- vars$timeSeries[order(as.numeric(names(vars$timeSeries)))]   #sortieren von names(vars$timeSeries)
 	    selectInput("idSelect", "Dataset", names(d))
 	  }
 	})
 	
-	output$windowSizeSlider <- renderUI({
+	output$windowSize <- renderUI({
 	  databaseChanged()
 	  id <- input$idSelect
 	  
-	  if (is.null(data.sets) || is.null(id))
+	  if (is.null(vars$timeSeries) || is.null(id))
 	  {
 	    return(NULL)
 	  }
-	  numData <- length(data.sets[[id]]$x)
-	  values <- input$windowSizeSlider
+	  numData <- length(vars$timeSeries[[id]]$x)
+	  values <- input$windowSize
 	  if(is.null(values)){
 	    values <- 0.0175*numData
 	  }
-	  sliderInput('windowSizeSlider', 'Window Size', 1, round(0.05*numData), values, step = 1)
+	  sliderInput('windowSize', 'Window Size', 1, round(0.05*numData), values, step = 1)
 	})
 	
-	output$horizonSlider <- renderUI({
-	  windowSize <- input$windowSizeSlider
+	output$horizon <- renderUI({
+	  windowSize <- input$windowSize
 	  
 	  if(!is.null(windowSize))
 	  {
-	    values <- input$horizonSlider
+	    values <- input$horizon
 	    if(is.null(values)){
 	      values <- windowSize
 	    }
-	    sliderInput('horizonSlider', 'Predict Values', 1, 2*windowSize, values, step = 1)
+	    sliderInput('horizon', 'Predict Values', 1, 2*windowSize, values, step = 1)
 	  }
 	})
 	
 	output$hiddenSliderInput <- renderUI({
-	  if (is.null(input$windowSizeSlider)) return()
+	  if (is.null(input$windowSize)) return()
 	  values <- input$hiddenSliderInput
 	  if(is.null(values)){
 	    values <- 3
 	  }
-		maxHiddenSlider <- input$windowSizeSlider * 2
+		maxHiddenSlider <- input$windowSize * 2
 	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
 	})
 	
@@ -175,18 +183,78 @@ server <- function(input, output) {
 	
 	output$inputStrategy <- renderUI({
 	  
-	  if (is.null(input$windowSizeSlider)) return()
-	  if(input$inputCheckbox == TRUE && input$windowSizeSlider > 1)
+	  if (is.null(input$windowSize)) return()
+	  if(input$inputCheckbox == TRUE && input$windowSize > 1)
 	  {
 	      selectInput("inputStrategy", "Strategy", neuralnetwork.strategies)
 	  }
 	})
 	
-	output$inputSelectedErrorType <- renderUI({
+	observeEvent(input$openLoadResultsModal, {
+	  results <- getAvailableResuls()
 	  
-	  if (is.null(input$windowSizeSlider)) return()
-
-	 selectInput("inputSelectedErrorType", "Error Type", c("Outsample", "Insample"))
+	  showModal(
+	    if (length(results) > 0)
+	    {
+	      modalDialog(
+  	      selectInput('savedResults', 'Results', getAvailableResuls()),
+  	      footer = tagList(
+  	        actionButton('loadResults', 'Load'),
+  	        modalButton('Cancel')
+        ))
+	    }
+	    else
+	    {
+	      modalDialog(
+	        div('There are no results to load.'),
+  	      footer = tagList(
+  	        modalButton('OK')
+        ))
+	    }
+	  )
+	})
+	
+	showSaveModal <- function(failed = FALSE)
+	{
+	  showModal(modalDialog(
+	    textInput('resultName', 'Result Name'),
+	    if (failed)
+	    {
+	      div(tags$b('Name must not be empty', style = "color: red;"))
+	    },
+	    footer = tagList(
+	      actionButton('saveResults', 'Save'),
+	      modalButton('Cancel')
+	    )
+	  ))
+	}
+	
+	observeEvent(input$openSaveResultsModal, {
+	  showSaveModal()
+	})
+	
+	observeEvent(input$loadResults, {
+	  removeModal()
+	  vars <<- loadResults(input$savedResults)
+	  
+	  updateSliderInput(session, 'windowSize', value = vars$options$windowSize)
+	  updateSliderInput(session, 'horizon', value = vars$options$horizon)
+	  updateRadioButtons(session, 'arModelName', selected = vars$options$arModelName)
+	  
+	}, ignoreInit = TRUE)
+	
+	observeEvent(input$saveResults, {
+    resultName <- input$resultName
+    
+    if (resultName != '')
+    {
+      saveResults(resultName)
+      removeModal()
+    }
+    else
+    {
+      showSaveModal(failed = TRUE)
+    }
 	})
 	
 	
@@ -197,7 +265,7 @@ server <- function(input, output) {
 	output$dataChart <- renderPlotly({
 	  databaseChanged()
 	  
-		p <- plot_ly(data.sets[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
+		p <- plot_ly(vars$timeSeries[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
 	})
@@ -205,7 +273,7 @@ server <- function(input, output) {
 	output$dataTable <- renderDataTable({
 	  databaseChanged()
 	  
-	  data.sets[[input$idSelect]]
+	  vars$timeSeries[[input$idSelect]]
 	})
 	
 	output$trainDataTable <- renderDataTable({
@@ -352,7 +420,8 @@ server <- function(input, output) {
 	  excludeInputErrorChanged()
 
 	  m <- getModel('nnfeeic', NULL)
-	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="green", xlab = "Excluded Node", ylab = "Number")
+	  
+	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="black", xlab = "Excluded Node", ylab = "Number")
 
 	})
 	
@@ -363,7 +432,8 @@ server <- function(input, output) {
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfeheic', NULL)
-	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="green", xlab = "Excluded Node", ylab = "Number")
+	  
+	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="black", xlab = "Excluded Node", ylab = "Number")
 	})
 	
 	# Exclude Inputs Datatable
@@ -419,7 +489,7 @@ server <- function(input, output) {
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfeheic')
-	  data.table('id' = m$ids, 'path' = m$paths)
+	  data.table('id' = c(m$ids, m$pathsCombinedE), 'path' = c(m$paths, m$pathsCombinedN))
 	})
 	
 
@@ -490,7 +560,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(getModel('elman', input$idSelect), paste0('xt', 1:data.windowSize))
+  	plot(getModel('elman', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -508,7 +578,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(getModel('mlp', input$idSelect), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlp', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
@@ -526,7 +596,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
-  	plot(getModel('mlph', input$idSelect), paste0('xt', 1:data.windowSize))
+  	plot(getModel('mlph', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 
 	output$rsnns_jordan_tab <- renderDataTable({
@@ -544,7 +614,7 @@ server <- function(input, output) {
   	excludeBiasChanged()
   	hiddenLayersChanged()
 
-		plot(getModel('jordan', input$idSelect), paste0('xt', 1:data.windowSize))
+		plot(getModel('jordan', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 	
 	
@@ -557,13 +627,13 @@ server <- function(input, output) {
 	output$arACF <- renderPlot({
 	  databaseChanged()
 	  
-	  acf(data.sets[[input$idSelect]]$y, main = "ACF")
+	  acf(vars$timeSeries[[input$idSelect]]$y, main = "ACF")
 	})
 	
 	output$arPACF <- renderPlot({
 	  databaseChanged()
 	  
-	  pacf(data.sets[[input$idSelect]]$y, main = "PACF")
+	  pacf(vars$timeSeries[[input$idSelect]]$y, main = "PACF")
 	})
 	
 	
@@ -624,7 +694,7 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  enabledModelsChanged()
 	  
-	  if (is.null(data.sets))
+	  if (is.null(vars$timeSeries))
 	  {
 	    return (NULL)
 	  }
@@ -639,7 +709,7 @@ server <- function(input, output) {
 	  hiddenLayersChanged()
 	  enabledModelsChanged()
 	  
-	  if (is.null(data.sets))
+	  if (is.null(vars$timeSeries))
 	  {
 	    return (NULL)
 	  }
