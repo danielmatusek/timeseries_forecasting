@@ -28,6 +28,8 @@ resetNeuralNetworks <- function()
   
   resetModels('nnfe')
   resetModels('nnfa')
+  resetModels('nnfeeic')
+  resetModels('nnfeheic')
 }
 
 
@@ -127,8 +129,8 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
   
   
   tryCatch({
-     #if elements exist in excludevector then the condition is false
-    if(!is.logical(excludeVector)) 
+    #if elements exist in excludevector then the condition is false
+    if(!is.logical(excludedVectorPos))
     {
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
         exclude = excludedVectorPos)
@@ -271,7 +273,6 @@ getTestResults.nnfah <- function(id)
 # test excluded Input
 getTestResults.nnfeei <- function(id)
 {
-  browser()
   testNeuralNetwork(getModel('nnfeei', id)$model, id)
 }
 
@@ -315,13 +316,23 @@ getReducedNeuralNetworkWeights <- function(nn) {
   })
 }
 
+resetEIModels <- function()
+{
+  neuralnetwork.excludedPathAsIndices   <<- NULL
+  neuralNetwork.excludedInputNodes      <<- list()
+  neuralNetwork.excludedPastModels      <<- list()
+  neuralNetwork.excludedPastErrors      <<- vector()
+  neuralNetwork.excludedInternalErrors  <<- vector()
+}
 
 # calculate the best neural network model with greedy algorithm
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 {
-        #calculate the first model
+  
+  resetEIModels()
+    #calculate the first model
     model <- if (hiddenLayers) { if(is.null(id)){ getModel('nnfah')} else {getModel('nnfeh', id)}} else { if(is.null(id)) {getModel('nnfa')} else {getModel('nnfe', id)}}
-    saveExcludedInputModel(model)
+    saveExcludedInputModel(model, id)
     
     path = c(0)
     excludedPathAsIndices <- c(1)
@@ -426,7 +437,7 @@ createModels <- function(path, id, hiddenLayers)
   {
     if(!(i %in% path))
     {
-      saveExcludedInputModel(trainNeuralNetwork(getTrainSet(id), hiddenLayers, c(path, i)), c(path, i))
+      saveExcludedInputModel(trainNeuralNetwork(getTrainSet(id), hiddenLayers, c(path, i)),id, c(path, i))
     }
     else
     {
@@ -435,7 +446,7 @@ createModels <- function(path, id, hiddenLayers)
   }
 }
 
-saveExcludedInputModel <- function(model, path = NULL)
+saveExcludedInputModel <- function(model, id = NULL, path = NULL)
 {
   neuralnetwork.excludedPathAsIndices <<- c(neuralnetwork.excludedPathAsIndices, 0)
   if(is.null(model) || is.na(model))
@@ -450,7 +461,7 @@ saveExcludedInputModel <- function(model, path = NULL)
   l <- length(neuralNetwork.excludedPastModels) + 1
   neuralNetwork.excludedPastModels[[l]] <<- model
   neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[l]]$result.matrix[1])
-  results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[l]], data.idSelected)
+  results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[l]], id)
   neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
   neuralNetwork.excludedInputNodes[[l]] <<- path
 }
@@ -459,22 +470,46 @@ saveExcludedInputModel <- function(model, path = NULL)
 
 getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
 {
+
+
+  excludedPathCombination <- list()
   ids <- names(vars$timeSeries)
-  excludedPaths <- NULL
   excludedPathCounter <- c(rep(0,vars$options$windowSize))
-  
+
   for(id in ids)
   {
-    stats <- getExcludedInputNeuralNetwork(id,hiddenLayers)
-    pos <- as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers > 0) * 2) + 1
+    
+    stats <- if(!hiddenLayers){getModel('nnfeei',id)}else{getModel('nnfehei',id)}
     resultIndex <- which(stats$info == 2)
-    excludedPaths[[id]] <- stats$nodes[resultIndex]
-    for(pathID in  excludedPaths[[id]]) excludedPathCounter[pathID] <- excludedPathCounter[pathID] + 1
-    print(paste("ID: ", id, " path: ",excludedPaths[[id]], sep=""))
+    excludedPathCombination[[id]] <- stats$nodes[resultIndex]
+    for(pathID in  excludedPathCombination[[id]]) excludedPathCounter[pathID] <- excludedPathCounter[pathID] + 1
+    print(paste("ID: ", id, " path: ",excludedPathCombination[[id]], sep=""))
   }
-  
 
-  return(structure(list(ids = ids, paths = excludedPaths,pExcluded = (1 : vars$options$windowSize), excludedPathCounter = excludedPathCounter),class = 'EIStatistic'))
+  
+  ids <- names(vars$timeSeries)
+  excludedVectors <- unlist(lapply(ids, function(id) {
+    model <- NULL
+    if(!hiddenLayers)
+    {
+      model <- getModel('nnfeei', id)
+    }
+    else
+    {
+      model <- getModel('nnfehei', id)
+    }
+    
+    resultIndex <- which(model$info == 2)
+    paths <-  sort(model$nodes[[resultIndex]], decreasing = FALSE)
+    paste(paths, collapse=",")
+  }))
+  
+  dt <- data.table(excludedInputs = excludedVectors, id = ids)
+  dt <- dt[, .(number = length(list(id))), by = excludedInputs]
+  
+  
+  return(structure(list(ids = ids, paths = excludedPathCombination, pExcluded = (1 : vars$options$windowSize), excludedPathCounter = excludedPathCounter, pathsCombinedE = dt$excludedInputs, pathsCombinedN = dt$number),class = 'EIStatistic'))
+
 }
 
 

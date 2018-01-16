@@ -61,12 +61,7 @@ server <- function(input, output, session) {
 	  }
 	})
 	
-	
-	idChanged <- reactive({
-	  data.idSelected <<- input$idSelect
-	  resetNeuralNetworks.InputExclusion()
-	})
-	
+
 	excludeBiasChanged <- reactive({
 	  if (input$excludeBias != vars$options$excludeBias)
 	  {
@@ -339,7 +334,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$nnfePlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 
@@ -347,7 +341,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$nnfehPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -356,7 +349,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$nnfaPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  
@@ -364,7 +356,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$nnfahPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -376,7 +367,6 @@ server <- function(input, output, session) {
 	# Plot Differntiable Inputs 
 	
 	output$nnfedPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
@@ -385,7 +375,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$nnfehdPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -400,7 +389,6 @@ server <- function(input, output, session) {
 	# Plot Exclude Inputs 
 	
 	output$nnfeeiPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
@@ -410,7 +398,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$nnfeheiPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -424,26 +411,26 @@ server <- function(input, output, session) {
 	# Plot Exluded Input Stats
 	
 	output$nnfeeicPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 
 	  m <- getModel('nnfeeic', NULL)
-	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="green", xlab = "Excluded Node", ylab = "Number")
+	  
+	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="black", xlab = "Excluded Node", ylab = "Number")
 
 	})
 	
 	output$nnfeheicPlot <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfeheic', NULL)
-	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="green", xlab = "Excluded Node", ylab = "Number")
+	  
+	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="black", xlab = "Excluded Node", ylab = "Number")
 	})
 	
 	# Exclude Inputs Datatable
@@ -465,7 +452,6 @@ server <- function(input, output, session) {
 	
 
 	output$nnfeeiOptimizingTable <- DT::renderDataTable({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -476,7 +462,6 @@ server <- function(input, output, session) {
 	
 
 	output$nnfeheiOptimizingTable <- DT::renderDataTable({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
@@ -491,7 +476,8 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfeeic')
-	  data.table('id' = m$ids, 'path' = m$paths)
+	  
+	  data.table('id' = c(m$ids, m$pathsCombinedE), 'path' = c(m$paths, m$pathsCombinedN))
 	})
 	
 	output$nnfeheicOptimizingTable <- DT::renderDataTable({
@@ -500,7 +486,7 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfeheic')
-	  data.table('id' = m$ids, 'path' = m$paths)
+	  data.table('id' = c(m$ids, m$pathsCombinedE), 'path' = c(m$paths, m$pathsCombinedN))
 	})
 	
 
@@ -508,7 +494,6 @@ server <- function(input, output, session) {
 	
 	
 	output$neuralNetworkChartHiddenTrialError <- renderPlot({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -519,14 +504,12 @@ server <- function(input, output, session) {
 
 	output$neuralNetworkForecastForTrialError <- renderPrint({
 		windowsChanged()
-		idChanged()
 		vars$options$hiddenLayers <<- neuralNetwork.tempHiddenNodes
 		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill = FALSE)
 	})
 
 	output$neuralNetworkTableForTrialError <- renderDataTable({
 		windowsChanged()
-		idChanged()
 		getHlOptimizationErrorTable(input$idSelect)
 	})
 
@@ -537,7 +520,6 @@ server <- function(input, output, session) {
 	#Recurrent Neural Network
 	
 	output$reccurentNeuralNetwork_tab <- renderDataTable({
-		idChanged()
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
@@ -550,7 +532,6 @@ server <- function(input, output, session) {
 	#MLP with RSNNS and with Hidden Layer
 
 	output$rsnns_mlp_tab <- renderDataTable({
-		idChanged()
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
@@ -562,7 +543,6 @@ server <- function(input, output, session) {
 
 	#MLP with RSNSS and without Hidden Layer
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		idChanged()
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
@@ -573,7 +553,6 @@ server <- function(input, output, session) {
 	})
 
 	output$recPlot <- renderPlot({
-  	idChanged()
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
@@ -582,7 +561,6 @@ server <- function(input, output, session) {
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		idChanged()
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
@@ -593,7 +571,6 @@ server <- function(input, output, session) {
 	})
 
 	output$mlp_plot <- renderPlot({
-  	idChanged()
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
@@ -602,7 +579,6 @@ server <- function(input, output, session) {
 	})
 
 	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		idChanged()
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
@@ -613,7 +589,6 @@ server <- function(input, output, session) {
 	})
 
 	output$mlp_plot_without_hidden <- renderPlot({
-  	idChanged()
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
@@ -622,7 +597,6 @@ server <- function(input, output, session) {
 	})
 
 	output$rsnns_jordan_tab <- renderDataTable({
-		idChanged()
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
@@ -633,7 +607,6 @@ server <- function(input, output, session) {
 	})
 
 	output$rsnns_jordan_plot <- renderPlot({
-		idChanged()
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
@@ -686,16 +659,14 @@ server <- function(input, output, session) {
 	})
 	
 	output$compareError <- renderDataTable({
-	  idChanged()
 	  windowsChanged()
 	  enabledModelsChanged()
 	  arModelBaseChanged()
 	  
-	  getErrorMetricCompare()
+	  getErrorMetricCompare(input$idSelect)
 	})
 	
 	output$compareCoefficient <- renderDataTable({
-	  idChanged()
 	  databaseChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
@@ -706,7 +677,6 @@ server <- function(input, output, session) {
 	})
 	
 	output$neuralNetworkDifferenceWRTHiddenLayers <- renderDataTable({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -716,7 +686,6 @@ server <- function(input, output, session) {
 	})
 	
 	modelComparision <- eventReactive(input$compareModels, {
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
@@ -732,7 +701,6 @@ server <- function(input, output, session) {
 	
 	#output$ModelPredictionsCompareTable <- renderDataTable(modelComparision)
 	output$ModelPredictionsCompareTable <- renderDataTable({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()

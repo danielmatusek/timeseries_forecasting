@@ -3,10 +3,10 @@ library(plotly)
 
 errorTable <- NULL
 
-getErrorMetric <- function(FUN)
+getErrorMetric <- function(id, FUN)
 {
   metric <- lapply(vars$enabledModels, function(modelName) {
-    testResults <- getTestResults(modelName, data.idSelected)
+    testResults <- getTestResults(modelName, id)
     unlist(lapply(1:length(testResults$expected), function(i) {
       FUN(testResults$expected[[i]], testResults$predicted[[i]])
     }))
@@ -16,14 +16,14 @@ getErrorMetric <- function(FUN)
   metric
 }
 
-comparison <- function()
+comparison <- function(id)
 {
   if(is.null(errorTable))
   {
-    errorTable$mse <<- getErrorMetric(mse)
-    errorTable$rmse <<- getErrorMetric(rmse)
-    errorTable$smape <<- getErrorMetric(sMAPE)
-    errorTable$diff <<- getErrorMetric(function(x, y) { abs(x - y) })
+    errorTable$mse <<- getErrorMetric(id, mse)
+    errorTable$rmse <<- getErrorMetric(id, rmse)
+    errorTable$smape <<- getErrorMetric(id, sMAPE)
+    errorTable$diff <<- getErrorMetric(id, function(x, y) { abs(x - y) })
   }
   return(errorTable)
 }
@@ -58,9 +58,9 @@ getModelErrorPlot <- function(errorMetricName, id)
 }
 
 
-getMeanErrorVectorFromModels <- function(errorName)
+getMeanErrorVectorFromModels <- function(id, errorName)
 {
-  comparison()
+  comparison(id)
   
   unlist(lapply(vars$enabledModels, function(modelName) {
     mean(errorTable[[errorName]][[modelName]])
@@ -68,11 +68,12 @@ getMeanErrorVectorFromModels <- function(errorName)
 }
 
 
-getErrorMetricCompare <- function()
+getErrorMetricCompare <- function(id)
 {
-  comparison()
+  comparison(id)
   
-  data.table(NAME = vars$enabledModels, MSE = getMeanErrorVectorFromModels("mse"), RMSE =  getMeanErrorVectorFromModels("rmse"), SMAPE = getMeanErrorVectorFromModels("smape"))
+  data.table(NAME = vars$enabledModels, MSE = getMeanErrorVectorFromModels(id, "mse"),
+             RMSE =  getMeanErrorVectorFromModels(id, "rmse"), SMAPE = getMeanErrorVectorFromModels(id, "smape"))
 }
 
 getCoef <- function(id)
@@ -184,7 +185,6 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
       list(id = id, diff = -1)
     })
   })
-  
   # represent as a data.table, group and order by diff
   dt <- rbindlist(diffs)
   dt <- dt[, .(ids = list(id)), by = diff]

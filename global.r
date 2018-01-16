@@ -34,7 +34,10 @@ data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
 
-data.idSelected <- NULL
+
+data.windowSize <- NULL
+data.horizon <- NULL
+
 
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names
