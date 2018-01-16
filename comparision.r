@@ -184,7 +184,6 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
       list(id = id, diff = -1)
     })
   })
-  
   # represent as a data.table, group and order by diff
   dt <- rbindlist(diffs)
   dt <- dt[, .(ids = list(id)), by = diff]
