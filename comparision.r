@@ -78,7 +78,7 @@ getErrorMetricCompare <- function()
 getCoef <- function(id)
 {
   variables <- NULL
-  for(i in 1 : (data.windowSize+1))
+  for(i in 1 : (vars$options$windowSize+1))
   {
     variables = c(variables, paste(c("x", i), collapse = ""))
   }
@@ -162,7 +162,7 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
     stop(paste0("Model '", modelName2, "' unknown"))
   }
   
-  diffs <- lapply(names(data.sets), function(id) {
+  diffs <- lapply(names(vars$timeSeries), function(id) {
     tryCatch({
       predicted1 <- getTestResults(modelName1, id)$predicted
       if (is.atomic(predicted1))
@@ -196,19 +196,19 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
 
 
 getForecastComparisionPlot <- function(id) {
-  data.length <- length(data.sets[[id]]$y)
-  startRealData <- max(1, data.length - 2 * data.horizon + 1)
-  startPredictionIndex = data.length - startRealData - data.horizon + 1
+  data.length <- length(vars$timeSeries[[id]]$y)
+  startRealData <- max(1, data.length - 2 * vars$options$horizon + 1)
+  startPredictionIndex = data.length - startRealData - vars$options$horizon + 1
   
   # Start with original data
-  original <- data.table(x = data.sets[[id]]$x[startRealData:data.length], y = data.sets[[id]]$y[startRealData:data.length])
+  original <- data.table(x = vars$timeSeries[[id]]$x[startRealData:data.length], y = vars$timeSeries[[id]]$y[startRealData:data.length])
   
   # Plot the data
   p <- plot_ly(original, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)'))
   
   for(modelName in vars$enabledModels)
   {
-    prediction <- append(rep(NA, data.horizon), getTestResults(modelName, id)$predicted)
+    prediction <- append(rep(NA, vars$options$horizon), getTestResults(modelName, id)$predicted)
     prediction[[startPredictionIndex]] <- original$y[[startPredictionIndex]]
     p <- p %>% add_trace(y = prediction, name = modelName, line = list(color = modelColors[[modelName]]))
   }
