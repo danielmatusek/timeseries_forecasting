@@ -14,7 +14,6 @@ neuralNetwork.excludedInternalErrors  <<- vector()
 neuralnetwork.strategies              <<- c("Greedy") 
 #---------------------------
 
-neuralNetwork.excluded.statistics <<- list()
 neuralnetwork.greedyErrorType     <<- NULL
 
 
@@ -200,7 +199,7 @@ getModel.nnfehei <- function(id)
 
 
 
-# -----Differentable Input Models
+# -----Differentiable Input Models
 getModel.nnfed <- function(id)
 {
   trainNeuralNetwork(getDiffTrainSet(id),FALSE, NULL, TRUE)
@@ -209,6 +208,17 @@ getModel.nnfed <- function(id)
 getModel.nnfehd <- function(id)
 {
   trainNeuralNetwork(getDiffTrainSet(id), neuralNetwork.hiddenLayers,NULL, TRUE)
+}
+
+# ---- Excluded Input Statistics
+getModel.nnfeeic <- function()
+{
+  getStatisticOfExcludedInputs()
+}
+
+getModel.nnfeheic <- function()
+{
+  getStatisticOfExcludedInputs(neuralNetwork.hiddenLayers)
 }
 
 
@@ -268,12 +278,12 @@ getTestResults.nnfah <- function(id)
 # test excluded Input
 getTestResults.nnfeei <- function(id)
 {
-  testNeuralNetwork(getModel('nnfeei', id), id)
+  testNeuralNetwork(getModel('nnfeei', id)$model, id)
 }
 
 getTestResults.nnfehei <- function(id)
 {
-  testNeuralNetwork(getModel('nnfehei', id), id)
+  testNeuralNetwork(getModel('nnfehei', id)$model, id)
 }
 # test differntable Input
 getTestResults.nnfed <- function(id)
@@ -312,12 +322,10 @@ getReducedNeuralNetworkWeights <- function(nn) {
 }
 
 
-# calculate the best neural network model with specific strategy
+# calculate the best neural network model with greedy algorithm
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 {
-    resetNeuralNetworks.InputExclusion()
-  
-    #calculate the first model
+        #calculate the first model
     model <- if (hiddenLayers) { if(is.null(id)){ getModel('nnfah')} else {getModel('nnfeh', id)}} else { if(is.null(id)) {getModel('nnfa')} else {getModel('nnfe', id)}}
     saveExcludedInputModel(model)
     
@@ -348,12 +356,11 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
         {
           excludedPathAsIndices[from - data.windowSize  + (path[length(path)] - 1)] <- 2
         }
+        
         neuralNetwork.excludedInputNodes[[1]] <<- 'ø'
-        stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors, pathAsIndices = excludedPathAsIndices), class = 'TestExclusion')
-        pos <- as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers > 0) * 2) + 1
-        neuralNetwork.excluded.statistics[[pos]] <<- stats
+        stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors, info = excludedPathAsIndices, model = oldModel), class = 'TestExclusion')
 
-        return(oldModel)
+        return(stats)
       }
       
       # search for the next best input
@@ -454,6 +461,33 @@ saveExcludedInputModel <- function(model, path = NULL)
   neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
   neuralNetwork.excludedInputNodes[[l]] <<- path
 }
+
+
+
+getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
+{
+  ids <- names(data.sets)
+  excludedPaths <- NULL
+  excludedPathCounter <- c(rep(0,data.windowSize))
+  
+  for(id in ids)
+  {
+    stats <- getExcludedInputNeuralNetwork(id,hiddenLayers)
+    pos <- as.numeric(!is.null(id)) +  (as.numeric(hiddenLayers > 0) * 2) + 1
+    resultIndex <- which(stats$info == 2)
+    excludedPaths[[id]] <- stats$nodes[resultIndex]
+    for(pathID in  excludedPaths[[id]]) excludedPathCounter[pathID] <- excludedPathCounter[pathID] + 1
+    print(paste("ID: ", id, " path: ",excludedPaths[[id]], sep=""))
+  }
+  
+
+  return(structure(list(ids = ids, paths = excludedPaths,pExcluded = (1 : data.windowSize), excludedPathCounter = excludedPathCounter),class = 'EIStatistic'))
+}
+
+
+
+
+
 
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() 
 {

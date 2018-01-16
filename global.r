@@ -76,7 +76,7 @@ resetWindows <- function() {
 
 
 createWindows <- function(id) {
-  
+
   dataSet <- data.sets[[id]]$y
   
   windows <- NULL
