@@ -13,18 +13,18 @@ trainRNN <- function(id, hiddenLayers = c(0))
   myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
   #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
-  rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
+  rnn <- RSNNS::elman(x = myset$inputsTrain, y = myset$targetsTrain, size = vars$options$hiddenLayers,
                     inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
                     maxit = 500, learnFunc = "JE_Rprop")
   rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
-  #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
+  #learnFunc = "Std_Backpropagation", , size = vars$options$hiddenLayers,  maxit = 500, linOut = FALSE
   
   return(rnn)
 }
 
 getModel.elman <- function(id)
 {
-  trainRNN(id, neuralNetwork.hiddenLayers)
+  trainRNN(id, vars$options$hiddenLayers)
 }
 
 testRNN <- function(model, id)
@@ -58,7 +58,7 @@ trainMLP <- function(id, hiddenLayers = TRUE)
 
   if(hiddenLayers)
   {
-    mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers, learnFuncParams=c(0.05),
+    mlp <- RSNNS::mlp(x = myset$inputsTrain, y = myset$targetsTrain, size = vars$options$hiddenLayers, learnFuncParams=c(0.05),
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
                       linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
   } else {
@@ -66,7 +66,7 @@ trainMLP <- function(id, hiddenLayers = TRUE)
                       inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFunc = "Rprop",
                       linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
   }
-  #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
+  #learnFunc = "Std_Backpropagation", , size = vars$options$hiddenLayers,  maxit = 500, linOut = FALSE
   
   return(mlp)
 }
@@ -114,18 +114,18 @@ trainJordan <- function(id, hiddenLayers = c(0))
   myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
   #myset <- RSNNS::normTrainingAndTestSet(myset, type = "0_1", dontNormTargets = FALSE)
 
-  jordan <- RSNNS::jordan(x = myset$inputsTrain, y = myset$targetsTrain, size = neuralNetwork.hiddenLayers,
+  jordan <- RSNNS::jordan(x = myset$inputsTrain, y = myset$targetsTrain, size = vars$options$hiddenLayers,
                     inputsTest = myset$inputsTest, targetsTest = myset$targetsTest, learnFuncParams = c(0.001), 
                     maxit = 500, learnFunc = "JE_Rprop")
   #rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
-  #learnFunc = "Std_Backpropagation", , size = neuralNetwork.hiddenLayers,  maxit = 500, linOut = FALSE
+  #learnFunc = "Std_Backpropagation", , size = vars$options$hiddenLayers,  maxit = 500, linOut = FALSE
   
   return(jordan)
 }
 
 getModel.jordan <- function(id)
 {
-  trainJordan(id, neuralNetwork.hiddenLayers)
+  trainJordan(id, vars$options$hiddenLayers)
 }
 
 testJordan <- function(model, id)

@@ -168,7 +168,6 @@ resetModels <- function(...)
 {
   for (modelName in c(...))
   {
-    print(paste('reset', modelName))
     vars$models[[modelName]] <<- NULL
     vars$testResults[[modelName]] <<- NULL
     vars$cpuTimes[[modelName]] <<- NULL

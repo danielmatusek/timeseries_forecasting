@@ -8,7 +8,6 @@ library(TSPred) #sMape function
 library(zoo)
 
 source('autoRegression.r')
-source('neuralNetwork.r', encoding = 'UTF-8')
 source('comparision.r')
 source('recNeuralNetwork.r')
 source('plot.rsnns.r')
@@ -56,7 +55,6 @@ server <- function(input, output, session) {
 	    vars$options$horizon <<- input$horizon
 	    
 	    resetModels(availableModels)
-	    excludeInputChanged()
 	    resetWindows()
 	    resetComparison()
 	    resetNeuralNetworks.InputExclusion()
@@ -81,18 +79,25 @@ server <- function(input, output, session) {
 	})
 	
 	hiddenLayersChanged <- reactive({
-	  neuralNetwork.hiddenLayers <<- c(input$hiddenSliderInput)
-	  
-	  resetNeuralNetworks.hidden()
-	  resetNeuralNetworks.InputExclusion()
+	  hiddenLayers <- c(input$hiddenSliderInput)
+	  if (hiddenLayers != vars$options$hiddenLayers)
+	  {
+	    vars$options$hiddenLayers <<- hiddenLayers
+	    
+	    resetNeuralNetworks.hidden()
+	    resetNeuralNetworks.InputExclusion()
+	  }
 	})
 	
 	
 	
 	excludeInputErrorChanged <- reactive({
-	  neuralnetwork.greedyErrorType <<- input$inputSelectedErrorType
-	  resetNeuralNetworks()
-	  resetNeuralNetworks.InputExclusion()
+	  if (neuralnetwork.greedyErrorType != input$inputSelectedErrorType)
+	  {
+	    neuralnetwork.greedyErrorType <<- input$inputSelectedErrorType
+	    resetNeuralNetworks()
+	    resetNeuralNetworks.InputExclusion()
+	  }
 	})
 	
 	
@@ -185,17 +190,6 @@ server <- function(input, output, session) {
 	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
 	})
 	
-	
-	
-	output$inputStrategy <- renderUI({
-	  
-	  if (is.null(input$windowSize)) return()
-	  if(input$inputCheckbox == TRUE && input$windowSize > 1)
-	  {
-	      selectInput("inputStrategy", "Strategy", neuralnetwork.strategies)
-	  }
-	})
-	
 	observeEvent(input$openLoadResultsModal, {
 	  results <- getAvailableResuls()
 	  
@@ -246,6 +240,8 @@ server <- function(input, output, session) {
 	  updateSliderInput(session, 'windowSize', value = vars$options$windowSize)
 	  updateSliderInput(session, 'horizon', value = vars$options$horizon)
 	  updateRadioButtons(session, 'arModelName', selected = vars$options$arModelName)
+	  updateCheckboxInput(session, 'excludeBias', value = vars$options$excludeBias)
+	  updateCheckboxGroupInput(session, 'enabledModels', selected = vars$enabledModels)
 	  
 	}, ignoreInit = TRUE)
 	
@@ -524,7 +520,7 @@ server <- function(input, output, session) {
 	output$neuralNetworkForecastForTrialError <- renderPrint({
 		windowsChanged()
 		idChanged()
-		neuralNetwork.hiddenLayers <<- neuralNetwork.tempHiddenNodes
+		vars$options$hiddenLayers <<- neuralNetwork.tempHiddenNodes
 		cat("Optimal number of Hidden nodes: ", neuralNetwork.hlOptimization, fill = FALSE)
 	})
 
@@ -671,7 +667,6 @@ server <- function(input, output, session) {
 	### UI elements: Comparision
 	
 	output$forecastComparisionPlot <- renderPlotly({
-	  idChanged()
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()

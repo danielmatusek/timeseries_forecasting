@@ -10,8 +10,9 @@ vars <<- list(
   options = list(
     windowSize = 7,
     horizon = 7,
+    arModelName = 'ar',
     excludeBias = TRUE,
-    arModelName = 'ar'
+    hiddenLayers = c(0)
   )
 )
 
@@ -80,7 +81,14 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
     data <- data.table(id = data$id, x = data$x, y = data$y)
     
     # split data into sets with the same id
-    vars$timeSeries <<- split(data, by = 'id')
+    data <- split(data, by = 'id')
+    
+    for (id in names(data))
+    {
+      #data[[id]]$id <- NULL
+    }
+    
+    vars$timeSeries <<- data
   }
 }
 

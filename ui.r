@@ -2,6 +2,7 @@ library(plotly)
 library(shinydashboard)
 
 source('model.r')
+source('neuralNetwork.r', encoding = 'UTF-8')
 
 ui <- dashboardPage(skin = 'purple',
 	dashboardHeader(title = 'FPADB',
@@ -63,8 +64,7 @@ ui <- dashboardPage(skin = 'purple',
 		        h3('Neural Network', style = 'margin: 40px 0 10px 0;'),
 		        checkboxInput('excludeBias', 'Exclude Bias', TRUE),
 		        checkboxInput('inputDifferenceCheckbox', 'Use Difference', FALSE),
-		        checkboxInput('inputCheckbox', 'Exclude Input', FALSE),
-		        uiOutput('inputStrategy'),
+		        selectInput("inputStrategy", "Strategy", neuralnetwork.strategies),
 		        selectInput("inputSelectedErrorType", "Error Type", c("Outsample", "Insample")),
 		        uiOutput('hiddenSliderInput'),
 						checkboxGroupInput("variable_nn_hidden", "neural network hidden nodes optimization",

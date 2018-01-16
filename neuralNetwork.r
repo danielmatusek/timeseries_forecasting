@@ -1,7 +1,5 @@
 library(neuralnet)
 
-neuralNetwork.hiddenLayers  <<- c(0)
-
 #------- save greedy Models
 neuralnetwork.excludedPathAsIndices   <<- NULL
 neuralNetwork.excludedInputNodes      <<- list()
@@ -11,7 +9,7 @@ neuralNetwork.excludedInternalErrors  <<- vector()
 neuralnetwork.strategies              <<- c("Greedy") 
 #---------------------------
 
-neuralnetwork.greedyErrorType     <<- NULL
+neuralnetwork.greedyErrorType     <<- 'Outsample'
 
 neuralNetwork.hlOptimization <<- c(0)
 neuralNetwork.hlOptimizationErrorVector <<- c(0)
@@ -72,14 +70,14 @@ getNeuralNetworkExcludeVector <- function(hidden, excludeVector = NULL, isDiffer
     
     layer_vector <- NULL #we need the number of nodes in every vertical row (e.g. c(num(input_neuron), num(first_hiddenLayers)...))
     layer_vector[1] <- if(isDifferantable){2 * vars$options$windowSize - 1}else{vars$options$windowSize} #number of input neurons
-    for(i in 1 : length(neuralNetwork.hiddenLayers))
+    for(i in 1 : length(vars$options$hiddenLayers))
     {
-      layer_vector[i + 1] <- neuralNetwork.hiddenLayers[i] #create the layer vector
+      layer_vector[i + 1] <- vars$options$hiddenLayers[i] #create the layer vector
     }
     current_bias <- 1 #first bias always 1
     exclude_counter <- length(excludedVectorPos) + 1 #to fill the exclude-vector. first one is already filled (1), so begin with 2
-    for (i in 1 : length(neuralNetwork.hiddenLayers)){ #iterate through the vertical layers, beginning with input nodes
-      for (j in 1 : neuralNetwork.hiddenLayers[i]){ #iterate through the nodes of the current layer
+    for (i in 1 : length(vars$options$hiddenLayers)){ #iterate through the vertical layers, beginning with input nodes
+      for (j in 1 : vars$options$hiddenLayers[i]){ #iterate through the nodes of the current layer
         current_bias <- current_bias + layer_vector[i] + 1 #from bias to bias calculate new_value = old_value + n + 1 where n is number of nodes in current layer
         excludedVectorPos[exclude_counter] <- current_bias #add to vector for excluded weights
         exclude_counter <- exclude_counter + 1 #go to next element in exclude vector
@@ -101,7 +99,7 @@ excludeInputs <- function(hidden, excludeVector)
   {
     for(pos in excludeVector)
     {
-      for(i in 1 : neuralNetwork.hiddenLayers)
+      for(i in 1 : vars$options$hiddenLayers)
       {
         from <- ((i - 1) * (vars$options$windowSize + 1)) + 1
         vec <- c(vec, from + pos)
@@ -129,8 +127,8 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
   
   
   tryCatch({
-    #if elements exist in excludevector then the condition is false
-    if(!is.logical(neuralNetwork.excludeVector) || vars$options$excludeBias) 
+     #if elements exist in excludevector then the condition is false
+    if(!is.logical(excludeVector)) 
     {
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
         exclude = excludedVectorPos)
@@ -166,7 +164,7 @@ getModel.nnfe <- function(id)
 
 getModel.nnfeh <- function(id)
 {
-  trainNeuralNetwork(getTrainSet(id), neuralNetwork.hiddenLayers)
+  trainNeuralNetwork(getTrainSet(id), vars$options$hiddenLayers)
 }
 
 getModel.nnfa <- function()
@@ -178,7 +176,7 @@ getModel.nnfa <- function()
 getModel.nnfah <- function()
 {
   trainSetsCombined <- getAllTrainSetsCombined()
-  trainNeuralNetwork(trainSetsCombined, neuralNetwork.hiddenLayers)
+  trainNeuralNetwork(trainSetsCombined, vars$options$hiddenLayers)
 }
 
 
@@ -190,7 +188,7 @@ getModel.nnfeei <- function(id)
 
 getModel.nnfehei <- function(id)
 {
-  getExcludedInputNeuralNetwork(id, neuralNetwork.hiddenLayers)
+  getExcludedInputNeuralNetwork(id, vars$options$hiddenLayers)
 }
 
 
@@ -203,7 +201,7 @@ getModel.nnfed <- function(id)
 
 getModel.nnfehd <- function(id)
 {
-  trainNeuralNetwork(getDiffTrainSet(id), neuralNetwork.hiddenLayers,NULL, TRUE)
+  trainNeuralNetwork(getDiffTrainSet(id), vars$options$hiddenLayers,NULL, TRUE)
 }
 
 # ---- Excluded Input Statistics
@@ -214,7 +212,7 @@ getModel.nnfeeic <- function()
 
 getModel.nnfeheic <- function()
 {
-  getStatisticOfExcludedInputs(neuralNetwork.hiddenLayers)
+  getStatisticOfExcludedInputs(vars$options$hiddenLayers)
 }
 
 
@@ -240,7 +238,6 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 
 testNeuralNetwork <- function(neuralNetwork, testSetID, isDiffInput = FALSE)
 {
-  
   testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)} 
   expected <- testData$xt0
   testData$xt0 <- NULL
@@ -274,6 +271,7 @@ getTestResults.nnfah <- function(id)
 # test excluded Input
 getTestResults.nnfeei <- function(id)
 {
+  browser()
   testNeuralNetwork(getModel('nnfeei', id)$model, id)
 }
 
@@ -519,7 +517,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 {
   resetNeuralNetworks.hlOptimizationNN()
   neuralNetwork.hlOptimizationErrorVector <<- c(0)
-  neuralNetwork.tempHiddenNodes <<- neuralNetwork.hiddenLayers
+  neuralNetwork.tempHiddenNodes <<- vars$options$hiddenLayers
   if (is.null(neuralNetwork.hlOptimizationNN[[id]]))
   {
     #get neural network and error without hidden layer
@@ -534,7 +532,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     for (i in 1:vars$options$windowSize){
       #Prepare environmental variables for nn calculation
       neuralNetwork.hlOptimization <<- c(i)
-      neuralNetwork.hiddenLayers <<- c(i)
+      vars$options$hiddenLayers <<- c(i)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
@@ -558,7 +556,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     for (j in 1:m){
       #Prepare environmental variables for nn calculation
       neuralNetwork.hlOptimization <<- c(m, j)
-      neuralNetwork.hiddenLayers <<- c(m, j)
+      vars$options$hiddenLayers <<- c(m, j)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
@@ -569,7 +567,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
       if(last_error < current_error)
       {
         neuralNetwork.hlOptimization <<- c(m, j)
-        neuralNetwork.hiddenLayers <<- c(m, j)
+        vars$options$hiddenLayers <<- c(m, j)
         #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network

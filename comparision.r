@@ -208,9 +208,13 @@ getForecastComparisionPlot <- function(id) {
   
   for(modelName in vars$enabledModels)
   {
-    prediction <- append(rep(NA, vars$options$horizon), getTestResults(modelName, id)$predicted)
-    prediction[[startPredictionIndex]] <- original$y[[startPredictionIndex]]
-    p <- p %>% add_trace(y = prediction, name = modelName, line = list(color = modelColors[[modelName]]))
+    testResults <- getTestResults(modelName, id)
+    if (mode(testResults) != 'logical')
+    {
+      prediction <- append(rep(NA, vars$options$horizon), testResults$predicted)
+      prediction[[startPredictionIndex]] <- original$y[[startPredictionIndex]]
+      p <- p %>% add_trace(y = prediction, name = modelName, line = list(color = modelColors[[modelName]]))
+    }
   }
  
   p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
