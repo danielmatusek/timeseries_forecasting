@@ -7,9 +7,11 @@ library(stats)
 library(TSPred) #sMape function
 library(zoo)
 
-source('autoRegression.r')
+source('ar.r')
+source('elman.r')
+source('jordan.r')
+source('mlp.r')
 source('comparision.r')
-source('recNeuralNetwork.r')
 source('plot.rsnns.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB

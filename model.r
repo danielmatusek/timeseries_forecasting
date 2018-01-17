@@ -1,10 +1,3 @@
-library(foreach)
-library(doParallel)
-
-# set cluster for parallel execution
-setDefaultCluster(makeCluster(detectCores()))
-
-
 ###
 ### Prediction Models
 ###
@@ -60,14 +53,9 @@ getModel <- function(modelName, id = NULL)
 ### Test Results
 ###
 
-getTestResults <- function(x, ...)
-{
-  UseMethod('getTestResults')
-}
-
 # Get the test results for a given model and a given id or for all time series
 # if id = NULL
-getTestResults.default <- function(modelName, id)
+getTestResults <- function(modelName, id)
 {
   # validate model name
   if (!modelName %in% availableModels)
@@ -78,7 +66,7 @@ getTestResults.default <- function(modelName, id)
   # if id is null get the test results of all time series
   if (is.null(id))
   {
-    results <- foreach(id = names(vars$timeSeries)) %dopar% getTestResults(modelName, id)
+    results <- lapply(names(vars$timeSeries), function(id) { getTestResults(modelName, id) })
     
     # remove not valid test results
     results[sapply(results, function(r) { !inherits(r, 'TestResults') })] <- NULL
@@ -93,9 +81,9 @@ getTestResults.default <- function(modelName, id)
     # compute test results
     model <- getModel(modelName, id)
     
-    if (!is.atomic(model))
+    if (mode(model) == 'list' || mode(model) == 'numeric')
     {
-      testResults <- do.call(paste0('getTestResults.', modelName), list(id))
+      testResults <- do.call(paste0('getTestResults.', modelName), list(model, id))
       if (mode(testResults) == 'numeric')
       {
         vars$predictions[[modelName]][[id]] <<- testResults
@@ -167,7 +155,7 @@ getCpuTimes <- function(modelName, id = NULL, na.rm = TRUE)
   {
     if (is.null(id))
     {
-      cpuTimes <- foreach(id = names(vars$timeSeries), .combine = 'c') %dopar% getCpuTimes(modelName, id)
+      cpuTimes <- unlist(lapply(names(vars$timeSeries), function(id) { getCpuTimes(modelName, id) }))
       
       return (cpuTimes)
     }

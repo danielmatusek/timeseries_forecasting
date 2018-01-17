@@ -35,10 +35,6 @@ data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
 
 
-data.windowSize <- NULL
-data.horizon <- NULL
-
-
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names
   if (length(data) >= 3)
@@ -125,6 +121,7 @@ loadResults <- function(name)
   if (file.access(path, 4) == 0)
   {
     vars <<- readRDS(path)
+    vars$testResults <<- NULL
     print(paste0("loaded results from 'results/", name, ".rdata'"))
   }
   else

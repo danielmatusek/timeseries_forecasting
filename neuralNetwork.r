@@ -140,12 +140,16 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity)
     }
     
-    # remove the larger "unnecessary" fields. They fill up RAM.
+    # remove "unnecessary" fields. They fill up RAM.
     nn$response <- NULL
     nn$coveriate <- NULL
     nn$data <- NULL
     nn$covariate <- NULL
+    nn$exclude <- NULL
+    nn$call <- NULL
+    nn$err.fct <- NULL
     nn$net.result <- NULL
+    nn$startweights <- NULL
     nn$generalized.weights <- NULL
     nn
   },
@@ -240,50 +244,50 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 
 testNeuralNetwork <- function(neuralNetwork, testSetID, isDiffInput = FALSE)
 {
-  testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)} 
+  testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)}
 
   compute(neuralNetwork, testData)$net.result[,1]
 }
 
-getTestResults.nnfe <- function(id)
+getTestResults.nnfe <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfe', id), id)
+  testNeuralNetwork(model, id)
 }
 
-getTestResults.nnfeh <- function(id)
+getTestResults.nnfeh <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfeh', id), id)
+  testNeuralNetwork(model, id)
 }
 
-getTestResults.nnfa <- function(id)
+getTestResults.nnfa <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfa', id), id)
+  testNeuralNetwork(model, id)
 }
 
 getTestResults.nnfah <- function(id)
 {
-  testNeuralNetwork(getModel('nnfah', id), id)
+  testNeuralNetwork(model, id)
 }
 
 # test excluded Input
-getTestResults.nnfeei <- function(id)
+getTestResults.nnfeei <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfeei', id)$model, id)
+  testNeuralNetwork(model$model, id)
 }
 
-getTestResults.nnfehei <- function(id)
+getTestResults.nnfehei <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfehei', id)$model, id)
+  testNeuralNetwork(model$model, id)
 }
 # test differntable Input
-getTestResults.nnfed <- function(id)
+getTestResults.nnfed <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfed', id), id, TRUE)
+  testNeuralNetwork(model, id, TRUE)
 }
 
-getTestResults.nnfehd <- function(id)
+getTestResults.nnfehd <- function(model, id)
 {
-  testNeuralNetwork(getModel('nnfehd', id), id, TRUE)
+  testNeuralNetwork(model, id, TRUE)
 }
 
 
@@ -456,8 +460,8 @@ saveExcludedInputModel <- function(model, id = NULL, path = NULL)
   l <- length(neuralNetwork.excludedPastModels) + 1
   neuralNetwork.excludedPastModels[[l]] <<- model
   neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[l]]$result.matrix[1])
-  results <- testNeuralNetwork(neuralNetwork.excludedPastModels[[l]], id)
-  neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(results$expected, results$predicted))
+  prediction <- testNeuralNetwork(neuralNetwork.excludedPastModels[[l]], id)
+  neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(data.expecetedTestResults[[id]], prediction))
   neuralNetwork.excludedInputNodes[[l]] <<- path
 }
 

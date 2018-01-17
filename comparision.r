@@ -89,7 +89,7 @@ getCoef <- function(id)
   names <- c('Variables')
   
   # Add Autoregressive
-  dt$arc = getARCoef(id)
+  dt$arc = getModel('ar', id) # the ar model is the set of coefficients
   names <- c(names, 'AutoRegressive')
   
   
@@ -195,9 +195,10 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
 
 
 
-getForecastComparisionPlot <- function(id) {
+getForecastComparisionPlot <- function(id)
+{
   data.length <- length(vars$timeSeries[[id]]$y)
-  startRealData <- max(1, data.length - 2 * vars$options$horizon + 1)
+  startRealData <- max(1, data.length - vars$options$horizon + 1)
   startPredictionIndex = data.length - startRealData - vars$options$horizon + 1
   
   # Start with original data
@@ -211,9 +212,8 @@ getForecastComparisionPlot <- function(id) {
     testResults <- getTestResults(modelName, id)
     if (mode(testResults) != 'logical')
     {
-      prediction <- append(rep(NA, vars$options$horizon), testResults$predicted)
-      prediction[[startPredictionIndex]] <- original$y[[startPredictionIndex]]
-      p <- p %>% add_trace(y = prediction, name = modelName, line = list(color = modelColors[[modelName]]))
+      p <- p %>% add_trace(y = testResults$predicted, name = modelName,
+        line = list(color = modelColors[[modelName]]))
     }
   }
  
