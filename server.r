@@ -144,7 +144,7 @@ server <- function(input, output, session) {
     updateCheckboxGroupInput(session, 'enabledModels', selected = vars$enabledModels)
     updateSliderInput(session, 'hiddenNeuronsInFirstLayer', value = options$hiddenLayers[1],
       min = options$hiddenLayers[1], max = options$hiddenLayers[1])
-  }, ignoreInit = TRUE)
+  })
   
   observeEvent(input$saveResults, {
     resultName <- input$resultName
