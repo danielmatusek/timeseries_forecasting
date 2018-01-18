@@ -17,52 +17,167 @@ source('plot.rsnns.r')
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
 server <- function(input, output, session) {
+  values <- reactiveValues(dataImported = 0)
   
-  ### Settings Changed Events
+  ###
+  ### Load Data Source
+  ###
   
-  rawData <- reactive({
-    file <- input$dataFile
-    if (is.null(file) && input$use_data=="csv")
-    {
-      return(NULL)
-    }
-    #read.table(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    if(input$use_data=="alipay"){
-      data  <- readRDS("../resources/alipay_base.rdata")
-    } 
-    if (input$use_data=="metadata"){
-      data  <- readRDS("../resources/meterdata_complete_series.RData")
-    }
-    if (input$use_data=="csv"){
-      data  <- read.csv(file$datapath, header = input$headerCheckbox, sep = input$separatorRadioButton)
-    }
+  observeEvent(input$importDataModal, {
+    dataSources <- getAvailableDataSources()
     
-    return(data)
+    showModal(modalDialog(
+      selectInput('dataInput', 'Use Dataset:', dataSources),
+      conditionalPanel(
+        condition = 'input.dataInput.substr(-4).toLowerCase() == ".csv"',
+        checkboxInput('dataSourceContainsHeader', 'Contains Header', TRUE),
+        radioButtons('dataSourceSeparator', 'Separator',
+          c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ',')
+      ),
+      footer = tagList(
+        actionButton('importData', 'Import Data'),
+        modalButton('Cancel')
+      )
+    ))
   })
   
-
-  databaseChanged <- reactive({
-    data <- rawData()
-
-    if (!is.null(data)) 
+  observeEvent(input$importData, {
+    removeModal()
+    
+    path <- paste0('../resources/', input$dataInput)
+    length <- nchar(path)
+    
+    # Save data in a temporary variable
+    if (tolower(substr(path, length - 3, length)) == '.csv')
     {
-      parseData(data, idName = input$idColumnSelect, xName = input$x_axis, yName = input$y_axis)
+      values$rawData <- read.csv(path, header = input$dataSourceContainsHeader, sep = input$dataSourceSeparator)
+    }
+    else
+    {
+      values$rawData <- readRDS(path)
+    }
+    columns <- names(values$rawData)
+    
+    showModal(modalDialog(
+      selectInput('idColumn', 'ID Name', columns, selected = columns[1]),
+      selectInput('xColumn', 'X-Axis', columns, selected = columns[2]),
+      selectInput('yColumn', 'Y-Axis', columns, selected = columns[3]),
+      footer = tagList(
+        actionButton('setDataStructure', 'OK'),
+        modalButton('Cancel')
+      )
+    ))
+  })
+  
+  observeEvent(input$setDataStructure, {
+    removeModal()
+    
+    parseData(values$rawData, idName = input$idColumn, xName = input$xColumn, yName = input$yColumn)
+    resetModels(availableModels)
+    
+    values$rawData <- NULL  # Remove temporarily stored data
+    values$dataImported <- values$dataImported + 1
+  })
+  
+  
+  
+  ###
+  ### Save/Load Results
+  ###
+  
+  observeEvent(input$openLoadResultsModal, {
+    results <- getAvailableResuls()
+    
+    showModal(
+      if (length(results) > 0)
+      {
+        modalDialog(
+          selectInput('savedResults', 'Load Results', getAvailableResuls()),
+          footer = tagList(
+            actionButton('loadResults', 'Load'),
+            modalButton('Cancel')
+          ))
+      }
+      else
+      {
+        modalDialog(
+          div('There are no results to load.'),
+          footer = tagList(
+            modalButton('OK')
+          ))
+      }
+    )
+  })
+  
+  showSaveModal <- function(failed = FALSE)
+  {
+    showModal(modalDialog(
+      textInput('resultName', 'Result Name'),
+      if (failed)
+      {
+        div(tags$b('Name must not be empty', style = "color: red;"))
+      },
+      footer = tagList(
+        actionButton('saveResults', 'Save'),
+        modalButton('Cancel')
+      )
+    ))
+  }
+  
+  observeEvent(input$openSaveResultsModal, {
+    showSaveModal()
+  })
+  
+  observeEvent(input$loadResults, {
+    removeModal()
+    loadResults(input$savedResults)
+    
+    values$dataImported <- values$dataImported + 1
+    
+    options <- vars$options
+    updateSliderInput(session, 'windowSize', value = options$windowSize,
+      min = options$windowSize, max = options$windowSize)
+    updateSliderInput(session, 'horizon', value = options$horizon,
+      min = options$horizon, max = options$horizon)
+    updateRadioButtons(session, 'arModelName', selected = vars$options$arModelName)
+    updateCheckboxInput(session, 'excludeBias', value = vars$options$excludeBias)
+    updateCheckboxGroupInput(session, 'enabledModels', selected = vars$enabledModels)
+    updateSliderInput(session, 'hiddenNeuronsInFirstLayer', value = options$hiddenLayers[1],
+      min = options$hiddenLayers[1], max = options$hiddenLayers[1])
+  }, ignoreInit = TRUE)
+  
+  observeEvent(input$saveResults, {
+    resultName <- input$resultName
+    
+    if (resultName != '')
+    {
+      saveResults(resultName)
+      removeModal()
+    }
+    else
+    {
+      showSaveModal(failed = TRUE)
     }
   })
 	
-	windowsChanged <- reactive({
-	  if (input$windowSize != vars$options$windowSize || input$horizon != vars$options$horizon)
-	  {
-	    vars$options$windowSize <<- input$windowSize
-	    vars$options$horizon <<- input$horizon
-	    
-	    resetModels(availableModels)
-	    resetWindows()
-	    resetComparison()
-	    resetNeuralNetworks.InputExclusion()
-	  }
-	})
 	
+  
+  ###
+	### Settings Changed Events
+  ###
+  
+  windowsChanged <- reactive({
+    if (input$windowSize != vars$options$windowSize || input$horizon != vars$options$horizon)
+    {
+      vars$options$windowSize <<- input$windowSize
+      vars$options$horizon <<- input$horizon
+      
+      resetModels(availableModels)
+      resetWindows()
+      resetComparison()
+      resetNeuralNetworks.InputExclusion()
+    }
+  })
 
 	excludeBiasChanged <- reactive({
 	  if (input$excludeBias != vars$options$excludeBias)
@@ -76,7 +191,7 @@ server <- function(input, output, session) {
 	})
 	
 	hiddenLayersChanged <- reactive({
-	  hiddenLayers <- c(input$hiddenSliderInput)
+	  hiddenLayers <- c(input$hiddenNeuronsInFirstLayer)
 	  if (hiddenLayers != vars$options$hiddenLayers)
 	  {
 	    vars$options$hiddenLayers <<- hiddenLayers
@@ -86,8 +201,6 @@ server <- function(input, output, session) {
 	  }
 	})
 	
-	
-	
 	excludeInputErrorChanged <- reactive({
 	  if (neuralnetwork.greedyErrorType != input$inputSelectedErrorType)
 	  {
@@ -96,7 +209,6 @@ server <- function(input, output, session) {
 	    resetNeuralNetworks.InputExclusion()
 	  }
 	})
-	
 	
 	enabledModelsChanged <- reactive({
 	  vars$enabledModels <<- input$enabledModels
@@ -116,58 +228,40 @@ server <- function(input, output, session) {
 	
 	### UI elements: General
 	
-	
-	output$idColumnSelect <- renderUI({
-	  df <- rawData()
-	  if (is.null(df)) return()
-	  columns <- names(df)
-	  selectInput('idColumnSelect', 'ID Name', columns, selected = columns[1])
-	})
-	
-	output$x_axis <- renderUI({
-	  df <- rawData()
-	  if (is.null(df)) return()
-	  columns <- names(df)
-	  selectInput("x_axis", "x-axis", columns, selected = columns[2])
-	})
-	
-	output$y_axis <- renderUI({
-	  df <- rawData()
-	  if (is.null(df)) return()
-	  columns <- names(df)
-	  selectInput("y_axis","y-axis", columns, selected = columns[3])
-	})
-	
 	output$idSelectBox <- renderUI({
-	  databaseChanged()
-	  
-	  if (!is.null(vars$timeSeries))
+	  if (values$dataImported > 0)
 	  {
-	    d <- vars$timeSeries[order(as.numeric(names(vars$timeSeries)))]   #sortieren von names(vars$timeSeries)
-	    selectInput("idSelect", "Dataset", names(d))
+	    selectInput("idSelect", "Dataset", sort(as.numeric(names(vars$timeSeries))))
 	  }
 	})
 	
 	output$windowSize <- renderUI({
-	  databaseChanged()
+	  values$dataImported
 	  id <- input$idSelect
 	  
 	  if (is.null(vars$timeSeries) || is.null(id))
 	  {
-	    return(NULL)
+	    sliderInput('windowSize', 'Window Size', 0, 0, 0, step = 1)
 	  }
-	  numData <- length(vars$timeSeries[[id]]$x)
-	  values <- input$windowSize
-	  if(is.null(values)){
-	    values <- 0.0175*numData
+	  else
+	  {
+	    numData <- length(vars$timeSeries[[id]]$x)
+	    values <- input$windowSize
+	    if(is.null(values)){
+	      values <- 0.0175*numData
+	    }
+	    sliderInput('windowSize', 'Window Size', 1, round(0.05*numData), values, step = 1)
 	  }
-	  sliderInput('windowSize', 'Window Size', 1, round(0.05*numData), values, step = 1)
 	})
 	
 	output$horizon <- renderUI({
 	  windowSize <- input$windowSize
 	  
-	  if(!is.null(windowSize))
+	  if(is.null(windowSize) || windowSize == 0)
+	  {
+	    sliderInput('horizon', 'Predict Values', 0, 0, 0, step = 1)
+	  }
+	  else
 	  {
 	    values <- input$horizon
 	    if(is.null(values)){
@@ -178,82 +272,21 @@ server <- function(input, output, session) {
 	})
 	
 	output$hiddenSliderInput <- renderUI({
-	  if (is.null(input$windowSize)) return()
-	  values <- input$hiddenSliderInput
-	  if(is.null(values)){
-	    values <- 3
+	  windowSize <- input$windowSize
+	  
+	  if (is.null(windowSize) || windowSize == 0)
+	  {
+	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 0, 0, 0, step = 1)
 	  }
-		maxHiddenSlider <- input$windowSize * 2
-	  sliderInput("hiddenSliderInput", "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
-	})
-	
-	observeEvent(input$openLoadResultsModal, {
-	  results <- getAvailableResuls()
-	  
-	  showModal(
-	    if (length(results) > 0)
-	    {
-	      modalDialog(
-  	      selectInput('savedResults', 'Results', getAvailableResuls()),
-  	      footer = tagList(
-  	        actionButton('loadResults', 'Load'),
-  	        modalButton('Cancel')
-        ))
+	  else
+	  {
+	    values <- input$hiddenNeuronsInFirstLayer
+	    if(is.null(values)){
+	      values <- 3
 	    }
-	    else
-	    {
-	      modalDialog(
-	        div('There are no results to load.'),
-  	      footer = tagList(
-  	        modalButton('OK')
-        ))
-	    }
-	  )
-	})
-	
-	showSaveModal <- function(failed = FALSE)
-	{
-	  showModal(modalDialog(
-	    textInput('resultName', 'Result Name'),
-	    if (failed)
-	    {
-	      div(tags$b('Name must not be empty', style = "color: red;"))
-	    },
-	    footer = tagList(
-	      actionButton('saveResults', 'Save'),
-	      modalButton('Cancel')
-	    )
-	  ))
-	}
-	
-	observeEvent(input$openSaveResultsModal, {
-	  showSaveModal()
-	})
-	
-	observeEvent(input$loadResults, {
-	  removeModal()
-	  loadResults(input$savedResults)
-	  
-	  updateSliderInput(session, 'windowSize', value = vars$options$windowSize)
-	  updateSliderInput(session, 'horizon', value = vars$options$horizon)
-	  updateRadioButtons(session, 'arModelName', selected = vars$options$arModelName)
-	  updateCheckboxInput(session, 'excludeBias', value = vars$options$excludeBias)
-	  updateCheckboxGroupInput(session, 'enabledModels', selected = vars$enabledModels)
-	  
-	}, ignoreInit = TRUE)
-	
-	observeEvent(input$saveResults, {
-    resultName <- input$resultName
-    
-    if (resultName != '')
-    {
-      saveResults(resultName)
-      removeModal()
-    }
-    else
-    {
-      showSaveModal(failed = TRUE)
-    }
+	    maxHiddenSlider <- input$windowSize * 2
+	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
+	  }
 	})
 	
 	
@@ -262,7 +295,7 @@ server <- function(input, output, session) {
 	
 	
 	output$dataChart <- renderPlotly({
-	  databaseChanged()
+	  values$dataImported
 	  
 		p <- plot_ly(vars$timeSeries[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
@@ -270,7 +303,7 @@ server <- function(input, output, session) {
 	})
 	
 	output$dataTable <- renderDataTable({
-	  databaseChanged()
+	  values$dataImported
 	  
 	  vars$timeSeries[[input$idSelect]]
 	})
@@ -624,13 +657,13 @@ server <- function(input, output, session) {
 	
 	
 	output$arACF <- renderPlot({
-	  databaseChanged()
+	  values$dataImported
 	  
 	  acf(vars$timeSeries[[input$idSelect]]$y, main = "ACF")
 	})
 	
 	output$arPACF <- renderPlot({
-	  databaseChanged()
+	  values$dataImported
 	  
 	  pacf(vars$timeSeries[[input$idSelect]]$y, main = "PACF")
 	})
@@ -669,7 +702,7 @@ server <- function(input, output, session) {
 	})
 	
 	output$compareCoefficient <- renderDataTable({
-	  databaseChanged()
+	  values$dataImported
 	  windowsChanged()
 	  excludeBiasChanged()
 	  enabledModelsChanged()

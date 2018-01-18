@@ -15,11 +15,12 @@ ui <- dashboardPage(skin = 'purple',
 	    class = 'dropdown'
 	  ),
 	  tags$li(actionLink('openSaveResultsModal', label = '', icon = icon('save')), class = 'dropdown'),
-	  tags$li(actionLink('openLoadResultsModal', label = '', icon = icon('folder-open')), class = 'dropdown')
+	  tags$li(actionLink('openLoadResultsModal', label = '', icon = icon('folder-open')), class = 'dropdown'),
+	  tags$li(actionLink('importDataModal', label = '', icon = icon('upload')), class = 'dropdown')
 	),
 
 	dashboardSidebar(
-	  conditionalPanel('output.idColumnSelect != null',# cannot depend on input$dataFile directly.
+	  conditionalPanel('input.idSelect != null',# cannot depend on input$dataFile directly.
 	    sidebarMenu(id="tabs",
 	      menuItem('Settings', tabName = 'settings', icon = icon('cogs')),
 	              menuItem("Data", tabName = "data", icon = icon("database")),
@@ -27,11 +28,11 @@ ui <- dashboardPage(skin = 'purple',
 	              menuItem("RSNNS Package", tabName = "rsnnspackage", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
-	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
-	      hr(),
-		            uiOutput("idSelectBox")
-		  )
-	  )
+	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope"))
+		  ),
+	    hr()
+	  ),
+	  uiOutput("idSelectBox")
 	),
 
 	dashboardBody(
@@ -39,29 +40,19 @@ ui <- dashboardPage(skin = 'purple',
 		  tabItem(tabName = 'settings',
 		    fluidRow(style = 'background-color: #fff; margin: 0;',
 		      column(4,
-		        h3('Data Input', style = 'margin-bottom: 20px;'),
-		        checkboxInput('headerCheckbox', 'Header', TRUE),
-		        radioButtons('separatorRadioButton', 'Separator',
-		          c(Comma=',', Semicolon=';', Tab='\t', Space=' '), ','),	
-		        fileInput('dataFile', NULL,
-		          accept=c('text/csv', 'text/comma-separated-values,text/plain', '.csv')
-		        ),
-		        selectInput("use_data","Use Dataset:",c("load csv"="csv","alipay" = "alipay","metadata_complete"="metadata")),
-		        uiOutput('idColumnSelect'),
-		        uiOutput("x_axis"),
-		        uiOutput("y_axis")
+		        h3('Enable Models', style = 'margin-bottom: 20px;'),
+		        checkboxGroupInput('enabledModels', NULL, availableModels, selected = vars$enabledModels)
 		      ),
 		      column(4,
 		        h3('General', style = 'margin-bottom: 20px;'),
 		        uiOutput('windowSize'),
 		        uiOutput('horizon'),
-		        checkboxGroupInput('enabledModels', 'Enable Models', availableModels, selected = vars$enabledModels)
+		        h3('Autoregression', style = 'margin: 40px 0 10px 0;'),
+		        radioButtons('arModelName', 'Arima Models',
+		          c(AR='ar', AutoArima='autoArima'), 'ar')
 		      ),
 		      column(4,
-		        h3('Autoregression', style = 'margin-bottom: 20px;'),
-		        radioButtons('arModelName', 'Arima Models',
-		          c(AR='ar', AutoArima='autoArima'), 'ar'),
-		        h3('Neural Network', style = 'margin: 40px 0 10px 0;'),
+		        h3('Neural Network', style = 'margin-bottom: 20px;'),
 		        checkboxInput('excludeBias', 'Exclude Bias', TRUE),
 		        checkboxInput('inputDifferenceCheckbox', 'Use Difference', FALSE),
 		        selectInput("inputStrategy", "Strategy", neuralnetwork.strategies),

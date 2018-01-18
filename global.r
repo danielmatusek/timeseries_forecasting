@@ -91,6 +91,27 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   }
 }
 
+getAvailableDataSources <- function()
+{
+  unlist(lapply(list.files('../resources'), function(filename) {
+    length <- nchar(filename)
+    dotPos <- length - 5
+    
+    if (tolower(substr(filename, dotPos, length)) == '.rdata')
+    {
+      return (filename)
+    }
+    
+    dotPos <- length - 3
+    if (tolower(substr(filename, dotPos, length)) == '.csv')
+    {
+      return (filename)
+    }
+    
+    return (NULL)
+  }))
+}
+
 saveResults <- function(name)
 {
   # create dir if not already present
@@ -121,7 +142,11 @@ loadResults <- function(name)
   if (file.access(path, 4) == 0)
   {
     vars <<- readRDS(path)
-    vars$testResults <<- NULL
+    for (id in names(vars$timeSeries))
+    {
+      createWindows(id)
+    }
+    
     print(paste0("loaded results from 'results/", name, ".rdata'"))
   }
   else
