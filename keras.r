@@ -4,7 +4,8 @@ library(RSNNS)
 
 
 #--- global
-batch_size <- 1
+#batch_size <- vars$options$windowSize
+batch_size <- 32
 maxlen <- vars$options$windowSize
 validationset.ratio <- 0.1
 
@@ -44,10 +45,10 @@ trainLSTM <- function(id)
   features <- dim(x_train)[3]
   
   model <- keras_model_sequential()
-  
+  browser()
   model %>%
     layer_lstm(units = tsteps, input_shape = c(tsteps, features), batch_size = batch_size,
-               return_sequences = FALSE, stateful = TRUE) %>%
+               return_sequences = FALSE, stateful = FALSE) %>%
     layer_dense(units = 1)
   model %>% compile(loss = 'mse', optimizer = 'rmsprop', metrics = c('accuracy'))
   
