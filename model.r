@@ -57,6 +57,7 @@ getModel <- function(modelName, id = NULL)
 # if id = NULL
 getTestResults <- function(modelName, id)
 {
+
   # validate model name
   if (!modelName %in% availableModels)
   {
@@ -81,7 +82,7 @@ getTestResults <- function(modelName, id)
     # compute test results
     model <- getModel(modelName, id)
     
-    if (mode(model) == 'list' || mode(model) == 'numeric')
+    if ((mode(model) == 'list' || mode(model) == 'numeric') && !is.na(model[[1]]))
     {
       testResults <- do.call(paste0('getTestResults.', modelName), list(model, id))
       if (mode(testResults) == 'numeric')

@@ -45,12 +45,18 @@ getModelErrorPlot <- function(errorMetricName, id)
   for (modelName in vars$enabledModels)
   {
     testResults <- getTestResults(modelName, id)
-    errors <- unlist(lapply(1:length(testResults$expected), function(i) {
-      FUN(testResults$expected[[i]], testResults$predicted[[i]])
-    }))
+    errors <- NULL
+    if(!is.na(testResults))
+    {
+      errors <- unlist(lapply(1:length(testResults$expected), function(i) {
+        FUN(testResults$expected[[i]], testResults$predicted[[i]])
+      }))
+      p <- p %>% add_boxplot(y = errors, line = list(color = modelColors[[modelName]]),
+                             name = modelName, boxmean = TRUE)
+      
+    }
     
-    p <- p %>% add_boxplot(y = errors, line = list(color = modelColors[[modelName]]),
-      name = modelName, boxmean = TRUE)
+    
   }
 
   p$elementId <- NULL

@@ -427,10 +427,8 @@ server <- function(input, output, session) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
-	  
-	  m <- getModel('nnfeei', input$idSelect)
-	  
-	  plot(m, rep = 'best')
+
+	  plot(getModel('nnfeei', input$idSelect), rep = 'best')
 	})
 	
 	output$nnfeheiPlot <- renderPlot({
@@ -475,37 +473,47 @@ server <- function(input, output, session) {
 	getExcludedInputTable <- function(modelName)
 	{
 	  s <- getModel(modelName, input$idSelect)
-	  #info <- NULL
+	  path <- s$path
+	  pathes <- names(s$inSampleError)
+	  l <- length(s$inSampleError)
+	  info <- rep(0, l)
 	  
-	 # for(i in 1 : length(s$inSampleError))
-	 # {
-	 #   if(is.null(s$path))
-	 #   {
-	 #     info <- c(2, rep(0, length(s$inSampleError) - 1))
-	 #     break
-	 #   }
-	 #   else
-	 #   {
-	 #     flag = FALSE
-	 #     for(node in s$path)
-	 #     {
-	 #       
-	 #     }
-	 #   }
-	 # }
+	  if(is.null(path))
+	  {
+	    info[1] <- 2
+	  }
+	  else
+	  {
+	    info[1] <- 1
+	    counter <- 1
+	    for(i in 2 : l)
+	    {
+	      subPath <- paste(path[1 : counter], collapse = ",")
+	      if(subPath %in% pathes[i])
+	      {
+	        if(counter == length(path))
+	        {
+	          info[i] <- 2
+	          break
+	        }
+	        else
+	        {
+	          info[i] <- 1
+	          counter <- counter + 1 
+	        }
+	      }
+	    }
+	  }
 	  
-
+	  dt <- data.table("Excluded Nodes" = names(s$inSampleError), "sMAPE" = s$outSampleError, "Sampling Error" = s$inSampleError, "info" = info)
 	  
-	  dt <- data.table("Excluded Nodes" = names(s$inSampleError), "sMAPE" = s$outSampleError, "Sampling Error" = s$inSampleError)
-	  
-	  
-	  #dt <- dt[rowSums(is.na(dt)) == 0,]
-	  #datatable(head(dt, 50),
-	  #          class = 'cell-border stripe',
-	  #          options = list(
-	  #            columnDefs = list(list(targets = 4, visible = FALSE)),
-	  #            pageLength = 50))%>%
-	  #  formatStyle("info",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1,2), c('white', 'yellow','#00ff00')), fontWeight = styleEqual(c(2), c('bold')))
+	  dt <- dt[rowSums(is.na(dt)) == 0,]
+	  datatable(head(dt, 50),
+	            class = 'cell-border stripe',
+	            options = list(
+	              columnDefs = list(list(targets = 4, visible = FALSE)),
+	              pageLength = 50))%>%
+	    formatStyle("info",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1,2), c('white', 'yellow','#00ff00')), fontWeight = styleEqual(c(2), c('bold')))
 	  
 	}
 	

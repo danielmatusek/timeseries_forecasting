@@ -270,12 +270,13 @@ getTestResults.nnfah <- function(id)
 # test excluded Input
 getTestResults.nnfeei <- function(model, id)
 {
-  testNeuralNetwork(model$model, id)
+
+  testNeuralNetwork(model, id)
 }
 
 getTestResults.nnfehei <- function(model, id)
 {
-  testNeuralNetwork(model$model, id)
+  testNeuralNetwork(model, id)
 }
 # test differntable Input
 getTestResults.nnfed <- function(model, id)
@@ -328,7 +329,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
     internalError[['empty']] <- NA
     externalError[['empty']] <- NA
     bestExclInput <- NULL
-    bestError <- double.xmax
+    bestError <- .Machine$double.xmax
   }
   else
   {
@@ -336,10 +337,10 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
     externalError[['empty']] <- sMAPE(testResults$expected, testResults$predicted)
     internalError[['empty']] <- bestModel$result.matrix[1]
     bestExclInput <- 'empty'
-    bestError <- if(neuralnetwork.greedyErrorType == "Insample"){internalError[['empty']]} else{externalError[['empty']]}
+    bestError <- if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[['empty']]} else {internalError[['empty']]}
   }
   
-  queue <- lapply(1:vars$options$windowSize, function(i) { i })
+  queue <- lapply(1 : vars$options$windowSize, function(i) { i })
   
   trainSet <- getTrainSet(id)
   
@@ -354,7 +355,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
       
       nn <- trainNeuralNetwork(trainSet, hiddenLayers, path)
       pathAsString <- paste(path, collapse = ",")
-      
+
       if (mode(nn) == 'logical')
       {
         internalError[[pathAsString]] <- NA
@@ -366,7 +367,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
         externalError[[pathAsString]] <- sMAPE(data.expecetedTestResults[[id]], testResults)
         internalError[[pathAsString]] <- bestModel$result.matrix[1]
         
-        if (if(neuralnetwork.greedyErrorType == "Insample"){internalError[[pathAsString]]} else{externalError[[pathAsString]]} < bestError)
+        if (if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[['empty']]} else {internalError[['empty']]} < bestError)
         {
           bestModel <- nn
           newBestInput <- path
