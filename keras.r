@@ -3,49 +3,68 @@ library(tensorflow)
 library(RSNNS)
 
 
-#--- global
-#batch_size <- vars$options$windowSize
-batch_size <- 32
-maxlen <- vars$options$windowSize
-validationset.ratio <- 0.1
-
-#--- model
-tsteps <- vars$options$windowSize
-lstm.layers <- c(vars$options$windowSize,2,1)
-
-#--- fit
-epochs <- 15
-
-#--- predict
-
-
-
 use_condaenv("tensorflow")
 k <- backend()
 
 trainLSTM <- function(id)
 {
-  trainset <- getTrainSet(id)
+  maxlen <- vars$options$windowSize
+  #batch_size <- vars$options$windowSize
+  batch_size <- 32
+  maxlen <- vars$options$windowSize
+  ratio <- 0.9
   
-  traininput <- trainset[,2:length(trainset)]
-  traintarget <- trainset[,1]
-  splitSet <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
+  #--- fit
+  epochs <- 15
   
-  x_train <- splitSet$inputsTrain
-  y_train <- splitSet$targetsTrain    
-  x_test <- splitSet$inputsTest
-  y_test <- splitSet$targetsTest
+  #--- model
+  tsteps <- vars$options$windowSize
+  lstm.layers <- c(vars$options$windowSize,2,1)
   
-  x_train <- pad_sequences(x_train, maxlen = maxlen)
-  x_test <- pad_sequences(x_test, maxlen = maxlen)
-
+  trainset <- as.matrix(getTrainSet(id))
+  
+  #traininput <- trainset[,2:length(trainset)]
+  #traintarget <- trainset[,1]
+  
+  # make sure ratio divides training and test into multipe of 32 rows
+  numRows <- NROW(trainset)
+  maxTrainIndex <- floor(ratio * numRows / batch_size) * batch_size
+  maxValidationIndex <- floor((numRows - maxTrainIndex) / batch_size) * batch_size
+  if (maxValidationIndex == 0)
+  {
+    maxValidationIndex <- batch_size
+    maxTrainIndex <- maxTrainIndex - batch_size
+  }
+  maxValidationIndex <- maxValidationIndex + maxTrainIndex
+  #splitSet <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=ratio)
+  #x_train <- splitSet$inputsTrain
+  #y_train <- splitSet$targetsTrain
+  #x_test <- splitSet$inputsTest
+  #y_test <- splitSet$targetsTest
+  train <- trainset[1:maxTrainIndex, ]
+  validation <- trainset[(maxTrainIndex+1):maxValidationIndex, ]
+  
+  #browser()
+  
+  y_train <- train[, 1]
+  y_test <- validation[, 1]
+  
+  train <- train[, -1]
+  validation <- validation[, -1]
+  
+  browser()
+  
+  x_train <- pad_sequences(train, maxlen = maxlen)
+  x_test <- pad_sequences(validation, maxlen = maxlen)
+#browser()
   x_train <- k$eval(k$expand_dims(x_train, axis = 2L))
   x_test <- k$eval(k$expand_dims(x_test, axis = 2L))
+  
+  
   
   features <- dim(x_train)[3]
   
   model <- keras_model_sequential()
-  browser()
   model %>%
     layer_lstm(units = tsteps, input_shape = c(tsteps, features), batch_size = batch_size,
                return_sequences = FALSE, stateful = FALSE) %>%
@@ -125,6 +144,7 @@ trainLSTM <- function(id)
 
 testLSTM <- function(id)
 {
+  browser()
   model <- trainLSTM(id)
   
   testSet <- getTestSet(id)
