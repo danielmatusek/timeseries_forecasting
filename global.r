@@ -6,7 +6,9 @@
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
-  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
+  #enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan', 'lstm'),
+  enabledModels = c('lstm'),
+  
   options = list(
     windowSize = 7,
     horizon = 7,
@@ -17,12 +19,13 @@ vars <<- list(
 )
 
 availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan',
-  'nnfeei', 'nnfehei', 'nnfed', 'nnfehd', 'nnfeeic', 'nnfeheic')
+  'nnfeei', 'nnfehei', 'nnfed', 'nnfehd', 'nnfeeic', 'nnfeheic', 'lstm')
 oneForAllModels <<- c('nnfa', 'nnfah', 'nnfeeic', 'nnfeheic')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
   'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)', 'nnfehei' = 'rgb(50,50,50)',
-  'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)' )
+  'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)',
+  'lstm' = 'rgb(123,123,123)' )
 
 
 data.names <- NULL

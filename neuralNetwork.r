@@ -361,7 +361,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
           excludedPathAsIndices[from - vars$options$windowSize  + (path[length(path)] - 1)] <- 2
         }
         
-        neuralNetwork.excludedInputNodes[[1]] <<- 'ø'
+        neuralNetwork.excludedInputNodes[[1]] <<- '-'
         stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors, info = excludedPathAsIndices, model = oldModel), class = 'TestExclusion')
 
         return(stats)
