@@ -429,7 +429,8 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfeei', input$idSelect)
-	  plot(m$model, rep = 'best')
+	  
+	  plot(m, rep = 'best')
 	})
 	
 	output$nnfeheiPlot <- renderPlot({
@@ -470,18 +471,41 @@ server <- function(input, output, session) {
 	
 	# Exclude Inputs Datatable
 	
+	
 	getExcludedInputTable <- function(modelName)
 	{
 	  s <- getModel(modelName, input$idSelect)
+	  #info <- NULL
 	  
-	  dt <- data.table("Excluded Nodes" = s$nodes, "sMAPE" = s$smape, "Sampling Error" = s$internalE, info = s$info)
-	  dt <- dt[rowSums(is.na(dt)) == 0,]
-	  datatable(head(dt, 50),
-	            class = 'cell-border stripe',
-	            options = list(
-	              columnDefs = list(list(targets = 4, visible = FALSE)),
-	              pageLength = 50))%>%
-	    formatStyle("info",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1,2), c('white', 'yellow','#00ff00')), fontWeight = styleEqual(c(2), c('bold')))
+	 # for(i in 1 : length(s$inSampleError))
+	 # {
+	 #   if(is.null(s$path))
+	 #   {
+	 #     info <- c(2, rep(0, length(s$inSampleError) - 1))
+	 #     break
+	 #   }
+	 #   else
+	 #   {
+	 #     flag = FALSE
+	 #     for(node in s$path)
+	 #     {
+	 #       
+	 #     }
+	 #   }
+	 # }
+	  
+
+	  
+	  dt <- data.table("Excluded Nodes" = names(s$inSampleError), "sMAPE" = s$outSampleError, "Sampling Error" = s$inSampleError)
+	  
+	  
+	  #dt <- dt[rowSums(is.na(dt)) == 0,]
+	  #datatable(head(dt, 50),
+	  #          class = 'cell-border stripe',
+	  #          options = list(
+	  #            columnDefs = list(list(targets = 4, visible = FALSE)),
+	  #            pageLength = 50))%>%
+	  #  formatStyle("info",target = 'row',color = "black", backgroundColor = styleEqual(c(0, 1,2), c('white', 'yellow','#00ff00')), fontWeight = styleEqual(c(2), c('bold')))
 	  
 	}
 	
@@ -489,7 +513,6 @@ server <- function(input, output, session) {
 	output$nnfeeiOptimizingTable <- DT::renderDataTable({
 	  windowsChanged()
 	  excludeBiasChanged()
-	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 	  
 	  getExcludedInputTable('nnfeei')
@@ -499,6 +522,7 @@ server <- function(input, output, session) {
 	output$nnfeheiOptimizingTable <- DT::renderDataTable({
 	  windowsChanged()
 	  excludeBiasChanged()
+	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 	  
 	  getExcludedInputTable('nnfehei')

@@ -187,15 +187,16 @@ createWindows <- function(id)
 
 createDifferentableWindow <- function(id)
 {
+  browser()
   dataSet <- vars$timeSeries[[id]]$y
-  win <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
-  names(win) <- paste0('xt', vars$options$windowSize : 0)
-  setcolorder(win, paste0('xt', 0 : vars$options$windowSize))
+  win <- as.data.table(rollapply(dataSet, width = vars$options$windowSize , FUN = identity, by = 1), by.column = TRUE)
+  names(win) <- paste0('xt', vars$options$windowSize : 1)
+  setcolorder(win, paste0('xt', 1 : vars$options$windowSize))
   
   winDt <- as.data.table(rollapply(diff(dataSet), width = vars$options$windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
   names(winDt) <- paste0('dt', (vars$options$windowSize - 1) : 1)
   setcolorder(winDt, paste0('dt', 1 : (vars$options$windowSize - 1)))
-  winDt <- winDt[-nrow(winDt),]
+  #winDt <- winDt[-nrow(winDt),] # ????
   
   win <- cbind(win, winDt)
   

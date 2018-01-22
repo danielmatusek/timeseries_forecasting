@@ -98,7 +98,6 @@ getTestResults <- function(modelName, id)
         }
         
         vars$predictions[[modelName]][[id]] <- NA
-        
         return (NA)
       }
     }
