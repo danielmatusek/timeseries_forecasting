@@ -215,6 +215,7 @@ getForecastComparisionPlot <- function(id)
 
   for(modelName in vars$enabledModels)
   {
+    
     testResults <- getTestResults(modelName, id)
     if (mode(testResults) != 'logical')
     {

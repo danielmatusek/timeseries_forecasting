@@ -409,16 +409,6 @@ server <- function(input, output, session) {
 	  plot(getModel('nnfed', input$idSelect), rep = 'best')
 	})
 	
-	output$nnfehdPlot <- renderPlot({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  hiddenLayersChanged()
-	  excludeInputErrorChanged()
-	  
-	  plot(getModel('nnfehd', input$idSelect), rep = 'best')
-	})
-	
-	
 	
 	
 	# Plot Exclude Inputs 
@@ -442,8 +432,6 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
 
 	  m <- getModel('nnfamei', NULL)
-	  browser()
-	  b = 1
 	  plot(m$inputNodePos, m$numOfExclusionPerNode, type = "l", col ="black", xlab = "Input node position", ylab = "Number")
 
 	})
@@ -498,7 +486,6 @@ server <- function(input, output, session) {
 	  
 	}
 	
-
 	output$nnfeeiOptimizingTable <- DT::renderDataTable({
 	  windowsChanged()
 	  excludeBiasChanged()

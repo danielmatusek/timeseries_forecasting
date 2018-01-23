@@ -87,6 +87,7 @@ getTestResults <- function(modelName, id)
       testResults <- do.call(paste0('getTestResults.', modelName), list(model, id))
       if (mode(testResults) == 'numeric')
       {
+        
         vars$predictions[[modelName]][[id]] <<- testResults
         return (structure(list(expected = data.expecetedTestResults[[id]], predicted = testResults), class = 'TestResults'))
       }

@@ -195,10 +195,6 @@ getModel.nnfed <- function(id)
   trainNeuralNetwork(getDiffTrainSet(id),FALSE, NULL, TRUE)
 }
 
-getModel.nnfehd <- function(id)
-{
-  trainNeuralNetwork(getDiffTrainSet(id), vars$options$hiddenLayers,NULL, TRUE)
-}
 
 # ---- Excluded Input Statistics
 getModel.nnfamei <- function()
@@ -267,10 +263,6 @@ getTestResults.nnfed <- function(model, id)
   testNeuralNetwork(model, id, TRUE)
 }
 
-getTestResults.nnfehd <- function(model, id)
-{
-  testNeuralNetwork(model, id, TRUE)
-}
 
 getTestResults.nnfamei <- function(model, id)
 {
@@ -305,7 +297,6 @@ getReducedNeuralNetworkWeights <- function(nn) {
 
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 {
-
   baseModelName <- if(hiddenLayers) { if(is.null(id)) { 'nnfah' } else { 'nnfeh' }} else { if(is.null(id)) { 'nnfa' } else { 'nnfe'}}
   internalError = list()
   externalError = list()
