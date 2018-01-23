@@ -251,7 +251,7 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- 0.0175*numData
 	    }
-	    sliderInput('windowSize', 'Window Size', 1, round(0.05*numData), values, step = 1)
+	    sliderInput('windowSize', 'Window Size', 1, 10, values, step = 1)
 	  }
 	})
 	
@@ -268,7 +268,7 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- windowSize
 	    }
-	    sliderInput('horizon', 'Predict Values', 1, 2*windowSize, values, step = 1)
+	    sliderInput('horizon', 'Predict Values', 1, 20 , values, step = 1)
 	  }
 	})
 	
