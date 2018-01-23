@@ -13,6 +13,7 @@ source('jordan.r')
 source('mlp.r')
 source('comparision.r')
 source('plot.rsnns.r')
+source('keras.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
