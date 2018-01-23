@@ -338,7 +338,8 @@ server <- function(input, output, session) {
 	    {
 	      tabPanel(nnName,
 	               plotOutput(paste0(nnName, 'Plot'), height = '600px'),
-	               dataTableOutput(paste0(nnName, 'OptimizingTable'))
+	               dataTableOutput(paste0(nnName, 'OptimizingTable')),
+	               dataTableOutput(paste0(nnName, 'OptimizingTable2'))
 	      )
 	    }
 	    else
@@ -430,10 +431,10 @@ server <- function(input, output, session) {
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
-
+      
 	  m <- getModel('nnfamei', NULL)
-	  plot(m$inputNodePos, m$numOfExclusionPerNode, type = "l", col ="black", xlab = "Input node position", ylab = "Number")
-
+	  
+	  barplot(m$numOfExclusionPerNode, xlab = "Input node position", ylab = "Number", col = c("darkblue"), horz= TRUE)
 	})
 	
 
@@ -503,7 +504,16 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
 	  
 	  m <- getModel('nnfamei')
-	  data.table('ID' = c(m$ids), 'Excluded input nodes' = c(m$excludedInputs))
+	  data.table('Input Node' = c(m$inputNodePos), 'Number of exclusion' = c(m$numOfExclusionPerNode))
+	})
+	
+	output$nnfameiOptimizingTable2 <- DT::renderDataTable({
+	  windowsChanged()
+	  excludeBiasChanged()
+	  excludeInputErrorChanged()
+	  
+	  m <- getModel('nnfamei')
+	  data.table( 'Path' = c(m$excludedInputs), 'Ids' = c(m$ids))
 	})
 	
 

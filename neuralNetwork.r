@@ -378,11 +378,16 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
     }
   }
   
-  bestModel$path <- excludedPath
+  
   if (mode(bestModel) != 'logical')
   {
     bestModel$inSampleError <- internalError
     bestModel$outSampleError <- externalError
+    bestModel$path <- excludedPath
+  }
+  else
+  {
+    bestModel <- NA
   }
   
   return(bestModel)
@@ -420,11 +425,8 @@ getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
   dt <- dt[, .(number = length(list(id))), by = excludedInputs]
   
   exludeVector <- c(0)
-  which(numOfExclusionPerNode > 0)
+  
 
-  tail(sort(numOfExclusionPerNode), round(length(numOfExclusionPerNode)))
-  
-  
   model <- trainNeuralNetwork(getTrainSet(id), hiddenLayers = FALSE, excludeVector = exludeVector)
   
   model$inputNodePos <- (1 : vars$options$windowSize)

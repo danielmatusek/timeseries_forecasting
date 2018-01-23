@@ -82,7 +82,7 @@ getTestResults <- function(modelName, id)
     # compute test results
     model <- getModel(modelName, id)
     
-    if ((mode(model) == 'list' || mode(model) == 'numeric') && !is.na(model[[1]]))
+    if ((mode(model) == 'list' || mode(model) == 'numeric'))
     {
       testResults <- do.call(paste0('getTestResults.', modelName), list(model, id))
       if (mode(testResults) == 'numeric')
