@@ -557,9 +557,11 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     #get neural network and error without hidden layer
     neuralNetwork.hlOptimization <<- c(0)
     neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-    neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
+    neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]   
+    
+    expected_values <- data.expecetedTestResults[[id]]
 
-    last_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
+    last_error <- sMAPE(expected_values, neuralNetwork.testResults.hlOptimizationNN[[id]])
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
     
     #add first layer incrementally
@@ -570,14 +572,14 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
+      current_error <- sMAPE(expected_values, neuralNetwork.testResults.hlOptimizationNN[[id]])
       neuralNetwork.hlOptimizationErrorVector[i+1] <<- current_error
 
       #break from optimization when error rises again
       if(last_error < current_error)
       {
         neuralNetwork.hlOptimization <<- c(i-1)
-        #return(neuralNetwork.hlOptimization)
+        return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
       last_error <- current_error
@@ -594,7 +596,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted, neuralNetwork.testResults.hlOptimizationNN[[id]]$expected)
+      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]], expected_values)
       neuralNetwork.hlOptimizationErrorVector[m+j+1] <<- current_error
 
       #break from optimization when error rises again
@@ -602,7 +604,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
       {
         neuralNetwork.hlOptimization <<- c(m, j)
         vars$options$hiddenLayers <<- c(m, j)
-        #return(neuralNetwork.hlOptimization)
+        return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
       last_error <- current_error
@@ -616,12 +618,19 @@ getHlOptimizationErrorTable <- function(id)
 {
   #print(neuralNetwork.hlOptimizationErrorVector)
   #return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
-
+  browser()
   row <- (length(neuralNetwork.hlOptimizationErrorVector))
 
   eM <- matrix(nrow = row, ncol = 3) # plus 1 for the original NN
   n_firstlayer <- neuralNetwork.hlOptimization[1]
-  n_seclayer <- neuralNetwork.hlOptimization[2]
+  if(!is.na( neuralNetwork.hlOptimization[2]))
+  {
+    n_seclayer <- neuralNetwork.hlOptimization[2]
+  }
+  else
+  {
+    n_seclayer <- 0
+  }
 
 
   for(i in 1 : row)
@@ -638,12 +647,15 @@ getHlOptimizationErrorTable <- function(id)
     eM[k+1,2] <- 0
   }
 
-  second_index <- n_seclayer
-  for(l in 1 : second_index)
+  if(n_seclayer>0)
   {
-    offset <- first_index + l
-    eM[offset, 1] <- n_firstlayer
-    eM[offset, 2] <- l
+    second_index <- n_seclayer
+    for(l in 1 : second_index)
+    {
+      offset <- first_index + l
+      eM[offset, 1] <- n_firstlayer
+      eM[offset, 2] <- l
+    }
   }
   
   return(data.table("first layer" = eM[,1], "second layer" = eM[,2], "SMAPE" = eM[,3]))
