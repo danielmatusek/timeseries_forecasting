@@ -329,8 +329,8 @@ server <- function(input, output, session) {
 	output$neuralNetwork_tabs <- renderUI({
 	  enabledModelsChanged()
 	  
-	  supportedNeuralNetworks <- c('nnfe', 'nnfeh', 'nnfa', 'nnfah', 'nnfeei','nnfehei','nnfed','nnfehd', 'nnfeeic', 'nnfeheic')
-	  optimizedNeuralNetworks <- c('nnfeei','nnfehei', 'nnfeeic', 'nnfeheic')
+	  supportedNeuralNetworks <- c('nnfe', 'nnfeh', 'nnfa', 'nnfah', 'nnfeei','nnfehei','nnfed','nnfehd','nnfamei')
+	  optimizedNeuralNetworks <- c('nnfeei','nnfehei', 'nnfamei')
 	  enabledNeuralNetworks <- intersect(vars$enabledModels, supportedNeuralNetworks)
 	  
 	  tabs <- lapply(enabledNeuralNetworks, function(nnName) {
@@ -435,28 +435,20 @@ server <- function(input, output, session) {
 	
 	# Plot Exluded Input Stats
 	
-	output$nnfeeicPlot <- renderPlot({
+	output$nnfameiPlot <- renderPlot({
 	  windowsChanged()
 	  excludeBiasChanged()
 	  hiddenLayersChanged()
 	  excludeInputErrorChanged()
 
-	  m <- getModel('nnfeeic', NULL)
-	  
-	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="black", xlab = "Excluded Node", ylab = "Number")
+	  m <- getModel('nnfamei', NULL)
+	  browser()
+	  b = 1
+	  plot(m$inputNodePos, m$numOfExclusionPerNode, type = "l", col ="black", xlab = "Input node position", ylab = "Number")
 
 	})
 	
-	output$nnfeheicPlot <- renderPlot({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  hiddenLayersChanged()
-	  excludeInputErrorChanged()
-	  
-	  m <- getModel('nnfeheic', NULL)
-	  
-	  plot(m$pExcluded, m$excludedPathCounter, type = "l", col ="black", xlab = "Excluded Node", ylab = "Number")
-	})
+
 	
 	# Exclude Inputs Datatable
 	
@@ -518,23 +510,13 @@ server <- function(input, output, session) {
 
 	
 	# Data table for excluded Input stats
-	output$nnfeeicOptimizingTable <- DT::renderDataTable({
+	output$nnfameiOptimizingTable <- DT::renderDataTable({
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
 	  
-	  m <- getModel('nnfeeic')
-	  
-	  data.table('id' = c(m$ids, m$pathsCombinedE), 'path' = c(m$paths, m$pathsCombinedN))
-	})
-	
-	output$nnfeheicOptimizingTable <- DT::renderDataTable({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  excludeInputErrorChanged()
-	  
-	  m <- getModel('nnfeheic')
-	  data.table('id' = c(m$ids, m$pathsCombinedE), 'path' = c(m$paths, m$pathsCombinedN))
+	  m <- getModel('nnfamei')
+	  data.table('ID' = c(m$ids), 'Excluded input nodes' = c(m$excludedInputs))
 	})
 	
 

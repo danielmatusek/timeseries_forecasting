@@ -12,7 +12,6 @@ resetNeuralNetworks.hidden <- function()
 {
   resetModels('nnfeh')
   resetModels('nnfah')
-  resetModels('nnfehei')
   resetModels('nnfehd')
 }
 
@@ -25,8 +24,7 @@ resetNeuralNetworks <- function()
   resetModels('nnfa')
   resetModels('nnfeei')
   resetModels('nnfed')
-  resetModels('nnfeeic')
-  resetModels('nnfeheic')
+  resetModels('nnfamei')
 }
 
 
@@ -191,9 +189,6 @@ getModel.nnfeei <- function(id)
 }
 
 
-
-
-
 # -----Differentiable Input Models
 getModel.nnfed <- function(id)
 {
@@ -206,15 +201,11 @@ getModel.nnfehd <- function(id)
 }
 
 # ---- Excluded Input Statistics
-getModel.nnfeeic <- function()
+getModel.nnfamei <- function()
 {
   getStatisticOfExcludedInputs()
 }
 
-getModel.nnfeheic <- function()
-{
-  getStatisticOfExcludedInputs(vars$options$hiddenLayers)
-}
 
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
@@ -270,10 +261,6 @@ getTestResults.nnfeei <- function(model, id)
   testNeuralNetwork(model, id)
 }
 
-getTestResults.nnfehei <- function(model, id)
-{
-  testNeuralNetwork(model, id)
-}
 # test differntable Input
 getTestResults.nnfed <- function(model, id)
 {
@@ -285,6 +272,10 @@ getTestResults.nnfehd <- function(model, id)
   testNeuralNetwork(model, id, TRUE)
 }
 
+getTestResults.nnfamei <- function(model, id)
+{
+  testNeuralNetwork(model, id)
+}
 
 
 getReducedNeuralNetworkWeights <- function(nn) {
@@ -410,33 +401,48 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 
 getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
 {
-  
-  excludedPathCombination <- list()
   ids <- names(vars$timeSeries)
-  excludedPathCounter <- c(rep(0,vars$options$windowSize))
+  numOfExclusionPerNode <- c(rep(0,vars$options$windowSize))
 
   for(id in ids)
   {
-    stats <- if(!hiddenLayers){getModel('nnfeei',id)}else{getModel('nnfehei',id)}
-    resultIndex <- which(stats$info == 2)
-    excludedPathCombination[[id]] <- stats$nodes[resultIndex]
-    for(pathID in  excludedPathCombination[[id]]) excludedPathCounter[pathID] <- excludedPathCounter[pathID] + 1
-    print(paste("ID: ", id, " path: ",excludedPathCombination[[id]], sep=""))
+    model <- if(!hiddenLayers){getModel('nnfeei',id)}else{getModel('nnfehei',id)}
+    if(mode(model) != 'logic')
+    {
+      weights <- model$weights[[1]][[1]][2 : length(model$weights[[1]][[1]][,1]),1]
+      for(i in which(is.na(weights))) 
+      {
+        numOfExclusionPerNode[i] <- numOfExclusionPerNode[i] + 1
+      }
+    }
   }
-
-    ids <- names(vars$timeSeries)
-    excludedVectors <- unlist(lapply(ids, function(id) {
-
-    model <- if(!hiddenLayers)  { getModel('nnfeei', id)} else { getModel('nnfehei', id)}
-    resultIndex <- which(model$info == 2)
-    paths <-  sort(model$nodes[[resultIndex]], decreasing = FALSE)
-    paste(paths, collapse=",")
+  
+  excludedInputs <- unlist(lapply(ids, function(id) {
+  model <- getModel('nnfeei', id)
+  paths <- NULL
+  if(!is.null(model$path)) paths <-  sort(model$path, decreasing = FALSE)
+  
+  paste(paths, collapse=",")
   }))
   
-  dt <- data.table(excludedInputs = excludedVectors, id = ids)
+  dt <- data.table(excludedInputs = excludedInputs, id = ids)
   dt <- dt[, .(number = length(list(id))), by = excludedInputs]
   
-  return(structure(list(ids = ids, paths = excludedPathCombination, pExcluded = (1 : vars$options$windowSize), excludedPathCounter = excludedPathCounter, pathsCombinedE = dt$excludedInputs, pathsCombinedN = dt$number),class = 'EIStatistic'))
+  exludeVector <- c(0)
+  which(numOfExclusionPerNode > 0)
+
+  tail(sort(numOfExclusionPerNode), round(length(numOfExclusionPerNode)))
+  
+  
+  model <- trainNeuralNetwork(getTrainSet(id), hiddenLayers = FALSE, excludeVector = exludeVector)
+  
+  model$inputNodePos <- (1 : vars$options$windowSize)
+  model$numOfExclusionPerNode <- numOfExclusionPerNode
+  
+  model$ids <- ids
+  model$excludedInputs = dt$excludedInputs
+  
+  return(model)
 }
 
 
