@@ -212,7 +212,7 @@ getForecastComparisionPlot <- function(id)
   
   # Plot the data
   p <- plot_ly(original, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)'))
-  
+
   for(modelName in vars$enabledModels)
   {
     testResults <- getTestResults(modelName, id)

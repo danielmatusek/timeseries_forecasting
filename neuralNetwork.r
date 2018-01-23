@@ -190,10 +190,7 @@ getModel.nnfeei <- function(id)
   getExcludedInputNeuralNetwork(id, FALSE)
 }
 
-getModel.nnfehei <- function(id)
-{
-  getExcludedInputNeuralNetwork(id, vars$options$hiddenLayers)
-}
+
 
 
 
@@ -242,8 +239,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 
 testNeuralNetwork <- function(neuralNetwork, testSetID, isDiffInput = FALSE)
 {
-  testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)}
-
+  testData <- if(isDiffInput){getDiffTestSet(testSetID)[,-1]}else{getTestSet(testSetID)}
   compute(neuralNetwork, testData)$net.result[,1]
 }
 
@@ -318,6 +314,7 @@ getReducedNeuralNetworkWeights <- function(nn) {
 
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 {
+
   baseModelName <- if(hiddenLayers) { if(is.null(id)) { 'nnfah' } else { 'nnfeh' }} else { if(is.null(id)) { 'nnfa' } else { 'nnfe'}}
   internalError = list()
   externalError = list()
@@ -334,7 +331,8 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
   else
   {
     testResults <- getTestResults(baseModelName, id)
-    externalError[['empty']] <- sMAPE(testResults$expected, testResults$predicted)
+    smape <- sMAPE(testResults$expected, testResults$predicted)
+    externalError[['empty']] <- if(!is.nan(smape)){ smape }else{ 0 }
     internalError[['empty']] <- bestModel$result.matrix[1]
     bestExclInput <- 'empty'
     bestError <- if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[['empty']]} else {internalError[['empty']]}
@@ -364,10 +362,12 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
       else
       {
         testResults <- testNeuralNetwork(nn, id)
-        externalError[[pathAsString]] <- sMAPE(data.expecetedTestResults[[id]], testResults)
-        internalError[[pathAsString]] <- bestModel$result.matrix[1]
+        smape <- sMAPE(data.expecetedTestResults[[id]], testResults)
+        externalError[[pathAsString]] <-  if(!is.nan(smape)){ smape }else{ 0 }
+        internalError[[pathAsString]] <- nn$result.matrix[1]
         
-        if (if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[['empty']]} else {internalError[['empty']]} < bestError)
+        error <- if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[[pathAsString]]} else {internalError[[pathAsString]]}
+        if (error < bestError)
         {
           bestModel <- nn
           newBestInput <- path

@@ -92,7 +92,7 @@ getTestResults <- function(modelName, id)
       }
       else
       {
-        # make sure that vars$predictions[[modelName]] is a list otherwise it will be NA
+        # make sure that vars$predictions[[modelName]] is a list otherwise it will testbe NA
         if (is.null(vars$predictions[[modelName]]))
         {
           vars$predictions[[modelName]] <<- list()

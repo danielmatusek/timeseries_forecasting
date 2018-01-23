@@ -405,7 +405,7 @@ server <- function(input, output, session) {
 	  windowsChanged()
 	  excludeBiasChanged()
 	  excludeInputErrorChanged()
-	
+	  
 	  plot(getModel('nnfed', input$idSelect), rep = 'best')
 	})
 	
@@ -431,15 +431,6 @@ server <- function(input, output, session) {
 	  plot(getModel('nnfeei', input$idSelect), rep = 'best')
 	})
 	
-	output$nnfeheiPlot <- renderPlot({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  hiddenLayersChanged()
-	  excludeInputErrorChanged()
-	  
-	  m <- getModel('nnfehei', input$idSelect)
-	  plot(m$model, rep = 'best')
-	})
 	
 	
 	# Plot Exluded Input Stats
@@ -506,8 +497,6 @@ server <- function(input, output, session) {
 	  }
 	  
 	  dt <- data.table("Excluded Nodes" = names(s$inSampleError), "sMAPE" = s$outSampleError, "Sampling Error" = s$inSampleError, "info" = info)
-	  
-	  dt <- dt[rowSums(is.na(dt)) == 0,]
 	  datatable(head(dt, 50),
 	            class = 'cell-border stripe',
 	            options = list(
@@ -527,14 +516,6 @@ server <- function(input, output, session) {
 	})
 	
 
-	output$nnfeheiOptimizingTable <- DT::renderDataTable({
-	  windowsChanged()
-	  excludeBiasChanged()
-	  hiddenLayersChanged()
-	  excludeInputErrorChanged()
-	  
-	  getExcludedInputTable('nnfehei')
-	})
 	
 	# Data table for excluded Input stats
 	output$nnfeeicOptimizingTable <- DT::renderDataTable({
