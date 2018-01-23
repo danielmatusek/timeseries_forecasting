@@ -6,8 +6,7 @@
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
-  #enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan', 'lstm'),
-  enabledModels = c('lstm'),
+  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
   
   options = list(
     windowSize = 7,

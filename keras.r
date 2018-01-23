@@ -6,16 +6,17 @@ library(RSNNS)
 use_condaenv("tensorflow")
 k <- backend()
 
+batch_size <<- 5
+
 trainLSTM <- function(id)
 {
   maxlen <- vars$options$windowSize
-  #batch_size <- vars$options$windowSize
-  batch_size <- 32
+  #batch_size <- vars$options$windowSize32
   maxlen <- vars$options$windowSize
   ratio <- 0.9
   
   #--- fit
-  epochs <- 15
+  epochs <- 5
   
   #--- model
   tsteps <- vars$options$windowSize
@@ -52,7 +53,6 @@ trainLSTM <- function(id)
   train <- train[, -1]
   validation <- validation[, -1]
   
-  browser()
   
   x_train <- pad_sequences(train, maxlen = maxlen)
   x_test <- pad_sequences(validation, maxlen = maxlen)
@@ -144,7 +144,6 @@ trainLSTM <- function(id)
 
 testLSTM <- function(id)
 {
-  browser()
   model <- trainLSTM(id)
   
   testSet <- getTestSet(id)
@@ -152,8 +151,6 @@ testLSTM <- function(id)
   #test <- testSet[,1:vars$options$windowSize]
   test <- k$eval(k$expand_dims(x_test, axis = 2L))
   predict(model, test, batch_size)[,1]
-  
-  
   
   #todo: predict    
 }
