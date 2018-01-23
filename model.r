@@ -57,6 +57,7 @@ getModel <- function(modelName, id = NULL)
 # if id = NULL
 getTestResults <- function(modelName, id)
 {
+
   # validate model name
   if (!modelName %in% availableModels)
   {
@@ -86,19 +87,19 @@ getTestResults <- function(modelName, id)
       testResults <- do.call(paste0('getTestResults.', modelName), list(model, id))
       if (mode(testResults) == 'numeric')
       {
+        
         vars$predictions[[modelName]][[id]] <<- testResults
         return (structure(list(expected = data.expecetedTestResults[[id]], predicted = testResults), class = 'TestResults'))
       }
       else
       {
-        # make sure that vars$predictions[[modelName]] is a list otherwise it will be NA
+        # make sure that vars$predictions[[modelName]] is a list otherwise it will testbe NA
         if (is.null(vars$predictions[[modelName]]))
         {
           vars$predictions[[modelName]] <<- list()
         }
         
         vars$predictions[[modelName]][[id]] <- NA
-        
         return (NA)
       }
     }

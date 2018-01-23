@@ -18,13 +18,12 @@ vars <<- list(
 )
 
 availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan',
-  'nnfeei', 'nnfehei', 'nnfed', 'nnfehd', 'nnfeeic', 'nnfeheic', 'lstm')
-oneForAllModels <<- c('nnfa', 'nnfah', 'nnfeeic', 'nnfeheic')
+  'nnfeei', 'nnfed', 'nnfamei', 'lstm')
+oneForAllModels <<- c('nnfa', 'nnfah', 'nnfamei')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
-  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)', 'nnfehei' = 'rgb(50,50,50)',
-  'nnfed' = 'rgb(70,70,70)', 'nnfehd' = 'rgb(100,100,100)', 'nnfeeic' = 'rgb(100,200,50)', 'nnfeheic' = 'rgb(50,200,50)',
-  'lstm' = 'rgb(123,123,123)' )
+  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)',
+  'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)' )
 
 
 data.names <- NULL
@@ -197,7 +196,7 @@ createDifferentableWindow <- function(id)
   winDt <- as.data.table(rollapply(diff(dataSet), width = vars$options$windowSize - 1, FUN = identity, by = 1), by.column = TRUE)
   names(winDt) <- paste0('dt', (vars$options$windowSize - 1) : 1)
   setcolorder(winDt, paste0('dt', 1 : (vars$options$windowSize - 1)))
-  winDt <- winDt[-nrow(winDt),]
+  winDt <- winDt[-nrow(winDt),] 
   
   win <- cbind(win, winDt)
   
