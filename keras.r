@@ -67,7 +67,8 @@ trainLSTM <- function(id)
   model <- keras_model_sequential()
   model %>%
     layer_lstm(units = tsteps, input_shape = c(tsteps, features), batch_size = batch_size,
-               return_sequences = FALSE, stateful = FALSE) %>%
+               return_sequences = TRUE, stateful = FALSE) %>%
+    layer_lstm(units=tsteps, return_sequences = FALSE) %>%
     layer_dense(units = 1)
   model %>% compile(loss = 'mse', optimizer = 'rmsprop', metrics = c('accuracy'))
   
@@ -163,9 +164,19 @@ getModel.lstm <- function(id)
 
 getTestResults.lstm <- function(model,id)
 {
-  testSet <- getTestSet(id)
-  x_test <- testSet[,2:length(testSet)]
+  testSet <- as.matrix(getTestSet(id))
+  testtestset <- getTestSet(id)
+  
+ # y_train <- train[, 1]
+ # y_test <- validation[, 1]
+  
+ # train <- train[, -1]
+ # validation <- validation[, -1]
+  
+  #-------------------------------
+  #testSet <- getTestSet(id)
+  #x_test <- testSet[,2:length(testSet)]
   #test <- testSet[,1:vars$options$windowSize]
-  test <- k$eval(k$expand_dims(x_test, axis = 2L))
+  test <- k$eval(k$expand_dims(testSet, axis = 2L))
   predict(model, test, batch_size)[,1]
 }
