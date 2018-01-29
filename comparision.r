@@ -46,7 +46,7 @@ getModelErrorPlot <- function(errorMetricName, id)
   {
     testResults <- getTestResults(modelName, id)
     errors <- NULL
-    if(!is.na(testResults))
+    if(inherits(testResults, 'TestResults'))
     {
       errors <- unlist(lapply(1:length(testResults$expected), function(i) {
         FUN(testResults$expected[[i]], testResults$predicted[[i]])
@@ -215,7 +215,6 @@ getForecastComparisionPlot <- function(id)
 
   for(modelName in vars$enabledModels)
   {
-    
     testResults <- getTestResults(modelName, id)
     if (mode(testResults) != 'logical')
     {

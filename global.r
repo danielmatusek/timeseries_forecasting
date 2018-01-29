@@ -23,7 +23,7 @@ oneForAllModels <<- c('nnfa', 'nnfah', 'nnfamei')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
   'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)',
-  'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)' )
+  'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)')
 
 
 data.names <- NULL

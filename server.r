@@ -199,6 +199,7 @@ server <- function(input, output, session) {
 	    
 	    resetNeuralNetworks.hidden()
 	    resetNeuralNetworks.InputExclusion()
+	    resetModels('mlp', 'lstm')
 	  }
 	})
 	

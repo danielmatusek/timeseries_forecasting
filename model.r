@@ -17,11 +17,6 @@ getModel <- function(modelName, id = NULL)
       print(paste('train', modelName))
       times <- system.time(model <- do.call(paste0('getModel.', modelName), list()))
       
-      if (is.null(vars$models))
-      {
-        vars$models <<- list()
-        vars$cpuTimes <<- list()
-      }
       vars$models[[modelName]] <<- model
       vars$cpuTimes[[modelName]] <<- times[['elapsed']]
     }
@@ -35,11 +30,6 @@ getModel <- function(modelName, id = NULL)
       print(paste('train', modelName, 'for id', id))
       times <- system.time(model <- do.call(paste0('getModel.', modelName), list(id)))
       
-      if (is.null(vars$models[[modelName]]))
-      {
-        vars$models[[modelName]] <<- list()
-        vars$cpuTimes[[modelName]] <<- list()
-      }
       vars$models[[modelName]][[id]] <<- model
       vars$cpuTimes[[modelName]][[id]] <<- times[['elapsed']]
     }
@@ -57,7 +47,6 @@ getModel <- function(modelName, id = NULL)
 # if id = NULL
 getTestResults <- function(modelName, id)
 {
-
   # validate model name
   if (!modelName %in% availableModels)
   {
@@ -94,25 +83,14 @@ getTestResults <- function(modelName, id)
       }
       else
       {
-        # make sure that vars$predictions[[modelName]] is a list otherwise it will testbe NA
-        if (is.null(vars$predictions[[modelName]]))
-        {
-          vars$predictions[[modelName]] <<- list()
-        }
-        
         vars$predictions[[modelName]][[id]] <- NA
         return (NA)
       }
     }
     else
     {
-      # make sure that vars$predictions[[modelName]] is a list otherwise it will be NA
-      if (is.null(vars$predictions[[modelName]]))
-      {
-        vars$predictions[[modelName]] <<- list()
-      }
-      
       vars$predictions[[modelName]][[id]] <<- NA
+      return (NA)
     }
   }
   else
@@ -190,8 +168,17 @@ resetModels <- function(...)
 {
   for (modelName in c(...))
   {
-    vars$models[[modelName]] <<- NULL
-    vars$predictions[[modelName]] <<- NULL
-    vars$cpuTimes[[modelName]] <<- NULL
+    if (modelName %in% oneForAllModels)
+    {
+      vars$models[[modelName]] <<- NULL
+      vars$cpuTimes[[modelName]] <<- NULL
+    }
+    else
+    {
+      vars$models[[modelName]] <<- list()
+      vars$cpuTimes[[modelName]] <<- list()
+    }
+    
+    vars$predictions[[modelName]] <<- list()
   }
 }
