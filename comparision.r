@@ -211,14 +211,15 @@ getForecastComparisionPlot <- function(id)
   original <- data.table(x = vars$timeSeries[[id]]$x[startRealData:data.length], y = vars$timeSeries[[id]]$y[startRealData:data.length])
   
   # Plot the data
-  p <- plot_ly(original, x = ~x, y = ~y, type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)'))
+  p <- plot_ly(original, x = ~x, y = ~y, text = "original", type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)'))
 
   for(modelName in vars$enabledModels)
   {
     testResults <- getTestResults(modelName, id)
     if (mode(testResults) != 'logical')
     {
-      p <- p %>% add_trace(y = testResults$predicted, name = modelName,
+      index <- which(vars$enabledModels == modelName)
+      p <- p %>% add_trace(y = testResults$predicted, text = modelText[index], name = modelName,
         line = list(color = modelColors[[modelName]]))
     }
   }
