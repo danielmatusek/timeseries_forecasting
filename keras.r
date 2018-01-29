@@ -16,13 +16,13 @@ trainLSTM <- function(id)
   ratio <- 0.9
   
   #--- fit
-  epochs <- 5
+  epochs <- 20
   
   #--- model
   tsteps <- vars$options$windowSize
   lstm.layers <- c(vars$options$windowSize,2,1)
-  
-  trainset <- as.matrix(getTrainSet(id))
+  #browser()
+  trainset <- as.matrix(getNormalizedTrainSet(id))
   
   #traininput <- trainset[,2:length(trainset)]
   #traintarget <- trainset[,1]
@@ -42,7 +42,9 @@ trainLSTM <- function(id)
   #y_train <- splitSet$targetsTrain
   #x_test <- splitSet$inputsTest
   #y_test <- splitSet$targetsTest
+  
   train <- trainset[1:maxTrainIndex, ]
+  
   validation <- trainset[(maxTrainIndex+1):maxValidationIndex, ]
   
   #browser()
@@ -67,8 +69,8 @@ trainLSTM <- function(id)
   model <- keras_model_sequential()
   model %>%
     layer_lstm(units = tsteps, input_shape = c(tsteps, features), batch_size = batch_size,
-               return_sequences = TRUE, stateful = FALSE) %>%
-    layer_lstm(units=tsteps, return_sequences = FALSE) %>%
+               return_sequences = FALSE, stateful = FALSE, dropout = 0.2) %>%
+   # layer_lstm(units=tsteps, return_sequences = FALSE, stateful = FALSE) %>%
     layer_dense(units = 1)
   model %>% compile(loss = 'mse', optimizer = 'rmsprop', metrics = c('accuracy'))
   
@@ -164,8 +166,8 @@ getModel.lstm <- function(id)
 
 getTestResults.lstm <- function(model,id)
 {
-  testSet <- as.matrix(getTestSet(id))
-  testtestset <- getTestSet(id)
+  testSet <- as.matrix(getNormalizedTestSet(id))
+  #testtestset <- getTestSet(id)
   
  # y_train <- train[, 1]
  # y_test <- validation[, 1]
@@ -178,5 +180,8 @@ getTestResults.lstm <- function(model,id)
   #x_test <- testSet[,2:length(testSet)]
   #test <- testSet[,1:vars$options$windowSize]
   test <- k$eval(k$expand_dims(testSet, axis = 2L))
-  predict(model, test, batch_size)[,1]
+  #browser()
+  predicted <- predict(model, test, batch_size)[,1]
+  predicted <- denormalizeData(predicted, normalizationParam)
+  predicted[,1]
 }
