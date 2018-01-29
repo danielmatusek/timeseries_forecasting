@@ -6,7 +6,7 @@ library(RSNNS)
 use_condaenv("tensorflow")
 k <- backend()
 
-batch_size <<- 5
+batch_size <<- 3
 
 trainLSTM <- function(id)
 {
@@ -16,7 +16,7 @@ trainLSTM <- function(id)
   ratio <- 0.9
   
   #--- fit
-  epochs <- 20
+  epochs <- 100
   
   #--- model
   tsteps <- vars$options$windowSize
@@ -69,9 +69,9 @@ trainLSTM <- function(id)
   model <- keras_model_sequential()
   model %>%
     layer_lstm(units = tsteps, input_shape = c(tsteps, features), batch_size = batch_size,
-               return_sequences = FALSE, stateful = FALSE, dropout = 0.2) %>%
+               return_sequences = FALSE, stateful = TRUE, dropout = 0.1, unit_forget_bias = FALSE) %>%
    # layer_lstm(units=tsteps, return_sequences = FALSE, stateful = FALSE) %>%
-    layer_dense(units = 1)
+    layer_dense(units = 1, activation = 'linear')
   model %>% compile(loss = 'mse', optimizer = 'rmsprop', metrics = c('accuracy'))
   
 #  for (i in 1:10) {
