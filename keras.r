@@ -114,7 +114,6 @@ trainLSTM <- function(id)
 
 getTestResults.lstm <- function(model, id)
 {
-  browser()
   data <- data.matrix(vars$timeSeries[[id]][, -1])
   data <- scale(data, center = model$mean, scale = model$std)
   test_gen <- generator(data,
