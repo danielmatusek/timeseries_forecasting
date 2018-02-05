@@ -287,28 +287,28 @@ server <- function(input, output, session) {
 	      values <- 3
 	    }
 	    maxHiddenSlider <- input$windowSize * 5
-	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
+	    sliderInput('hiddenNeuronsInFirstLayer', "Hidden Nodes in first layer", 1, maxHiddenSlider, values, step = 1)
 	  }
 	})
 
 	output$extendedHiddenLayer2 <- renderUI ({
 		numHiddenLayer <- input$selectNumHiddenLayers
 		if(numHiddenLayer == 2 | numHiddenLayer == 3 | numHiddenLayer == 4){
-			sliderInput('hiddenLayer2', "Hidden Nodes in second Layer", 1, 50, 1, step=1)
+			sliderInput('hiddenLayer2', "Hidden Nodes in second layer", 1, 50, 1, step=1)
 		}
 	})
 
 	output$extendedHiddenLayer3 <- renderUI ({
 		numHiddenLayer <- input$selectNumHiddenLayers
 		if(numHiddenLayer == 3 | numHiddenLayer == 4){
-			sliderInput('hiddenLayer3', "Hidden Nodes in third Layer", 1, 50, 1, step=1)
+			sliderInput('hiddenLayer3', "Hidden Nodes in third layer", 1, 50, 1, step=1)
 		}
 	})
 
 	output$extendedHiddenLayer4 <- renderUI ({
 		numHiddenLayer <- input$selectNumHiddenLayers
 		if(numHiddenLayer == 4){
-			sliderInput('hiddenLayer4', "Hidden Nodes in fourth Layer", 1, 50, 1, step=1)
+			sliderInput('hiddenLayer4', "Hidden Nodes in fourth layer", 1, 50, 1, step=1)
 		}
 	})
 	
