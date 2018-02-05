@@ -218,7 +218,7 @@ getForecastComparisionPlot <- function(id)
     testResults <- getTestResults(modelName, id)
     if (mode(testResults) != 'logical')
     {
-      index <- which(vars$enabledModels == modelName)
+      index <- which(availableModels == modelName)
       p <- p %>% add_trace(y = testResults$predicted, text = modelText[index], name = modelName,
         line = list(color = modelColors[[modelName]]))
     }
