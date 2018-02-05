@@ -10,6 +10,82 @@ batch_size <<- 3
 
 trainLSTM <- function(id)
 {
+  model <- keras_model_sequential()
+  for (i in 1:length(vars$options$hiddenLayers))
+  {
+    hiddenNeurons <- vars$options$hiddenLayers[i]
+    if (i == 1)
+    {
+      model %>% layer_dense(units = hiddenNeurons, input_shape = c(vars$options$windowSize))
+    }
+    else
+    {
+      model %>% layer_dense(units = hiddenNeurons)
+    }
+    
+    model %>% layer_dropout(rate = 0.1)
+  }
+  model %>% layer_dense(units = vars$options$horizon)
+  
+  summary(model)
+  
+  model %>% compile(loss = loss_mean_absolute_percentage_error, optimizer = optimizer_rmsprop())
+  
+  dataSet <- vars$timeSeries[[id]]$y
+  windows <- rollapply(dataSet, width = vars$options$windowSize + vars$options$horizon, FUN = identity, by = 1)
+  trainset <- windows[-NROW(windows),]
+  
+  train.x <- trainset[, 1:vars$options$windowSize]
+  train.y <- trainset[, -(1:vars$options$windowSize)]
+  
+  history <- model %>% fit(train.x, train.y, batch_size = 1)
+  
+  return(model)
+}
+
+getTestResults.lstm <- function(model, id)
+{
+  dataSet <- vars$timeSeries[[id]]$y
+  windows <- rollapply(dataSet, width = vars$options$windowSize + vars$options$horizon, FUN = identity, by = 1)
+  testset <- windows[NROW(windows), 1:vars$options$windowSize]
+  m <- matrix(c(testset), nrow = 1, ncol = vars$options$windowSize)
+  predict(model, m, batch_size = 1)[1, ]
+}
+
+trainLSTM.old.2 <- function(id)
+{
+  model <- keras_model_sequential()
+  for (i in 1:length(vars$options$hiddenLayers))
+  {
+    hiddenNeurons <- vars$options$hiddenLayers[i]
+    if (i == 1)
+    {
+      model %>% layer_dense(units = hiddenNeurons, input_shape = c(vars$options$windowSize))
+    }
+    else
+    {
+      model %>% layer_dense(units = hiddenNeurons)
+    }
+    
+    model %>% layer_dropout(rate = 0.3)
+  }
+  model %>% layer_dense(units = 1)
+  
+  summary(model)
+  
+  model %>% compile(loss = loss_mean_absolute_percentage_error, optimizer = optimizer_rmsprop())
+  
+  trainset <- as.matrix(getTrainSet(id))
+  train.x <- trainset[, -1]
+  train.y <- trainset[, 1]
+  
+  history <- model %>% fit(train.x, train.y, batch_size = 1)
+  
+  return(model)
+}
+
+trainLSTM.old <- function(id)
+{
   maxlen <- vars$options$windowSize
   #batch_size <- vars$options$windowSize32
   maxlen <- vars$options$windowSize
@@ -105,7 +181,13 @@ getModel.lstm <- function(id)
   trainLSTM(id)
 }
 
-getTestResults.lstm <- function(model,id)
+getTestResults.lstm.old2 <- function(model, id)
+{
+  testSet <- as.matrix(getTestSet(id))
+  predict(model, testSet, batch_size = 1)[, 1]
+}
+
+getTestResults.lstm.old <- function(model,id)
 {
   testSet <- as.matrix(getNormalizedTestSet(id))
   
