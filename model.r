@@ -79,7 +79,7 @@ getTestResults <- function(modelName, id)
       {
         
         vars$predictions[[modelName]][[id]] <<- testResults
-        return (structure(list(expected = data.expecetedTestResults[[id]], predicted = testResults), class = 'TestResults'))
+        return (structure(list(expected = data.expectedTestResults[[id]], predicted = testResults), class = 'TestResults'))
       }
       else
       {
@@ -98,7 +98,7 @@ getTestResults <- function(modelName, id)
     testResults <- vars$predictions[[modelName]][[id]]
     if (mode(testResults) == 'numeric')
     {
-      return (structure(list(expected = data.expecetedTestResults[[id]], predicted = testResults), class = 'TestResults'))
+      return (structure(list(expected = data.expectedTestResults[[id]], predicted = testResults), class = 'TestResults'))
     }
     else
     {

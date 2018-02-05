@@ -34,7 +34,7 @@ data.names <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
-data.expecetedTestResults <- NULL
+data.expectedTestResults <- NULL
 data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
@@ -190,7 +190,7 @@ createWindows <- function(id)
   index <- 1:(nrow(windows) - vars$options$horizon)
   data.trainSets[[id]] <<- windows[index, ]
   data.testSets[[id]] <<- windows[-index, ]
-  data.expecetedTestResults[[id]] <<- data.testSets[[id]]$xt0
+  data.expectedTestResults[[id]] <<- data.testSets[[id]]$xt0
   data.testSets[[id]]$xt0 <<- NULL
 }
 
