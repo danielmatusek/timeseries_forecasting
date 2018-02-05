@@ -68,17 +68,16 @@ trainLSTM <- function(id)
   mean <- mean(trainData)
   std <- sd(trainData)
   data <- scale(data, center = mean, scale = std)
-  print(paste0('Mean = ', mean, ', std = ', std))
   
   train_gen <- generator(data,
-    lookback = lookback,
+    lookback = vars$options$windowSize,
     delay = delay,
     minIndex = minIndexTrain,
     maxIndex = minIndexVal - 1,
     shuffle = TRUE,
     batchSize = batch_size)
   val_gen <- generator(data,
-    lookback = lookback,
+    lookback = vars$options$windowSize,
     delay = delay,
     minIndex = minIndexVal,
     maxIndex = minIndexTest - 1,
@@ -90,7 +89,7 @@ trainLSTM <- function(id)
     layer_lstm(units = 32, input_shape = list(NULL, dim(data)[[-1]]), return_sequences = TRUE,
       dropout = 0.2, recurrent_dropout = 0.5) %>%
     layer_lstm(units = 64, return_sequences = TRUE, dropout = 0.2, recurrent_dropout = 0.5) %>%
-    layer_lstm(units = 128, activation = 'relu', dropout = 0.2, recurrent_dropout = 0.5) %>%
+    layer_lstm(units = 128, dropout = 0.2, recurrent_dropout = 0.5) %>% #, activation = 'relu'
     layer_dense(units = 1)
   
   model %>% compile(
@@ -115,16 +114,16 @@ trainLSTM <- function(id)
 
 getTestResults.lstm <- function(model, id)
 {
+  browser()
   data <- data.matrix(vars$timeSeries[[id]][, -1])
   data <- scale(data, center = model$mean, scale = model$std)
   test_gen <- generator(data,
-    lookback = lookback,
+    lookback = vars$options$windowSize,
     delay = delay,
-    minIndex = nrow(data) - vars$options$horizon,
-    batchSize = batch_size)
+    minIndex = nrow(data) - vars$options$horizon - vars$options$windowSize + 1,
+    batchSize = vars$options$horizon)
   
-  test_steps = (nrow(data) - minIndexTest - 1 - lookback) / batch_size
-  predictions <- model %>% predict_generator(function() {list(test_gen()[[1]])}, steps = test_steps, verbose = TRUE)
+  predictions <- model %>% predict_generator(function() {list(test_gen()[[1]])}, steps = 1)
   return (predictions[,1]*model$std+model$mean)
 }
 

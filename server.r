@@ -252,7 +252,7 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- 0.0175*numData
 	    }
-	    sliderInput('windowSize', 'Window Size', 1, 10, values, step = 1)
+	    sliderInput('windowSize', 'Window Size', 1, 30, values, step = 1)
 	  }
 	})
 	
