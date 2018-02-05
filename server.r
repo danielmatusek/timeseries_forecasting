@@ -251,7 +251,7 @@ server <- function(input, output, session) {
 
 		resetNeuralNetworks.hidden()
 	  resetNeuralNetworks.InputExclusion()
-	  resetModels('mlp', 'lstm')
+	  resetModels('mlp', 'lstm', 'mlph')
 
 		vars$options$hiddenLayers <<- hiddenVector
 	})
