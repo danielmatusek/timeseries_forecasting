@@ -604,10 +604,15 @@ server <- function(input, output, session) {
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
-		
 		t <- getTestResults('elman', input$idSelect)
-		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	#MLP with RSNNS and with Hidden Layer
@@ -619,14 +624,13 @@ server <- function(input, output, session) {
 		
 		t <- getTestResults('mlp', input$idSelect)
 		
-		if (mode(t) == 'logical')
+		if (inherits(t, 'TestResults'))
 		{
-		  return (NULL)
+		  data.table(predicted = t$predicted, expected = t$expected)		  
 		}
 		else
 		{
-		  browser()
-		  data.table(predicted = t$predicted, expected = t$expected)
+			return (NULL)
 		}
 	})
 
@@ -638,13 +642,13 @@ server <- function(input, output, session) {
 		
 		t <- getTestResults('mlph', input$idSelect)
 		
-		if (mode(t) == 'logical')
+		if (inherits(t, 'TestResults'))
 		{
-		  return (NULL)
+		  data.table(predicted = t$predicted, expected = t$expected)		  
 		}
 		else
 		{
-		  data.table(predicted = t$predicted, expected = t$expected)
+			return (NULL)
 		}
 	})
 
