@@ -191,7 +191,7 @@ server <- function(input, output, session) {
 	  }
 	})
 	
-	hiddenLayersChanged <- reactive({
+	hiddenLayersChanged.old <- reactive({ #old hiddenLayers function, now using a new one
 	  hiddenLayers <- c(input$hiddenNeuronsInFirstLayer)
 	  if (hiddenLayers != vars$options$hiddenLayers)
 	  {
@@ -226,7 +226,7 @@ server <- function(input, output, session) {
 	  }
 	})
 
-	extendedHiddenLayersChanged <- reactive ({
+	hiddenLayersChanged <- reactive ({
 		numOfHiddenLayers <- input$selectNumHiddenLayers
 		hl1 <- input$hiddenNeuronsInFirstLayer
 		hl2 <- input$hiddenLayer2
