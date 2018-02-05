@@ -7,12 +7,7 @@ use_condaenv("tensorflow")
 k <- backend()
 
 
-lookback <- 7
-delay <- 0
 batch_size <- 32
-minIndexTrain <- 1
-minIndexVal <- 1025
-minIndexTest <- 1281
 
 generator <- function(data, lookback, minIndex, maxIndex = NULL, shuffle = FALSE, delay = 0, batchSize = 128, step = 1) {
   if (is.null(maxIndex))
@@ -64,43 +59,48 @@ trainLSTM <- function(id)
   #model %>% layer_dense(1, activation = NULL)
   
   data <- data.matrix(vars$timeSeries[[id]][, -1])
+  
+  minIndexTrain <- 1
+  minIndexTest <- nrow(data) - vars$options$horizon - vars$options$windowSize + 1
+  minIndexVal <- floor((minIndexTest - 1) * 4 / 5)
+  
   trainData <- data[1:(minIndexVal-1),]
   mean <- mean(trainData)
   std <- sd(trainData)
+  max <- max(trainData)
+  min <- min(trainData)
+  #mean <- min
+  #std <- max - min
   data <- scale(data, center = mean, scale = std)
   
   train_gen <- generator(data,
     lookback = vars$options$windowSize,
-    delay = delay,
     minIndex = minIndexTrain,
     maxIndex = minIndexVal - 1,
     shuffle = TRUE,
     batchSize = batch_size)
   val_gen <- generator(data,
     lookback = vars$options$windowSize,
-    delay = delay,
     minIndex = minIndexVal,
     maxIndex = minIndexTest - 1,
     batchSize = batch_size)
   
-  val_steps = (minIndexTest - minIndexVal - 1 - lookback) / batch_size
+  val_steps = (minIndexTest - minIndexVal - 1 - vars$options$windowSize) / batch_size
   
   model <- keras_model_sequential() %>%
-    layer_lstm(units = 32, input_shape = list(NULL, dim(data)[[-1]]), return_sequences = TRUE,
-      dropout = 0.2, recurrent_dropout = 0.5) %>%
-    layer_lstm(units = 64, return_sequences = TRUE, dropout = 0.2, recurrent_dropout = 0.5) %>%
-    layer_lstm(units = 128, dropout = 0.2, recurrent_dropout = 0.5) %>% #, activation = 'relu'
+    layer_flatten(input_shape = list(vars$options$windowSize, dim(data)[[-1]])) %>%
+    layer_dense(units = 2) %>%
     layer_dense(units = 1)
   
   model %>% compile(
     optimizer = optimizer_rmsprop(),
-    #loss = 'mae'
-    loss = loss_mean_absolute_percentage_error
+    loss = 'mae'
+    #loss = loss_mean_absolute_percentage_error
   )
   
   history <- model %>% fit_generator(
     train_gen,
-    steps_per_epoch = 500,
+    steps_per_epoch = floor(nrow(data) / batch_size * 1.5),
     epochs = 20,
     validation_data = val_gen,
     validation_steps = val_steps
@@ -118,7 +118,6 @@ getTestResults.lstm <- function(model, id)
   data <- scale(data, center = model$mean, scale = model$std)
   test_gen <- generator(data,
     lookback = vars$options$windowSize,
-    delay = delay,
     minIndex = nrow(data) - vars$options$horizon - vars$options$windowSize + 1,
     batchSize = vars$options$horizon)
   
