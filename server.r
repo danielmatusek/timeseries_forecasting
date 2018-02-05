@@ -225,6 +225,36 @@ server <- function(input, output, session) {
 	    resetModels('ar')
 	  }
 	})
+
+	extendedHiddenLayersChanged <- reactive ({
+		numOfHiddenLayers <- input$selectNumHiddenLayers
+		hl1 <- input$hiddenNeuronsInFirstLayer
+		hl2 <- input$hiddenLayer2
+		hl3 <- input$hiddenLayer3
+		hl4 <- input$hiddenLayer4
+
+		vars$options$hiddenLayers <<- c(0)
+		hiddenVector <- c(0)
+
+		if(numOfHiddenLayers > 0 && !is.null(hl1)){
+			hiddenVector[1] <- hl1
+		}
+		if(numOfHiddenLayers > 1 && !is.null(hl2)){
+			hiddenVector[2] <- hl2
+		}
+		if(numOfHiddenLayers > 2 && !is.null(hl3)){
+			hiddenVector[3] <- hl3
+		}
+		if(numOfHiddenLayers > 3 && !is.null(Hl4)){
+			hiddenVector[4] <- hl4
+		}
+
+		resetNeuralNetworks.hidden()
+	  resetNeuralNetworks.InputExclusion()
+	  resetModels('mlp', 'lstm')
+
+		vars$options$hiddenLayers <<- hiddenVector
+	})
 	
 	
 	
