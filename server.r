@@ -619,7 +619,15 @@ server <- function(input, output, session) {
 		
 		t <- getTestResults('mlp', input$idSelect)
 		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (mode(t) == 'logical')
+		{
+		  return (NULL)
+		}
+		else
+		{
+		  browser()
+		  data.table(predicted = t$predicted, expected = t$expected)
+		}
 	})
 
 	#MLP with RSNSS and without Hidden Layer
@@ -628,9 +636,16 @@ server <- function(input, output, session) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		t <- getTestResults('mlp', input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (mode(t) == 'logical')
+		{
+		  return (NULL)
+		}
+		else
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)
+		}
 	})
 
 	output$recPlot <- renderPlot({
