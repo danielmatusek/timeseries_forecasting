@@ -660,32 +660,12 @@ server <- function(input, output, session) {
   	plot(getModel('elman', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 
-	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		windowsChanged()
-		excludeBiasChanged()
-		hiddenLayersChanged()
-		
-		t <- getTestResults('mlph', input$idSelect)
-		
-		data.table(result = t$result, expected = t$expected)
-	})
-
 	output$mlp_plot <- renderPlot({
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
   	plot(getModel('mlp', input$idSelect), paste0('xt', 1:vars$options$windowSize))
-	})
-
-	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		windowsChanged()
-		excludeBiasChanged()
-		hiddenLayersChanged()
-		
-		t <- getTestResults('mlph', input$idSelect)
-		
-		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	output$mlp_plot_without_hidden <- renderPlot({
