@@ -344,7 +344,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
       else
       {
         testResults <- testNeuralNetwork(nn, id)
-        smape <- sMAPE(data.expecetedTestResults[[id]], testResults)
+        smape <- sMAPE(data.expectedTestResults[[id]], testResults)
         externalError[[pathAsString]] <-  if(!is.nan(smape)){ smape }else{ 0 }
         internalError[[pathAsString]] <- nn$result.matrix[1]
         
@@ -484,7 +484,9 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     #get neural network and error without hidden layer
     neuralNetwork.hlOptimization <<- c(0)
     neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
+
     neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
+
 
     last_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 

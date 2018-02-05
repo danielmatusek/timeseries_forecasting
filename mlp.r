@@ -4,7 +4,8 @@ library(RSNNS)
 getModel.mlp <- function(id, hiddenLayers = FALSE)
 {
   set.seed(1)
-  trainset <- getNormalizedTrainSet(id)
+  #trainset <- getNormalizedTrainSet(id)
+  trainset <- getTrainSet(id)
   traininput <- trainset[, 2:length(trainset)]
   traintarget <- trainset[, 1]
   
@@ -147,9 +148,10 @@ getTestResults.mlpei <- function(model, id)
 
 getTestResults.mlp <- function(model, id)
 {
-  datanew <- predict(model, getNormalizedTestSet(id))[,1]
-  denormalized <- denormalizeData(datanew, normalizationParam)
-  denormalized[,1]
+  #datanew <- predict(model, getNormalizedTestSet(id))[,1]
+  #denormalized <- denormalizeData(datanew, normalizationParam)
+  #denormalized[,1]
+  predict(model, getTestSet(id))[,1]
 }
 
 getTestResults.mlph <- getTestResults.mlp
