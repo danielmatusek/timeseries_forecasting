@@ -1,3 +1,4 @@
+library(RSNNS)
 # vars is a list of all variables worth saving in an extra file
 # it will contain:
 # vars$timeSeries[[id]]
@@ -6,7 +7,8 @@
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
-  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
+  #enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
+  enabledModels = c('ar', 'lstm'),
   
   options = list(
     windowSize = 7,
@@ -36,6 +38,11 @@ data.expecetedTestResults <- NULL
 data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
+data.normalized.trainSets <- NULL
+data.normalized.testSets <- NULL
+data.normalized.expectedTestResults <- NULL
+
+normalizationParam <<- NULL
 
 
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
@@ -187,6 +194,25 @@ createWindows <- function(id)
   data.testSets[[id]]$xt0 <<- NULL
 }
 
+createNormalizedWindows <- function(id)
+{
+  dataSet <- vars$timeSeries[[id]]$y
+  dataSet <- normalizeData(dataSet, "0_1")
+  normalizationParam <<- getNormParameters(dataSet)
+  dataSet <- dataSet[,1]
+  
+#  browser()
+  windows <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+  names(windows) <- paste0('xt', vars$options$windowSize:0)
+  setcolorder(windows, paste0('xt', 0:vars$options$windowSize))
+  
+  index <- 1:(nrow(windows) - vars$options$horizon)
+  data.normalized.trainSets[[id]] <<- windows[index, ]
+  data.normalized.testSets[[id]] <<- windows[-index, ]
+  data.normalized.expectedTestResults[[id]] <<- data.testSets[[id]]$xt0
+  data.normalized.testSets[[id]]$xt0 <<- NULL
+}
+
 
 createDifferentableWindow <- function(id)
 {
@@ -252,4 +278,20 @@ getTestSet <- function(id) {
     createWindows(id)
   }
   return(data.testSets[[id]])
+}
+
+getNormalizedTrainSet <- function(id) {
+  if (is.null(data.normalized.trainSets[[id]]))
+  {
+    createNormalizedWindows(id)
+  }
+  return(data.normalized.trainSets[[id]])
+}
+
+getNormalizedTestSet <- function(id) {
+  if (is.null(data.normalized.testSets[[id]]))
+  {
+    createNormalizedWindows(id)
+  }
+  return(data.normalized.testSets[[id]])
 }
