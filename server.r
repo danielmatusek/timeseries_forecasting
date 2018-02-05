@@ -278,7 +278,7 @@ server <- function(input, output, session) {
 	  
 	  if (is.null(windowSize) || windowSize == 0)
 	  {
-	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 0, 0, 0, step = 1)
+	    sliderInput('hiddenNeuronsInFirstLayer', "Hidden Nodes in first layer", 0, 0, 0, step = 1)
 	  }
 	  else
 	  {
