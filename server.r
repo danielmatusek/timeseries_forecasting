@@ -191,7 +191,7 @@ server <- function(input, output, session) {
 	  }
 	})
 	
-	hiddenLayersChanged <- reactive({
+	hiddenLayersChanged.old <- reactive({ #old hiddenLayers function, now using a new one
 	  hiddenLayers <- c(input$hiddenNeuronsInFirstLayer)
 	  if (hiddenLayers != vars$options$hiddenLayers)
 	  {
@@ -224,6 +224,36 @@ server <- function(input, output, session) {
 	    
 	    resetModels('ar')
 	  }
+	})
+
+	hiddenLayersChanged <- reactive ({
+		numOfHiddenLayers <- input$selectNumHiddenLayers
+		hl1 <- input$hiddenNeuronsInFirstLayer
+		hl2 <- input$hiddenLayer2
+		hl3 <- input$hiddenLayer3
+		hl4 <- input$hiddenLayer4
+
+		vars$options$hiddenLayers <<- c(0)
+		hiddenVector <- c(0)
+
+		if(numOfHiddenLayers > 0 && !is.null(hl1)){
+			hiddenVector[1] <- hl1
+		}
+		if(numOfHiddenLayers > 1 && !is.null(hl2)){
+			hiddenVector[2] <- hl2
+		}
+		if(numOfHiddenLayers > 2 && !is.null(hl3)){
+			hiddenVector[3] <- hl3
+		}
+		if(numOfHiddenLayers > 3 && !is.null(Hl4)){
+			hiddenVector[4] <- hl4
+		}
+
+		resetNeuralNetworks.hidden()
+	  resetNeuralNetworks.InputExclusion()
+	  resetModels('mlp', 'lstm', 'mlph')
+
+		vars$options$hiddenLayers <<- hiddenVector
 	})
 	
 	
@@ -574,10 +604,15 @@ server <- function(input, output, session) {
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
-		
 		t <- getTestResults('elman', input$idSelect)
-		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	#MLP with RSNNS and with Hidden Layer
@@ -589,7 +624,14 @@ server <- function(input, output, session) {
 		
 		t <- getTestResults('mlp', input$idSelect)
 		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	#MLP with RSNSS and without Hidden Layer
@@ -598,9 +640,16 @@ server <- function(input, output, session) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		t <- getTestResults('mlp', input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	output$recPlot <- renderPlot({
@@ -611,32 +660,12 @@ server <- function(input, output, session) {
   	plot(getModel('elman', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 
-	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		windowsChanged()
-		excludeBiasChanged()
-		hiddenLayersChanged()
-		
-		t <- getTestResults('mlph', input$idSelect)
-		
-		data.table(result = t$result, expected = t$expected)
-	})
-
 	output$mlp_plot <- renderPlot({
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
   	plot(getModel('mlp', input$idSelect), paste0('xt', 1:vars$options$windowSize))
-	})
-
-	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		windowsChanged()
-		excludeBiasChanged()
-		hiddenLayersChanged()
-		
-		t <- getTestResults('mlph', input$idSelect)
-		
-		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	output$mlp_plot_without_hidden <- renderPlot({
