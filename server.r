@@ -268,7 +268,7 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- windowSize
 	    }
-	    sliderInput('horizon', 'Predict Values', 1, 20 , values, step = 1)
+	    sliderInput('horizon', 'Predict Values', 1, 90 , values, step = 1)
 	  }
 	})
 	
@@ -285,7 +285,7 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- 3
 	    }
-	    maxHiddenSlider <- input$windowSize * 2
+	    maxHiddenSlider <- input$windowSize * 5
 	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
 	  }
 	})

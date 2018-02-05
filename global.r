@@ -195,7 +195,7 @@ createWindows <- function(id)
 createNormalizedWindows <- function(id)
 {
   dataSet <- vars$timeSeries[[id]]$y
-  dataSet <- normalizeData(dataSet, "norm")
+  dataSet <- normalizeData(dataSet, "0_1")
   normalizationParam <<- getNormParameters(dataSet)
   dataSet <- dataSet[,1]
   
