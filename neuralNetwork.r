@@ -545,7 +545,7 @@ getHlOptimizationErrorTable <- function(id)
 {
   #print(neuralNetwork.hlOptimizationErrorVector)
   #return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
-  browser()
+  
   row <- (length(neuralNetwork.hlOptimizationErrorVector))
 
   eM <- matrix(nrow = row, ncol = 3) # plus 1 for the original NN

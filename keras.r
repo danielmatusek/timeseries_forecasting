@@ -57,7 +57,7 @@ trainLSTM <- function(id)
   #timesteps = 8
   #data_dim = 1
   
-  #browser()
+  
   #model <- keras_model_sequential()
   #model %>% layer_lstm(32, activation = NULL, recurrent_activation = NULL, stateful = TRUE, return_sequences = TRUE,
   #  input_shape = c(vars$options$windowSize, 16), batch_size = batch_size)

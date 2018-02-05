@@ -435,7 +435,7 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
       
 	  m <- getModel('nnfamei', NULL)
-	  #browser()
+	  
 	  dat <- as.data.frame( m$numOfExclusionPerNode, m$inputNodePos )
 	  barplot(m$numOfExclusionPerNode, xlab = "Input node position", ylab = "Number", col = c("darkblue"), names.arg=m$inputNodePos)#, horz= TRUE)
 	})
