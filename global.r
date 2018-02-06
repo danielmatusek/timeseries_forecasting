@@ -176,6 +176,8 @@ resetWindows <- function() {
   data.testSets <<- NULL
   data.diff.trainSets <<- NULL
   data.diff.testSets <<- NULL
+  data.normalized.trainSets <<- NULL
+  data.normalized.testSets <<- NULL
 }
 
 
@@ -208,7 +210,10 @@ createNormalizedWindows <- function(id)
   index <- 1:(nrow(windows) - vars$options$horizon)
   data.normalized.trainSets[[id]] <<- windows[index, ]
   data.normalized.testSets[[id]] <<- windows[-index, ]
-  data.normalized.expectedTestResults[[id]] <<- data.testSets[[id]]$xt0
+
+  denormalizedTestSet <- denormalizeData(data.normalized.testSets[[id]], normalizationParam)
+
+  data.expectedTestResults[[id]] <<- denormalizedTestSet[,1]
   data.normalized.testSets[[id]]$xt0 <<- NULL
 }
 
