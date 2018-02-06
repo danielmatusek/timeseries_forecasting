@@ -6,7 +6,7 @@
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
-  enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
+  enabledModels = c('ar', 'mlp', 'mlph'),
   
   options = list(
     windowSize = 7,
@@ -25,8 +25,8 @@ modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' =
   'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)',
   'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)')
 
-modelText <<- c('AR', 'feedforward', 'feedforward with hidden', 'nnfa', 'nnfah', 'Elman', 'mlp', 'mlph', 'Jordan',
-                'nnfeei', 'nnfed', 'nnfamei', 'LSTM')
+modelText <<- c('AR', 'neural network for one', 'neural network for one with hidden', 'neural network for all', 'neural network for all with hidden', 'Elman', 'multilayer perceptron', 'multilayer perceptron with hidden', 'Jordan',
+                'neural network excluded input', 'nnfed', 'nnfamei', 'LSTM')
 
 data.names <- NULL
 data.windows <- NULL

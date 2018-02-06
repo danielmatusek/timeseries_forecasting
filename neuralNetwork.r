@@ -1,7 +1,14 @@
 library(neuralnet)
 
+#------- save greedy Models
+neuralnetwork.excludedPathAsIndices   <<- NULL
+neuralNetwork.excludedInputNodes      <<- list()
+neuralNetwork.excludedPastModels      <<- list()
+neuralNetwork.excludedPastErrors      <<- vector()
+neuralNetwork.excludedInternalErrors  <<- vector()
+neuralnetwork.strategies              <<- c("Greedy") 
+#---------------------------
 
-neuralnetwork.strategies         <<- c("Greedy") 
 neuralnetwork.greedyErrorType     <<- 'Outsample'
 
 neuralNetwork.hlOptimization <<- c(0)
@@ -12,7 +19,6 @@ resetNeuralNetworks.hidden <- function()
 {
   resetModels('nnfeh')
   resetModels('nnfah')
-  resetModels('nnfehd')
 }
 
 resetNeuralNetworks <- function()
@@ -22,9 +28,8 @@ resetNeuralNetworks <- function()
   
   resetModels('nnfe')
   resetModels('nnfa')
-  resetModels('nnfeei')
-  resetModels('nnfed')
-  resetModels('nnfamei')
+  resetModels('nnfeeic')
+  resetModels('nnfeheic')
 }
 
 
@@ -90,7 +95,6 @@ getNeuralNetworkExcludeVector <- function(hidden, excludeVector = NULL, isDiffer
 excludeInputs <- function(hidden, excludeVector)
 {
   vec <- vector()
-  
   if(is.null(excludeVector)) return(NULL)
   
   if(hidden)
@@ -120,7 +124,9 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
   excludedVectorPos <- getNeuralNetworkExcludeVector(hiddenLayers, excludeVector, isDifferantable)
   
   n <- names(trainset)
+  
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
+#  f <- as.formula(paste(paste(n[!n %in% "xt0"], collapse = " + ") ," ~ xt0"))
   set.seed(1)
   
   
@@ -129,11 +135,11 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
     if(!is.logical(excludedVectorPos))
     {
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
-        exclude = excludedVectorPos)
+        exclude = excludedVectorPos, stepmax = 500000)
     }
     else
     {
-      nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity)
+      nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity, stepmax = 500000)
     }
     
     # remove "unnecessary" fields. They fill up RAM.
@@ -188,6 +194,12 @@ getModel.nnfeei <- function(id)
   getExcludedInputNeuralNetwork(id, FALSE)
 }
 
+getModel.nnfehei <- function(id)
+{
+  getExcludedInputNeuralNetwork(id, vars$options$hiddenLayers)
+}
+
+
 
 # -----Differentiable Input Models
 getModel.nnfed <- function(id)
@@ -195,13 +207,21 @@ getModel.nnfed <- function(id)
   trainNeuralNetwork(getDiffTrainSet(id),FALSE, NULL, TRUE)
 }
 
+getModel.nnfehd <- function(id)
+{
+  trainNeuralNetwork(getDiffTrainSet(id), vars$options$hiddenLayers,NULL, TRUE)
+}
 
 # ---- Excluded Input Statistics
-getModel.nnfamei <- function()
+getModel.nnfeeic <- function()
 {
   getStatisticOfExcludedInputs()
 }
 
+getModel.nnfeheic <- function()
+{
+  getStatisticOfExcludedInputs(vars$options$hiddenLayers)
+}
 
 
 # Get the neural network for the given parameters (one neural network for all if is.null(id))
@@ -226,7 +246,8 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 
 testNeuralNetwork <- function(neuralNetwork, testSetID, isDiffInput = FALSE)
 {
-  testData <- if(isDiffInput){getDiffTestSet(testSetID)[,-1]}else{getTestSet(testSetID)}
+  testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)}
+
   compute(neuralNetwork, testData)$net.result[,1]
 }
 
@@ -253,21 +274,24 @@ getTestResults.nnfah <- function(id)
 # test excluded Input
 getTestResults.nnfeei <- function(model, id)
 {
-
-  testNeuralNetwork(model, id)
+  testNeuralNetwork(model$model, id)
 }
 
+getTestResults.nnfehei <- function(model, id)
+{
+  testNeuralNetwork(model$model, id)
+}
 # test differntable Input
 getTestResults.nnfed <- function(model, id)
 {
   testNeuralNetwork(model, id, TRUE)
 }
 
-
-getTestResults.nnfamei <- function(model, id)
+getTestResults.nnfehd <- function(model, id)
 {
-  testNeuralNetwork(model, id)
+  testNeuralNetwork(model, id, TRUE)
 }
+
 
 
 getReducedNeuralNetworkWeights <- function(nn) {
@@ -293,149 +317,200 @@ getReducedNeuralNetworkWeights <- function(nn) {
   })
 }
 
+resetEIModels <- function()
+{
+  neuralnetwork.excludedPathAsIndices   <<- NULL
+  neuralNetwork.excludedInputNodes      <<- list()
+  neuralNetwork.excludedPastModels      <<- list()
+  neuralNetwork.excludedPastErrors      <<- vector()
+  neuralNetwork.excludedInternalErrors  <<- vector()
+}
 
-
+# calculate the best neural network model with greedy algorithm
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 {
-  baseModelName <- if(hiddenLayers) { if(is.null(id)) { 'nnfah' } else { 'nnfeh' }} else { if(is.null(id)) { 'nnfa' } else { 'nnfe'}}
-  internalError = list()
-  externalError = list()
-  excludedPath <- NULL
-  bestModel = getModel(baseModelName, id)
   
-  if (mode(bestModel) == 'logical')
+  resetEIModels()
+    #calculate the first model
+    model <- if (hiddenLayers) { if(is.null(id)){ getModel('nnfah')} else {getModel('nnfeh', id)}} else { if(is.null(id)) {getModel('nnfa')} else {getModel('nnfe', id)}}
+    saveExcludedInputModel(model, id)
+    
+    path = c(0)
+    excludedPathAsIndices <- c(1)
+    from <- 0
+    to <- 1
+    
+    for(i in 1 : vars$options$windowSize)
+    {
+      createModels(path, id, hiddenLayers)
+      
+      if(length(path) != vars$options$windowSize) excludedPathAsIndices <- c(excludedPathAsIndices, rep(0, vars$options$windowSize))
+
+      from <- to + 1
+      to <- to + vars$options$windowSize
+     
+      # check, weather the old best model is better than all new calculated models
+      oldModel <- compareOldModel(path, from, to) 
+      
+      if(!is.null(oldModel))
+      {
+        if(length(path) == 1)
+        {
+          excludedPathAsIndices[1] <- 2
+        }
+        else
+        {
+          excludedPathAsIndices[from - vars$options$windowSize  + (path[length(path)] - 1)] <- 2
+        }
+        
+        neuralNetwork.excludedInputNodes[[1]] <<- '-'
+        stats <- structure(list(nodes = neuralNetwork.excludedInputNodes, smape = neuralNetwork.excludedPastErrors, internalE = neuralNetwork.excludedInternalErrors, info = excludedPathAsIndices, model = oldModel), class = 'TestExclusion')
+
+        return(stats)
+      }
+      
+      # search for the next best input
+      idx <- NULL
+      if(neuralnetwork.greedyErrorType == "Outsample")
+      {
+        idx <- which.min(neuralNetwork.excludedPastErrors[from : to])
+      }
+      else if(neuralnetwork.greedyErrorType == "Insample")
+      {
+        idx <- which.min(neuralNetwork.excludedInternalErrors[from : to])
+      }
+      path <- c(path, idx)
+      excludedPathAsIndices[from + idx - 1] <- 1
+    }
+  
+}
+
+
+
+
+# it compares the old model with the models in range
+# return NULL if old model is better
+compareOldModel <- function(path, from, to)
+{
+  errors <- NULL
+  if(neuralnetwork.greedyErrorType == "Outsample")
   {
-    internalError[['empty']] <- NA
-    externalError[['empty']] <- NA
-    bestExclInput <- NULL
-    bestError <- .Machine$double.xmax
+    errors <- neuralNetwork.excludedPastErrors
   }
   else
   {
-    testResults <- getTestResults(baseModelName, id)
-    smape <- sMAPE(testResults$expected, testResults$predicted)
-    externalError[['empty']] <- if(!is.nan(smape)){ smape }else{ 0 }
-    internalError[['empty']] <- bestModel$result.matrix[1]
-    bestExclInput <- 'empty'
-    bestError <- if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[['empty']]} else {internalError[['empty']]}
+    errors <- neuralNetwork.excludedInternalErrors
+  }
+    
+  pos <- 0
+  if(length(path) == 1)
+  {
+    pos <- 1
+  }
+  else
+  {
+    pos <- from - vars$options$windowSize  + (path[length(path)] - 1)
   }
   
-  queue <- lapply(1 : vars$options$windowSize, function(i) { i })
+  if((length(path)) == (vars$options$windowSize)) return(neuralNetwork.excludedPastModels[[pos]])
   
-  trainSet <- getTrainSet(id)
-  
-  repeat
+  for(i in 1 : vars$options$windowSize)
   {
-    newBestInput <- NULL
-    while(length(queue) > 0)
+    if(!is.na(errors[[from + (i-1)]]))
     {
-      path <- queue[[1]]
-      
-      if(length(path) == vars$options$windowSize) break
-      
-      nn <- trainNeuralNetwork(trainSet, hiddenLayers, path)
-      pathAsString <- paste(path, collapse = ",")
-
-      if (mode(nn) == 'logical')
-      {
-        internalError[[pathAsString]] <- NA
-        externalError[[pathAsString]] <- NA
-      }
-      else
-      {
-        testResults <- testNeuralNetwork(nn, id)
-        smape <- sMAPE(data.expecetedTestResults[[id]], testResults)
-        externalError[[pathAsString]] <-  if(!is.nan(smape)){ smape }else{ 0 }
-        internalError[[pathAsString]] <- nn$result.matrix[1]
-        
-        error <- if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[[pathAsString]]} else {internalError[[pathAsString]]}
-        if (error < bestError)
-        {
-          bestModel <- nn
-          newBestInput <- path
-          excludedPath <- path
-          bestError <- if(neuralnetwork.greedyErrorType == "Insample"){internalError[[pathAsString]]} else{externalError[[pathAsString]]}
-        }
-      }
-      
-      if(length(queue) == 1)
-      {
-        queue <- NULL
-        break
-      }
-      
-      queue <- queue[-1]
+      if(errors[[pos]] >= errors[[from + (i-1)]])
+       {
+         return(NULL)
+       }
     }
-    
-    if (is.null(newBestInput))
+  }
+  return(neuralNetwork.excludedPastModels[[pos]])
+}
+
+# create a model that exlude the given path and in every round it exludes an non-excluded Input
+# it saves the exluded Vector, model, internal error, crossvalidation and 
+createModels <- function(path, id, hiddenLayers)
+{
+  if((length(path)) == vars$options$windowSize) return(NULL)
+  
+  path = setdiff(path, 0) # don't consider 0 -> it's the bias
+  for(i in 1 : vars$options$windowSize)
+  {
+    if(!(i %in% path))
     {
-      break
+      saveExcludedInputModel(trainNeuralNetwork(getTrainSet(id), hiddenLayers, c(path, i)),id, c(path, i))
     }
     else
     {
-      newInputs <- setdiff(1 : vars$options$windowSize, newBestInput)
-      queue <- lapply(newInputs, function(newInput) { c(newBestInput, newInput) })
+      saveExcludedInputModel(NULL)
     }
   }
-  
-  
-  if (mode(bestModel) != 'logical')
+}
+
+saveExcludedInputModel <- function(model, id = NULL, path = NULL)
+{
+  neuralnetwork.excludedPathAsIndices <<- c(neuralnetwork.excludedPathAsIndices, 0)
+  if(is.null(model) || is.na(model))
   {
-    bestModel$inSampleError <- internalError
-    bestModel$outSampleError <- externalError
-    bestModel$path <- excludedPath
+    neuralNetwork.excludedPastModels[[length(neuralNetwork.excludedPastModels) + 1]] <<- NaN
+    neuralNetwork.excludedInternalErrors <<- c(neuralNetwork.excludedInternalErrors, NaN)
+    neuralNetwork.excludedPastErrors <<- c(neuralNetwork.excludedPastErrors, NaN)
+    neuralNetwork.excludedInputNodes[[length(neuralNetwork.excludedInputNodes) + 1]] <<- NaN
+    return()
   }
-  else
-  {
-    bestModel <- NA
-  }
-  
-  return(bestModel)
+
+  l <- length(neuralNetwork.excludedPastModels) + 1
+  neuralNetwork.excludedPastModels[[l]] <<- model
+  neuralNetwork.excludedInternalErrors  <<- c(neuralNetwork.excludedInternalErrors, neuralNetwork.excludedPastModels[[l]]$result.matrix[1])
+  prediction <- testNeuralNetwork(neuralNetwork.excludedPastModels[[l]], id)
+  neuralNetwork.excludedPastErrors      <<- c(neuralNetwork.excludedPastErrors, sMAPE(data.expecetedTestResults[[id]], prediction))
+  neuralNetwork.excludedInputNodes[[l]] <<- path
 }
 
 
 
 getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
 {
+
+
+  excludedPathCombination <- list()
   ids <- names(vars$timeSeries)
-  numOfExclusionPerNode <- c(rep(0,vars$options$windowSize))
+  excludedPathCounter <- c(rep(0,vars$options$windowSize))
 
   for(id in ids)
   {
-    model <- if(!hiddenLayers){getModel('nnfeei',id)}else{getModel('nnfehei',id)}
-    if(mode(model) != 'logic')
-    {
-      weights <- model$weights[[1]][[1]][2 : length(model$weights[[1]][[1]][,1]),1]
-      for(i in which(is.na(weights))) 
-      {
-        numOfExclusionPerNode[i] <- numOfExclusionPerNode[i] + 1
-      }
-    }
+    
+    stats <- if(!hiddenLayers){getModel('nnfeei',id)}else{getModel('nnfehei',id)}
+    resultIndex <- which(stats$info == 2)
+    excludedPathCombination[[id]] <- stats$nodes[resultIndex]
+    for(pathID in  excludedPathCombination[[id]]) excludedPathCounter[pathID] <- excludedPathCounter[pathID] + 1
+    print(paste("ID: ", id, " path: ",excludedPathCombination[[id]], sep=""))
   }
+
   
-  excludedInputs <- unlist(lapply(ids, function(id) {
-  model <- getModel('nnfeei', id)
-  paths <- NULL
-  if(!is.null(model$path)) paths <-  sort(model$path, decreasing = FALSE)
-  
-  paste(paths, collapse=",")
+  ids <- names(vars$timeSeries)
+  excludedVectors <- unlist(lapply(ids, function(id) {
+    model <- NULL
+    if(!hiddenLayers)
+    {
+      model <- getModel('nnfeei', id)
+    }
+    else
+    {
+      model <- getModel('nnfehei', id)
+    }
+    
+    resultIndex <- which(model$info == 2)
+    paths <-  sort(model$nodes[[resultIndex]], decreasing = FALSE)
+    paste(paths, collapse=",")
   }))
   
-  dt <- data.table(excludedInputs = excludedInputs, id = ids)
+  dt <- data.table(excludedInputs = excludedVectors, id = ids)
   dt <- dt[, .(number = length(list(id))), by = excludedInputs]
   
-  exludeVector <- c(0)
   
+  return(structure(list(ids = ids, paths = excludedPathCombination, pExcluded = (1 : vars$options$windowSize), excludedPathCounter = excludedPathCounter, pathsCombinedE = dt$excludedInputs, pathsCombinedN = dt$number),class = 'EIStatistic'))
 
-  model <- trainNeuralNetwork(getTrainSet(id), hiddenLayers = FALSE, excludeVector = exludeVector)
-  
-  model$inputNodePos <- (1 : vars$options$windowSize)
-  model$numOfExclusionPerNode <- numOfExclusionPerNode
-  
-  model$ids <- ids
-  model$excludedInputs = dt$excludedInputs
-  
-  return(model)
 }
 
 
@@ -484,11 +559,9 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
     #get neural network and error without hidden layer
     neuralNetwork.hlOptimization <<- c(0)
     neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-    neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]   
-    
-    expected_values <- data.expecetedTestResults[[id]]
+    neuralNetwork.testResults.hlOptimizationNN.old[[id]] <<- neuralNetwork.testResults.hlOptimizationNN[[id]]     
 
-    last_error <- sMAPE(expected_values, neuralNetwork.testResults.hlOptimizationNN[[id]])
+    last_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
     neuralNetwork.hlOptimizationErrorVector[1] <<- last_error 
     
     #add first layer incrementally
@@ -499,14 +572,14 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- sMAPE(expected_values, neuralNetwork.testResults.hlOptimizationNN[[id]])
+      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$expected, neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted)
       neuralNetwork.hlOptimizationErrorVector[i+1] <<- current_error
 
       #break from optimization when error rises again
       if(last_error < current_error)
       {
         neuralNetwork.hlOptimization <<- c(i-1)
-        return(neuralNetwork.hlOptimization)
+        #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
       last_error <- current_error
@@ -523,7 +596,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
 
       #get neural network for this id and hidden nodes vector
       neuralNetwork.testResults.hlOptimizationNN[[id]] <<- testNeuralNetwork(getNeuralNetwork(id, hlOptimization = TRUE), id)
-      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]], expected_values)
+      current_error <- sMAPE(neuralNetwork.testResults.hlOptimizationNN[[id]]$predicted, neuralNetwork.testResults.hlOptimizationNN[[id]]$expected)
       neuralNetwork.hlOptimizationErrorVector[m+j+1] <<- current_error
 
       #break from optimization when error rises again
@@ -531,7 +604,7 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
       {
         neuralNetwork.hlOptimization <<- c(m, j)
         vars$options$hiddenLayers <<- c(m, j)
-        return(neuralNetwork.hlOptimization)
+        #return(neuralNetwork.hlOptimization)
       }
       #set new error to last error and save previous neural network
       last_error <- current_error
@@ -545,19 +618,12 @@ getHlOptimizationErrorTable <- function(id)
 {
   #print(neuralNetwork.hlOptimizationErrorVector)
   #return(as.data.table(neuralNetwork.hlOptimizationErrorVector))
-  browser()
+
   row <- (length(neuralNetwork.hlOptimizationErrorVector))
 
   eM <- matrix(nrow = row, ncol = 3) # plus 1 for the original NN
   n_firstlayer <- neuralNetwork.hlOptimization[1]
-  if(!is.na( neuralNetwork.hlOptimization[2]))
-  {
-    n_seclayer <- neuralNetwork.hlOptimization[2]
-  }
-  else
-  {
-    n_seclayer <- 0
-  }
+  n_seclayer <- neuralNetwork.hlOptimization[2]
 
 
   for(i in 1 : row)
@@ -574,15 +640,12 @@ getHlOptimizationErrorTable <- function(id)
     eM[k+1,2] <- 0
   }
 
-  if(n_seclayer>0)
+  second_index <- n_seclayer
+  for(l in 1 : second_index)
   {
-    second_index <- n_seclayer
-    for(l in 1 : second_index)
-    {
-      offset <- first_index + l
-      eM[offset, 1] <- n_firstlayer
-      eM[offset, 2] <- l
-    }
+    offset <- first_index + l
+    eM[offset, 1] <- n_firstlayer
+    eM[offset, 2] <- l
   }
   
   return(data.table("first layer" = eM[,1], "second layer" = eM[,2], "SMAPE" = eM[,3]))
