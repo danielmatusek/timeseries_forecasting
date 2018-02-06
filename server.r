@@ -251,7 +251,7 @@ server <- function(input, output, session) {
 
 		resetNeuralNetworks.hidden()
 	  resetNeuralNetworks.InputExclusion()
-	  resetModels('mlp', 'lstm', 'mlph')
+	  resetModels('mlp', 'lstm', 'mlph', 'jordan', 'elman')
 
 		vars$options$hiddenLayers <<- hiddenVector
 	})
@@ -732,7 +732,10 @@ server <- function(input, output, session) {
 	
 	output$errorMetricPlot <- renderPlotly({
 	  windowsChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
 	  enabledModelsChanged()
+		excludeInputErrorChanged()
 	  arModelBaseChanged()
 	  
 	  getModelErrorPlot(input$errorMetricName, if(input$errorOfAllTimeseries) { NULL } else { input$idSelect })
@@ -740,7 +743,10 @@ server <- function(input, output, session) {
 	
 	output$compareError <- renderDataTable({
 	  windowsChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
 	  enabledModelsChanged()
+		excludeInputErrorChanged()
 	  arModelBaseChanged()
 	  
 	  getErrorMetricCompare(input$idSelect)

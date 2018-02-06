@@ -8,7 +8,7 @@ library(RSNNS)
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
   #enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
-  enabledModels = c('ar', 'lstm'),
+  enabledModels = c('jordan', 'elman', 'ar', 'mlp', 'mlph'),
   
   options = list(
     windowSize = 7,

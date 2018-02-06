@@ -21,7 +21,7 @@ trainJordan <- function(id, hiddenLayers = c(0))
   #learnFunc = "Std_Backpropagation", , size = vars$options$hiddenLayers,  maxit = 500, linOut = FALSE
   #jordan <- RSNNS::jordan(x = myset$inputsTrain, y = myset$targetsTrain, size = vars$options$hiddenLayers#, learnFuncParams = c(0.001), 
     #maxit = 500, learnFunc = "JE_Rprop")
-  jordan <- RSNNS::jordan(x = traininput, y = traintarget, size = vars$options$hiddenLayers, learnFuncParams=c(0.05),
+  jordan <- RSNNS::jordan(x = traininput, y = traintarget, size = vars$options$hiddenLayers[1], learnFuncParams=c(0.05),
     learnFunc = "JE_Rprop",
     linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
   return(jordan)
