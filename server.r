@@ -245,7 +245,7 @@ server <- function(input, output, session) {
 		if(numOfHiddenLayers > 2 && !is.null(hl3)){
 			hiddenVector[3] <- hl3
 		}
-		if(numOfHiddenLayers > 3 && !is.null(Hl4)){
+		if(numOfHiddenLayers > 3 && !is.null(hl4)){
 			hiddenVector[4] <- hl4
 		}
 
