@@ -20,15 +20,15 @@ vars <<- list(
 )
 
 availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan',
-  'nnfeei', 'nnfed', 'nnfamei', 'lstm')
+  'nnfeei','mlpei', 'nnfed', 'nnfamei', 'lstm')
 oneForAllModels <<- c('nnfa', 'nnfah', 'nnfamei')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
-  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)',
+  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,200,20)','mlpei' = 'rgb(200,10,60)',
   'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)')
 
 modelText <<- c('AR', 'feedforward', 'feedforward with hidden', 'nnfa', 'nnfah', 'Elman', 'mlp', 'mlph', 'Jordan',
-                'nnfeei', 'nnfed', 'nnfamei', 'LSTM')
+                'NN for each Excluded Input','MLP Excluded Input', 'NN with Difference', 'nnfamei', 'LSTM')
 
 data.names <- NULL
 data.windows <- NULL
@@ -196,13 +196,14 @@ createWindows <- function(id)
   data.testSets[[id]]$xt0 <<- NULL
 }
 
+
+
 createNormalizedWindows <- function(id)
 {
   dataSet <- vars$timeSeries[[id]]$y
   dataSet <- normalizeData(dataSet, "0_1")
   normalizationParam <<- getNormParameters(dataSet)
   dataSet <- dataSet[,1]
-
   windows <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
   names(windows) <- paste0('xt', vars$options$windowSize:0)
   setcolorder(windows, paste0('xt', 0:vars$options$windowSize))
