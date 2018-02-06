@@ -354,9 +354,6 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
       
       if(!is.null(oldModel))
       {
-<<<<<<< HEAD
-        if(length(path) == 1)
-=======
         testResults <- testNeuralNetwork(nn, id)
         smape <- sMAPE(data.expectedTestResults[[id]], testResults)
         externalError[[pathAsString]] <-  if(!is.nan(smape)){ smape }else{ 0 }
@@ -364,7 +361,6 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
         
         error <- if(neuralnetwork.greedyErrorType == 'Outsample') {externalError[[pathAsString]]} else {internalError[[pathAsString]]}
         if (error < bestError)
->>>>>>> efaa24cb3ce33f6d0e76db5c91255739db9de71b
         {
           excludedPathAsIndices[1] <- 2
         }
