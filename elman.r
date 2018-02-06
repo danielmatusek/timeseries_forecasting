@@ -6,8 +6,8 @@
 trainRNN <- function(id, hiddenLayers = c(0))
 {
   set.seed(1)
-  #trainset <- getNormalizedTrainSet(id)
-  trainset <- getTrainSet(id)
+  trainset <- getNormalizedTrainSet(id)
+  #trainset <- getTrainSet(id)
   traininput <- trainset[, 2:length(trainset)]
   traintarget <- trainset[, 1]
 
@@ -26,8 +26,8 @@ getModel.elman <- function(id)
 
 getTestResults.elman <- function(model, id)
 {
-  #datanew <- predict(model, getNormalizedTestSet(id))[,1]
-  #denormalized <- denormalizeData(datanew, normalizationParam)
-  #denormalized[,1]
-  predict(model, getTestSet(id))[,1]
+  datanew <- predict(model, getNormalizedTestSet(id))[,1]
+  denormalized <- denormalizeData(datanew, normalizationParam)
+  denormalized[,1]
+  #predict(model, getTestSet(id))[,1]
 }

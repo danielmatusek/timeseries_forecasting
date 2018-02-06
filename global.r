@@ -200,8 +200,7 @@ createNormalizedWindows <- function(id)
   dataSet <- normalizeData(dataSet, "0_1")
   normalizationParam <<- getNormParameters(dataSet)
   dataSet <- dataSet[,1]
-  
-#  
+
   windows <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
   names(windows) <- paste0('xt', vars$options$windowSize:0)
   setcolorder(windows, paste0('xt', 0:vars$options$windowSize))
