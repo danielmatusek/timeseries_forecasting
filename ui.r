@@ -28,7 +28,8 @@ ui <- dashboardPage(skin = 'purple',
 	              menuItem("RSNNS Package", tabName = "rsnnspackage", icon = icon("sitemap", "fa-rotate-90")),
 		            menuItem("Autoregressive", tabName = "aRModel", icon = icon("line-chart")),
 		            menuItem("Comparision", tabName = "comparision", icon = icon("balance-scale")),
-	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope"))
+	              menuItem("Hidden Nodes", tabName = "hlOptimization", icon = icon("stethoscope")),
+	              menuItem("Forecasting", tabName = "forecasting")
 		  ),
 	    hr()
 	  ),
@@ -174,6 +175,13 @@ ui <- dashboardPage(skin = 'purple',
 			),
 			tabItem(tabName="hlOptimization",
 			        uiOutput("neuralNetwork_hlOptimization")
+			),
+			tabItem(tabName = 'forecasting',
+			     tabBox(width = NULL,
+			       tabPanel('Forecast',
+			          plotOutput('forecastPlot')), 
+			       tabPanel('Forecast Holtwinter/ Naive',   
+			          plotOutput('forecastPlot_Hw_N',height = "700px")))
 			)
 		)
 	)

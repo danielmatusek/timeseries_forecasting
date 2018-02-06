@@ -14,6 +14,7 @@ source('mlp.r')
 source('comparision.r')
 source('plot.rsnns.r')
 source('keras.r')
+source('forecast.R')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
@@ -840,4 +841,17 @@ server <- function(input, output, session) {
 	  p$elementId <- NULL
 	  p
 	})
+	
+	#Output Forecast
+	output$forecastPlot_Hw_N <- renderPlot({
+	  ts <- ts(vars$timeSeries[[input$idSelect]][,2], frequency = 7)
+	  par(mfrow=c(2,1))
+	  getForecastHW(ts,input$horizon)
+	  getForecastNaive(ts,input$horizon)
+	})
+	
+	output$forecastPlot <- renderPlot({
+
+	})	
+	
 }
