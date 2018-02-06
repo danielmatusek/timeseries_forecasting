@@ -54,10 +54,10 @@ getModel.mlpei <- function(id)
     bestExclInput <- 'empty'
     bestError <- externalError[['empty']]
   }
-  
   queue <- lapply(1 : vars$options$windowSize, function(i) { i })
   
-  trainSet <- getNormalizedTrainSet(id)
+  trainSet <- getTrainSet(id)
+  testSet <- data.expectedTestResults[[id]]
   
   repeat
   {
@@ -86,8 +86,8 @@ getModel.mlpei <- function(id)
       }
       else
       {
-        testResults <- getTestResults.mlpei(mlp, id)
-        smape <- sMAPE(data.expecetedTestResults[[id]], testResults)
+        
+        smape <- sMAPE(testSet, getTestResults.mlpei(mlp, id))
         externalError[[pathAsString]] <-  if(!is.nan(smape)){ smape }else{ 0 }
         
         error <- externalError[[pathAsString]]
@@ -138,11 +138,11 @@ getModel.mlpei <- function(id)
 
 getTestResults.mlpei <- function(model, id)
 {
-  data <- data.matrix(getNormalizedTestSet(id))
-  if(!is.null(model$excludedInput)) data <- data.matrix(data.matrix(getNormalizedTestSet(id))[, -model$excludedInput])
+  data <- getTestSet(id)
+  if(!is.null(model$excludedInput)) data <- data.matrix(data.matrix(data)[, -model$excludedInput])
   datanew <- predict(model, data)[,1]
-  denormalized <- denormalizeData(datanew, normalizationParam)
-  denormalized[,1]
+  #denormalized <- denormalizeData(datanew, normalizationParam)
+  #denormalized[,1]
 }
 
 

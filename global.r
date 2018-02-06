@@ -211,7 +211,7 @@ createNormalizedWindows <- function(id)
   index <- 1:(nrow(windows) - vars$options$horizon)
   data.normalized.trainSets[[id]] <<- windows[index, ]
   data.normalized.testSets[[id]] <<- windows[-index, ]
-  data.normalized.expectedTestResults[[id]] <<- data.testSets[[id]]$xt0
+  data.normalized.expectedTestResults[[id]] <<- data.normalized.testSets[[id]]$xt0
   data.normalized.testSets[[id]]$xt0 <<- NULL
 }
 
