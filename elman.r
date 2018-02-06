@@ -11,9 +11,8 @@ trainRNN <- function(id, hiddenLayers = c(0))
   traininput <- trainset[, 2:length(trainset)]
   traintarget <- trainset[, 1]
 
-  rnn <- RSNNS::elman(x = traininput, y = traintarget, size = 20,# size = vars$options$hiddenLayers,
-    learnFuncParams=c(0.1), maxit = 1000,
-    linOut = TRUE)
+  rnn <- RSNNS::elman(x = traininput, y = traintarget, size = vars$options$hiddenLayers,
+    learnFuncParams=c(0.1), maxit = 1000, linOut = TRUE)
   #rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
   
   return(rnn)

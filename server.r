@@ -14,6 +14,7 @@ source('mlp.r')
 source('comparision.r')
 source('plot.rsnns.r')
 source('keras.r')
+source('forecast.R')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
@@ -251,7 +252,7 @@ server <- function(input, output, session) {
 
 		resetNeuralNetworks.hidden()
 	  resetNeuralNetworks.InputExclusion()
-	  resetModels('mlp', 'lstm', 'mlph')
+	  resetModels('mlp', 'lstm', 'mlph', 'jordan', 'elman')
 
 		vars$options$hiddenLayers <<- hiddenVector
 	})
@@ -732,7 +733,10 @@ server <- function(input, output, session) {
 	
 	output$errorMetricPlot <- renderPlotly({
 	  windowsChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
 	  enabledModelsChanged()
+		excludeInputErrorChanged()
 	  arModelBaseChanged()
 	  
 	  getModelErrorPlot(input$errorMetricName, if(input$errorOfAllTimeseries) { NULL } else { input$idSelect })
@@ -740,7 +744,10 @@ server <- function(input, output, session) {
 	
 	output$compareError <- renderDataTable({
 	  windowsChanged()
+		excludeBiasChanged()
+		hiddenLayersChanged()
 	  enabledModelsChanged()
+		excludeInputErrorChanged()
 	  arModelBaseChanged()
 	  
 	  getErrorMetricCompare(input$idSelect)
@@ -834,4 +841,17 @@ server <- function(input, output, session) {
 	  p$elementId <- NULL
 	  p
 	})
+	
+	#Output Forecast
+	output$forecastPlot_Hw_N <- renderPlot({
+	  ts <- ts(vars$timeSeries[[input$idSelect]][,2], frequency = 7)
+	  par(mfrow=c(2,1))
+	  getForecastHW(ts,input$horizon)
+	  getForecastNaive(ts,input$horizon)
+	})
+	
+	output$forecastPlot <- renderPlot({
+
+	})	
+	
 }

@@ -7,8 +7,9 @@ library(RSNNS)
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
+
   #enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
-  enabledModels = c('ar', 'lstm'),
+  enabledModels = c('jordan', 'elman', 'ar', 'mlp', 'mlph'),
   
   options = list(
     windowSize = 7,
@@ -27,8 +28,8 @@ modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' =
   'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,200,20)','mlpei' = 'rgb(200,10,60)',
   'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)')
 
-modelText <<- c('AR', 'feedforward', 'feedforward with hidden', 'nnfa', 'nnfah', 'Elman', 'mlp', 'mlph', 'Jordan',
-                'NN for each Excluded Input','MLP Excluded Input', 'NN with Difference', 'nnfamei', 'LSTM')
+modelText <<- c('AR', 'neural network for one', 'neural network for one with hidden', 'neural network for all', 'neural network for all with hidden', 'Elman', 'multilayer perceptron', 'multilayer perceptron with hidden', 'Jordan',
+                'neural network excluded input','MLP Excluded Input', 'NN with Difference', 'nnfamei', 'LSTM')
 
 data.names <- NULL
 data.windows <- NULL
