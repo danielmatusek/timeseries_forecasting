@@ -1,3 +1,4 @@
+library(RSNNS)
 # vars is a list of all variables worth saving in an extra file
 # it will contain:
 # vars$timeSeries[[id]]
@@ -6,8 +7,10 @@
 # vars$testResults[[modelName]][[id]]
 # vars$cpuTimes[[modelName]][[id]]
 vars <<- list(
-  enabledModels = c('ar', 'mlp', 'mlph'),
-  
+
+  #enabledModels = c('ar', 'nnfe', 'nnfeh', 'elman', 'mlp', 'mlph', 'jordan'),
+  enabledModels = c('ar', 'lstm'),
+
   options = list(
     windowSize = 7,
     horizon = 7,
@@ -18,24 +21,29 @@ vars <<- list(
 )
 
 availableModels <<- c('ar', 'nnfe', 'nnfeh', 'nnfa', 'nnfah', 'elman', 'mlp', 'mlph', 'jordan',
-  'nnfeei', 'nnfed', 'nnfamei', 'lstm')
+  'nnfeei','mlpei', 'nnfed', 'nnfamei', 'lstm')
 oneForAllModels <<- c('nnfa', 'nnfah', 'nnfamei')
 modelColors <<- c('ar' = 'rgb(193, 5, 52)', 'nnfe' = 'rgb(0, 0, 255)', 'nnfeh' = 'rgb(0, 255, 255)',
   'nnfa' = 'rgb(255, 0, 128)', 'nnfah' = 'rgb(128, 0, 128)', 'elman' = 'rgb(255, 127, 0)', 'mlp' = 'rgb(0,96,0)',
-  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,20,20)',
+  'mlph' ='rgb(255, 0, 0)', 'jordan' = 'rgb(0, 255, 128)', 'nnfeei' = 'rgb(20,200,20)','mlpei' = 'rgb(200,10,60)',
   'nnfed' = 'rgb(30,230,10)', 'nnfamei'= 'rgb(20,80,240)', 'lstm' = 'rgb(50, 123, 243)')
 
 modelText <<- c('AR', 'neural network for one', 'neural network for one with hidden', 'neural network for all', 'neural network for all with hidden', 'Elman', 'multilayer perceptron', 'multilayer perceptron with hidden', 'Jordan',
-                'neural network excluded input', 'nnfed', 'nnfamei', 'LSTM')
+                'neural network excluded input','MLP Excluded Input', 'NN with Difference', 'nnfamei', 'LSTM')
 
 data.names <- NULL
 data.windows <- NULL
 data.trainSets <- NULL
 data.testSets <- NULL
-data.expecetedTestResults <- NULL
+data.expectedTestResults <- NULL
 data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
+data.normalized.trainSets <- NULL
+data.normalized.testSets <- NULL
+data.normalized.expectedTestResults <- NULL
+
+normalizationParam <<- NULL
 
 
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
@@ -169,6 +177,8 @@ resetWindows <- function() {
   data.testSets <<- NULL
   data.diff.trainSets <<- NULL
   data.diff.testSets <<- NULL
+  data.normalized.trainSets <<- NULL
+  data.normalized.testSets <<- NULL
 }
 
 
@@ -183,8 +193,30 @@ createWindows <- function(id)
   index <- 1:(nrow(windows) - vars$options$horizon)
   data.trainSets[[id]] <<- windows[index, ]
   data.testSets[[id]] <<- windows[-index, ]
-  data.expecetedTestResults[[id]] <<- data.testSets[[id]]$xt0
+  data.expectedTestResults[[id]] <<- data.testSets[[id]]$xt0
   data.testSets[[id]]$xt0 <<- NULL
+}
+
+
+
+createNormalizedWindows <- function(id)
+{
+  dataSet <- vars$timeSeries[[id]]$y
+  dataSet <- normalizeData(dataSet, "0_1")
+  normalizationParam <<- getNormParameters(dataSet)
+  dataSet <- dataSet[,1]
+  windows <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
+  names(windows) <- paste0('xt', vars$options$windowSize:0)
+  setcolorder(windows, paste0('xt', 0:vars$options$windowSize))
+  
+  index <- 1:(nrow(windows) - vars$options$horizon)
+  data.normalized.trainSets[[id]] <<- windows[index, ]
+  data.normalized.testSets[[id]] <<- windows[-index, ]
+
+  denormalizedTestSet <- denormalizeData(data.normalized.testSets[[id]], normalizationParam)
+
+  data.expectedTestResults[[id]] <<- denormalizedTestSet[,1]
+  data.normalized.testSets[[id]]$xt0 <<- NULL
 }
 
 
@@ -252,4 +284,20 @@ getTestSet <- function(id) {
     createWindows(id)
   }
   return(data.testSets[[id]])
+}
+
+getNormalizedTrainSet <- function(id) {
+  if (is.null(data.normalized.trainSets[[id]]))
+  {
+    createNormalizedWindows(id)
+  }
+  return(data.normalized.trainSets[[id]])
+}
+
+getNormalizedTestSet <- function(id) {
+  if (is.null(data.normalized.testSets[[id]]))
+  {
+    createNormalizedWindows(id)
+  }
+  return(data.normalized.testSets[[id]])
 }

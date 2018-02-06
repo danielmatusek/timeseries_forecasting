@@ -192,7 +192,7 @@ server <- function(input, output, session) {
 	  }
 	})
 	
-	hiddenLayersChanged <- reactive({
+	hiddenLayersChanged.old <- reactive({ #old hiddenLayers function, now using a new one
 	  hiddenLayers <- c(input$hiddenNeuronsInFirstLayer)
 	  if (hiddenLayers != vars$options$hiddenLayers)
 	  {
@@ -226,6 +226,36 @@ server <- function(input, output, session) {
 	    resetModels('ar')
 	  }
 	})
+
+	hiddenLayersChanged <- reactive ({
+		numOfHiddenLayers <- input$selectNumHiddenLayers
+		hl1 <- input$hiddenNeuronsInFirstLayer
+		hl2 <- input$hiddenLayer2
+		hl3 <- input$hiddenLayer3
+		hl4 <- input$hiddenLayer4
+
+		vars$options$hiddenLayers <<- c(0)
+		hiddenVector <- c(0)
+
+		if(numOfHiddenLayers > 0 && !is.null(hl1)){
+			hiddenVector[1] <- hl1
+		}
+		if(numOfHiddenLayers > 1 && !is.null(hl2)){
+			hiddenVector[2] <- hl2
+		}
+		if(numOfHiddenLayers > 2 && !is.null(hl3)){
+			hiddenVector[3] <- hl3
+		}
+		if(numOfHiddenLayers > 3 && !is.null(hl4)){
+			hiddenVector[4] <- hl4
+		}
+
+		resetNeuralNetworks.hidden()
+	  resetNeuralNetworks.InputExclusion()
+	  resetModels('mlp', 'lstm', 'mlph')
+
+		vars$options$hiddenLayers <<- hiddenVector
+	})
 	
 	
 	
@@ -253,7 +283,7 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- 0.0175*numData
 	    }
-	    sliderInput('windowSize', 'Window Size', 1, 10, values, step = 1)
+	    sliderInput('windowSize', 'Window Size', 1, 30, values, step = 1)
 	  }
 	})
 	
@@ -279,7 +309,7 @@ server <- function(input, output, session) {
 	  
 	  if (is.null(windowSize) || windowSize == 0)
 	  {
-	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 0, 0, 0, step = 1)
+	    sliderInput('hiddenNeuronsInFirstLayer', "Hidden Nodes in first layer", 0, 0, 0, step = 1)
 	  }
 	  else
 	  {
@@ -287,9 +317,30 @@ server <- function(input, output, session) {
 	    if(is.null(values)){
 	      values <- 3
 	    }
-	    maxHiddenSlider <- input$windowSize * 2
-	    sliderInput('hiddenNeuronsInFirstLayer', "Number Hidden Neurons", 1, maxHiddenSlider, values, step = 1)
+	    maxHiddenSlider <- input$windowSize * 5
+	    sliderInput('hiddenNeuronsInFirstLayer', "Hidden Nodes in first layer", 1, maxHiddenSlider, values, step = 1)
 	  }
+	})
+
+	output$extendedHiddenLayer2 <- renderUI ({
+		numHiddenLayer <- input$selectNumHiddenLayers
+		if(numHiddenLayer == 2 | numHiddenLayer == 3 | numHiddenLayer == 4){
+			sliderInput('hiddenLayer2', "Hidden Nodes in second layer", 1, 50, 1, step=1)
+		}
+	})
+
+	output$extendedHiddenLayer3 <- renderUI ({
+		numHiddenLayer <- input$selectNumHiddenLayers
+		if(numHiddenLayer == 3 | numHiddenLayer == 4){
+			sliderInput('hiddenLayer3', "Hidden Nodes in third layer", 1, 50, 1, step=1)
+		}
+	})
+
+	output$extendedHiddenLayer4 <- renderUI ({
+		numHiddenLayer <- input$selectNumHiddenLayers
+		if(numHiddenLayer == 4){
+			sliderInput('hiddenLayer4', "Hidden Nodes in fourth layer", 1, 50, 1, step=1)
+		}
 	})
 	
 	
@@ -436,7 +487,7 @@ server <- function(input, output, session) {
 	  excludeInputErrorChanged()
       
 	  m <- getModel('nnfamei', NULL)
-	  #browser()
+	  
 	  dat <- as.data.frame( m$numOfExclusionPerNode, m$inputNodePos )
 	  barplot(m$numOfExclusionPerNode, xlab = "Input node position", ylab = "Number", col = c("darkblue"), names.arg=m$inputNodePos)#, horz= TRUE)
 	})
@@ -554,10 +605,15 @@ server <- function(input, output, session) {
 		windowsChanged()
 		excludeBiasChanged()
 		hiddenLayersChanged()
-		
 		t <- getTestResults('elman', input$idSelect)
-		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	#MLP with RSNNS and with Hidden Layer
@@ -569,7 +625,14 @@ server <- function(input, output, session) {
 		
 		t <- getTestResults('mlp', input$idSelect)
 		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	#MLP with RSNSS and without Hidden Layer
@@ -578,9 +641,16 @@ server <- function(input, output, session) {
 		excludeBiasChanged()
 		hiddenLayersChanged()
 		
-		t <- getTestResults('mlp', input$idSelect)
+		t <- getTestResults('mlph', input$idSelect)
 		
-		data.table(predicted = t$predicted, expected = t$expected)
+		if (inherits(t, 'TestResults'))
+		{
+		  data.table(predicted = t$predicted, expected = t$expected)		  
+		}
+		else
+		{
+			return (NULL)
+		}
 	})
 
 	output$recPlot <- renderPlot({
@@ -591,32 +661,12 @@ server <- function(input, output, session) {
   	plot(getModel('elman', input$idSelect), paste0('xt', 1:vars$options$windowSize))
 	})
 
-	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		windowsChanged()
-		excludeBiasChanged()
-		hiddenLayersChanged()
-		
-		t <- getTestResults('mlph', input$idSelect)
-		
-		data.table(result = t$result, expected = t$expected)
-	})
-
 	output$mlp_plot <- renderPlot({
   	windowsChanged()
   	excludeBiasChanged()
   	hiddenLayersChanged()
   
   	plot(getModel('mlp', input$idSelect), paste0('xt', 1:vars$options$windowSize))
-	})
-
-	output$rsnns_mlp_tab_without_hidden <- renderDataTable({
-		windowsChanged()
-		excludeBiasChanged()
-		hiddenLayersChanged()
-		
-		t <- getTestResults('mlph', input$idSelect)
-		
-		data.table(predicted = t$predicted, expected = t$expected)
 	})
 
 	output$mlp_plot_without_hidden <- renderPlot({
