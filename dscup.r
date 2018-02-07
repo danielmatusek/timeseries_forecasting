@@ -9,9 +9,10 @@ horizon.daily <<- 9
 filename <<- NULL
 
 startRoutine <- function(modelName, id, granularity){
-    #write.csv()
     loadedID <- names(vars$timeSeries)
+
     x <- data.frame("TS-ID", "MODEL", "WINDOWSIZE", "LAYER ARCHITECTURE", "SMAPE")
+
     if(granularity == 'monthly'){
         filename <<- 'monthly.csv'
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
@@ -53,7 +54,6 @@ getBestConfig <- function(modelName, id, horizon){
                     }
                     if(inc) break
                 }   
-
                 # Die eigentliche Verarbeitungsroutine in welcher  das Model gelernt wird 
                 # (in getTestResults und dann wird der SMAPE in eine Datei rausgeschrieben)
                 vars$options$hiddenLayers <<- layerVector
