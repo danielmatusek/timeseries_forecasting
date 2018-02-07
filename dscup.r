@@ -1,11 +1,13 @@
-maxWindowSize <<- 5
-maxHiddenLayer <<- 3
-maxHiddenNodes <<- 4
+maxWindowSize <<- 2
+maxHiddenLayer <<- 2
+maxHiddenNodes <<- 2
 
 startRoutine <- function(modelName, id, granularity){
     #write.csv()
     loadedID <- names(vars$timeSeries)
     if(granularity == 'monthly'){
+        x <- data.frame("MODEL", "WINDOWSIZE", "LAYER ARCHITECTURE", "SMAPE")
+        write.table(x, file = "monthly.csv", append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
         getBestMonthlyConfig(modelName, id)
     }
     else if (granularity == 'weekly'){
@@ -45,8 +47,8 @@ getBestMonthlyConfig <- function(modelName, id){
                 if(inherits(testResults, 'TestResults'))
                 {
                     smape <- sMAPE(testResults$expected, testResults$predicted)  
-                    write.csv(smape, file = "monthly.csv", append = TRUE, eol = '\n') 
-                    print(smape)
+                    x <- data.frame(modelName, windowSize, toString(layerVector), smape)
+                    write.table(x, file = "monthly.csv", append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
                 }
                 resetModels(modelName)
             }
