@@ -11,22 +11,24 @@ startRoutine <- function(modelName, id, granularity){
         getBestMonthlyConfig(modelName, id)
     }
     else if (granularity == 'weekly'){
-        write.csv(getBestMonthlyConfig(modelName, id), file = "weekly.csv", append = TRUE, eol = '\n')
+        #todo
     }
     else if (granularity == 'daily'){
-        write.csv(getBestMonthlyConfig(modelName, id), file = "daily.csv", append = TRUE, eol = '\n')
+        #todo
     } else print('WARN: no such granularity (dscup.r)')
 }
 
 getBestMonthlyConfig <- function(modelName, id){
     vars$options$horizon <<- 3
 
+    #iteriere durch alle Windows und Layer
     for(windowSize in 1:maxWindowSize){
         vars$options$windowSize <<- windowSize
         for(hiddenLayer in 1:maxHiddenLayer){
             layerVector <- rep(1,hiddenLayer)
             #j <- hiddenLayer
             for(hiddenNodes in 1:((maxHiddenNodes ^ hiddenLayer)-1)){
+                #Aufbauen des HIdden Nodes Vektors
                 inc <- FALSE
                 j <- hiddenLayer
                 while(!inc){
@@ -40,9 +42,10 @@ getBestMonthlyConfig <- function(modelName, id){
                     }
                     if(inc) break
                 }   
+
+                # Die eigentliche Verarbeitungsroutine in welcher  das Model gelernt wird 
+                # (in getTestResults und dann wird der SMAPE in eine Datei rausgeschrieben)
                 vars$options$hiddenLayers <<- layerVector
-                cat("hidden layer: ", vars$options$hiddenLayers, "\n")
-                cat("windowSize: ",vars$options$windowSize, "\n")
                 testResults <- getTestResults(modelName, id)
                 if(inherits(testResults, 'TestResults'))
                 {
@@ -57,9 +60,11 @@ getBestMonthlyConfig <- function(modelName, id){
 }
 
 getBestWeeklyConfig <- function(x){
-
+    #todo dasselbe wie beim monat nur mit anderm horizon
+    #write.csv(getBestMonthlyConfig(modelName, id), file = "weekly.csv", append = TRUE, eol = '\n')
 }
 
 getBestDailyConfig <- function(x){
-
+    #todo dasselbe wie beim monat nur mit anderm horizon
+    #write.csv(getBestMonthlyConfig(modelName, id), file = "daily.csv", append = TRUE, eol = '\n')
 }
