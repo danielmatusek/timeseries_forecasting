@@ -15,6 +15,7 @@ source('comparision.r')
 source('plot.rsnns.r')
 source('keras.r')
 source('forecast.R')
+source('windows.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
