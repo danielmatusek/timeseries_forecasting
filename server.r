@@ -15,6 +15,7 @@ source('comparision.r')
 source('plot.rsnns.r')
 source('keras.r')
 source('forecast.R')
+source('windows.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
@@ -278,7 +279,7 @@ server <- function(input, output, session) {
 	  }
 	  else
 	  {
-	    numData <- length(vars$timeSeries[[id]]$x)
+	    numData <- nrow(vars$timeSeries[[id]])
 	    values <- input$windowSize
 	    if(is.null(values)){
 	      values <- 0.0175*numData
@@ -351,7 +352,7 @@ server <- function(input, output, session) {
 	output$dataChart <- renderPlotly({
 	  values$dataImported
 	  
-		p <- plot_ly(vars$timeSeries[[input$idSelect]], x = ~x, y = ~y, type = 'scatter', mode = 'lines')
+		p <- plot_ly(y = vars$timeSeries[[input$idSelect]][, 1], type = 'scatter', mode = 'lines')
 		p$elementId <- NULL	# workaround for the "Warning in origRenderFunc() : Ignoring explicitly provided widget ID ""; Shiny doesn't use them"
 		p
 	})
@@ -705,13 +706,13 @@ server <- function(input, output, session) {
 	output$arACF <- renderPlot({
 	  values$dataImported
 	  
-	  acf(vars$timeSeries[[input$idSelect]]$y, main = "ACF")
+	  acf(vars$timeSeries[[input$idSelect]][,1], main = "ACF")
 	})
 	
 	output$arPACF <- renderPlot({
 	  values$dataImported
 	  
-	  pacf(vars$timeSeries[[input$idSelect]]$y, main = "PACF")
+	  pacf(vars$timeSeries[[input$idSelect]][,1], main = "PACF")
 	})
 	
 	
@@ -844,7 +845,7 @@ server <- function(input, output, session) {
 	
 	#Output Forecast
 	output$forecastPlot_Hw_N <- renderPlot({
-	  ts <- ts(vars$timeSeries[[input$idSelect]][,2], frequency = 7)
+	  ts <- ts(vars$timeSeries[[input$idSelect]][,1], frequency = 7)
 	  par(mfrow=c(2,1))
 	  getForecastHW(ts,input$horizon)
 	  getForecastNaive(ts,input$horizon)

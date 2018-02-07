@@ -32,16 +32,9 @@ modelText <<- c('AR', 'neural network for one', 'neural network for one with hid
                 'neural network excluded input','MLP Excluded Input', 'NN with Difference', 'nnfamei', 'LSTM')
 
 data.names <- NULL
-data.windows <- NULL
-data.trainSets <- NULL
-data.testSets <- NULL
-data.expectedTestResults <- NULL
 data.diff.trainSets <- NULL
 data.diff.testSets <- NULL
 data.inputDifference.testSets <- NULL
-data.normalized.trainSets <- NULL
-data.normalized.testSets <- NULL
-data.normalized.expectedTestResults <- NULL
 
 normalizationParam <<- NULL
 
@@ -95,7 +88,7 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
     
     for (id in names(data))
     {
-      data[[id]]$id <- NULL
+      data[[id]] <- as.matrix(data[[id]]$y)
     }
     
     vars$timeSeries <<- data
@@ -153,10 +146,6 @@ loadResults <- function(name)
   if (file.access(path, 4) == 0)
   {
     vars <<- readRDS(path)
-    for (id in names(vars$timeSeries))
-    {
-      createWindows(id)
-    }
     
     print(paste0("loaded results from 'results/", name, ".rdata'"))
   }
@@ -168,6 +157,6 @@ loadResults <- function(name)
 
 getTimeSeriesValueSpan <- function(id)
 {
-  values <- vars$timeSeries[[id]]$y
+  values <- vars$timeSeries[[id]][,1]
   max(values) - min(values)
 }

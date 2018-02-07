@@ -4,9 +4,9 @@ library(RSNNS)
 getModel.mlp <- function(id, hiddenLayers = FALSE)
 {
   set.seed(1)
-  trainset <- getNormalizedTrainSet(id)
+  trainset <- getTrainSet(id, normalization = '0_1')
   #trainset <- getTrainSet(id)
-  traininput <- trainset[, 2:length(trainset)]
+  traininput <- trainset[, -1]
   traintarget <- trainset[, 1]
   
   if(hiddenLayers)
@@ -20,6 +20,8 @@ getModel.mlp <- function(id, hiddenLayers = FALSE)
       linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
   }
   
+  
+  attr(mlp, 'normParams') <- getNormParameters(trainset)
   return(mlp)
 }
 
@@ -57,7 +59,7 @@ getModel.mlpei <- function(id)
   queue <- lapply(1 : vars$options$windowSize, function(i) { i })
   
   trainSet <- getTrainSet(id)
-  testSet <- data.expectedTestResults[[id]]
+  testSet <- tail(vars$timeSeries[[id]][, 1], vars$options$horizon)
   
   repeat
   {
@@ -148,10 +150,10 @@ getTestResults.mlpei <- function(model, id)
 
 getTestResults.mlp <- function(model, id)
 {
-  datanew <- predict(model, getNormalizedTestSet(id))[,1]
-  denormalized <- denormalizeData(datanew, normalizationParam)
+  testSet <- getTestSet(id, normalization = '0_1')
+  datanew <- predict(model, testSet)[,1]
+  denormalized <- denormalizeData(datanew, getNormParameters(model))
   denormalized[,1]
-  #predict(model, getTestSet(id))[,1]
 }
 
 getTestResults.mlph <- getTestResults.mlp

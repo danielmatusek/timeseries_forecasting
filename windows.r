@@ -35,16 +35,13 @@ windowGenerator2 <- function(data, lookback, minIndex, maxIndex = NULL, shuffle 
 }
 
 resetWindows <- function() {
-  data.trainSets <<- NULL
-  data.testSets <<- NULL
   data.diff.trainSets <<- NULL
   data.diff.testSets <<- NULL
-  data.normalized.trainSets <<- NULL
-  data.normalized.testSets <<- NULL
 }
 
 
-generateWindows <- function(id, lookbackIndices = NULL, delay = 0, seasonality = NULL, normalization = NULL)
+generateWindows <- function(id, minIndex = 1, maxIndex = NULL,
+  lookbackIndices = NULL, delay = 0, seasonality = NULL, normalization = NULL)
 {
   if (mode(lookbackIndices) != 'numeric')
   {
@@ -58,21 +55,43 @@ generateWindows <- function(id, lookbackIndices = NULL, delay = 0, seasonality =
       }
     }
   }
-  maxIndex <- max(lookbackIndices)
+  maxLookbackIndex <- max(lookbackIndices)
   
-  data <- data.matrix(vars$timeSeries[[id]]$y)
+  data <- vars$timeSeries[[id]]
   if (!is.null(normalization))
   {
     data <- normalizeData(data, normalization)
   }
   
-  samples <- array(0, dim = c(nrow(data) - maxIndex, length(lookbackIndices) + 1))
+  if (is.null(maxIndex) || maxIndex > nrow(data))
+  {
+    maxIndex <- nrow(data)
+  }
+  if (maxIndex <= 0)
+  {
+    maxIndex <- nrow(data) + maxIndex
+  }
+  if (minIndex <= 0)
+  {
+    minIndex <- nrow(data) + minIndex
+  }
+  if (minIndex - maxLookbackIndex < 1)
+  {
+    minIndex <- maxLookbackIndex + 1
+  }
+  if (maxIndex - minIndex < 0)
+  {
+    return(NULL)
+  }
+  
+  samples <- array(0, dim = c(maxIndex - minIndex + 1, length(lookbackIndices) + 1))
   colnames(samples) <- paste0('xt', c(0, lookbackIndices))
+  current <- minIndex
   for (i in 1:nrow(samples))
   {
-    current <- maxIndex + i
     indices <- c(current, current - lookbackIndices)
     samples[i,] <- data[indices,]
+    current <- current + 1
   }
   
   if (!is.null(normalization))
@@ -83,38 +102,10 @@ generateWindows <- function(id, lookbackIndices = NULL, delay = 0, seasonality =
   return (samples)
 }
 
-createWindows <- function(id)
-{
-  windows <- generateWindows(id)
-  windows <- as.data.table(windows, by.column = TRUE)
-  
-  index <- 1:(nrow(windows) - vars$options$horizon)
-  data.trainSets[[id]] <<- windows[index, ]
-  data.testSets[[id]] <<- windows[-index, ]
-  data.expectedTestResults[[id]] <<- data.testSets[[id]]$xt0
-  data.testSets[[id]]$xt0 <<- NULL
-}
-
-createNormalizedWindows <- function(id)
-{
-  windows <- generateWindows(id, normalization = '0_1')
-  normalizationParam <<- getNormParameters(windows)
-  windows <- as.data.table(windows, by.column = TRUE)
-  
-  index <- 1:(nrow(windows) - vars$options$horizon)
-  data.normalized.trainSets[[id]] <<- windows[index, ]
-  data.normalized.testSets[[id]] <<- windows[-index, ]
-  
-  denormalizedTestSet <- denormalizeData(data.normalized.testSets[[id]], normalizationParam)
-  
-  data.expectedTestResults[[id]] <<- denormalizedTestSet[,1]
-  data.normalized.testSets[[id]]$xt0 <<- NULL
-}
-
 
 createDifferentableWindow <- function(id)
 {
-  dataSet <- vars$timeSeries[[id]]$y
+  dataSet <- vars$timeSeries[[id]][,1]
   win <- as.data.table(rollapply(dataSet, width = vars$options$windowSize + 1, FUN = identity, by = 1), by.column = TRUE)
   names(win) <- paste0('xt', vars$options$windowSize : 0)
   setcolorder(win, paste0('xt', 0 : vars$options$windowSize))
@@ -132,31 +123,15 @@ createDifferentableWindow <- function(id)
 }
 
 
-getTrainSet <- function(id, lookbackIndices = NULL)
+getTrainSet <- function(id, normalization = NULL)
 {
-  if (mode(lookbackIndices) != 'numeric')
-  {
-    lookbackIndices <- 1:vars$options$windowSize
-  }
-  maxIndex <- max(lookbackIndices)
-  
-  data <- vars$timeSeries[[id]]$y
-  
-  samples <- array(0, dim = c(length(data) - maxIndex, length(lookbackIndices) + 1))
-  for (i in 1:nrow(samples))
-  {
-    current <- maxIndex + i
-    indices <- c(current, current - lookbackIndices)
-    samples[i,] <- data[indices]
-  }
-  
-  windows <- as.data.table(samples, by.column = TRUE)
-  names(windows) <- paste0('xt', c(0, lookbackIndices))
-  
-  index <- 1:(nrow(windows) - vars$options$horizon)
-  return (windows[index, ])
+  return(generateWindows(id, maxIndex = -vars$options$horizon, normalization = normalization))
 }
 
+getAllTrainSetsCombined <- function()
+{
+  return(do.call(rbind, lapply(names(vars$timeSeries), function(id) { getTrainSet(id) })))
+}
 
 getDiffTrainSet <- function(id)
 {
@@ -167,6 +142,11 @@ getDiffTrainSet <- function(id)
   return(data.diff.trainSets[[id]])
 }
 
+getTestSet <- function(id, normalization = NULL)
+{
+  return(generateWindows(id, minIndex = -vars$options$horizon + 1, normalization = normalization)[, -1])
+}
+
 getDiffTestSet <- function(id)
 {
   if(is.null(data.diff.testSets[[id]]))
@@ -174,38 +154,4 @@ getDiffTestSet <- function(id)
     createDifferentableWindow(id)
   }
   return(data.diff.testSets[[id]])
-}
-
-getAllTrainSetsCombined <- function() {
-  ids <- names(vars$timeSeries)
-  for (i in 1:length(ids))
-  {
-    getTrainSet(ids[i])
-  }
-  
-  return(rbindlist(data.trainSets))
-}
-
-getTestSet <- function(id) {
-  if (is.null(data.testSets[[id]]))
-  {
-    createWindows(id)
-  }
-  return(data.testSets[[id]])
-}
-
-getNormalizedTrainSet <- function(id) {
-  if (is.null(data.normalized.trainSets[[id]]))
-  {
-    createNormalizedWindows(id)
-  }
-  return(data.normalized.trainSets[[id]])
-}
-
-getNormalizedTestSet <- function(id) {
-  if (is.null(data.normalized.testSets[[id]]))
-  {
-    createNormalizedWindows(id)
-  }
-  return(data.normalized.testSets[[id]])
 }

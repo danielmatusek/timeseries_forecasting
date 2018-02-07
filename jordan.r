@@ -4,8 +4,8 @@ library(RSNNS)
 trainJordan <- function(id, hiddenLayers = c(0))
 {
   set.seed(1)
-  trainset <- getNormalizedTrainSet(id)
-  traininput <- trainset[, 2:length(trainset)]
+  trainset <- getTrainSet(id, normalization = '0_1')
+  traininput <- trainset[, -1]
   traintarget <- trainset[, 1]
   
   #myset <- RSNNS::splitForTrainingAndTest(traininput, traintarget, ratio=validationset.ratio)
@@ -24,6 +24,7 @@ trainJordan <- function(id, hiddenLayers = c(0))
   jordan <- RSNNS::jordan(x = traininput, y = traintarget, size = vars$options$hiddenLayers[1], learnFuncParams=c(0.05),
     learnFunc = "JE_Rprop",
     linOut = TRUE, maxit = 50, hiddenActFunc = "Act_Identity")
+  attr(jordan, 'normParams') <- getNormParameters(trainset)
   return(jordan)
 }
 
@@ -34,7 +35,8 @@ getModel.jordan <- function(id)
 
 getTestResults.jordan <- function(model, id)
 {
-  datanew <- predict(model, getNormalizedTestSet(id))[,1]
-  denormalized <- denormalizeData(datanew, normalizationParam)
+  testSet <- getTestSet(id, normalization = '0_1')
+  datanew <- predict(model, testSet)[,1]
+  denormalized <- denormalizeData(datanew, getNormParameters(model))
   denormalized[,1]
 }

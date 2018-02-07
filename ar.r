@@ -5,8 +5,7 @@ library(data.table)
 
 getModel.ar <- function(id)
 {
-  y <- vars$timeSeries[[id]]$y
-  trainData <- y[1 : (length(y) - vars$options$horizon)]
+  trainData <- tail(vars$timeSeries[[id]][, 1], -vars$options$horizon)
 
   if(vars$options$arModelName == 'ar')
   {
@@ -22,9 +21,7 @@ getModel.ar <- function(id)
 
 getTestResults.ar <- function(model, id)
 {
-  testSet <- getTestSet(id)
-  testSet <- testSet[, 1 : vars$options$windowSize]
-  testSet[['bias']] <- 1
+  testSet <- cbind(getTestSet(id), 1)
   
-  (as.matrix(testSet) %*% model)[, 1]
+  (testSet %*% model)[, 1]
 }

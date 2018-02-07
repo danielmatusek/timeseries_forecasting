@@ -77,9 +77,8 @@ getTestResults <- function(modelName, id)
       testResults <- do.call(paste0('getTestResults.', modelName), list(model, id))
       if (mode(testResults) == 'numeric')
       {
-        
         vars$predictions[[modelName]][[id]] <<- testResults
-        return (structure(list(expected = data.expectedTestResults[[id]], predicted = testResults), class = 'TestResults'))
+        return (structure(list(expected = tail(vars$timeSeries[[id]][,1], vars$options$horizon), predicted = testResults), class = 'TestResults'))
       }
       else
       {
@@ -98,7 +97,7 @@ getTestResults <- function(modelName, id)
     testResults <- vars$predictions[[modelName]][[id]]
     if (mode(testResults) == 'numeric')
     {
-      return (structure(list(expected = data.expectedTestResults[[id]], predicted = testResults), class = 'TestResults'))
+      return (structure(list(expected = tail(vars$timeSeries[[id]][,1], vars$options$horizon), predicted = testResults), class = 'TestResults'))
     }
     else
     {

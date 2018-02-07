@@ -120,13 +120,11 @@ excludeInputs <- function(hidden, excludeVector)
 
 trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NULL, isDifferantable = FALSE) 
 {
-  
   excludedVectorPos <- getNeuralNetworkExcludeVector(hiddenLayers, excludeVector, isDifferantable)
   
-  n <- names(trainset)
+  n <- colnames(trainset)
   
   f <- as.formula(paste("xt0 ~ ", paste(n[!n %in% "xt0"], collapse = " + ")))
-#  f <- as.formula(paste(paste(n[!n %in% "xt0"], collapse = " + ") ," ~ xt0"))
   set.seed(1)
   
   
@@ -266,7 +264,7 @@ getTestResults.nnfa <- function(model, id)
   testNeuralNetwork(model, id)
 }
 
-getTestResults.nnfah <- function(id)
+getTestResults.nnfah <- function(model, id)
 {
   testNeuralNetwork(model, id)
 }
@@ -329,7 +327,6 @@ resetEIModels <- function()
 # calculate the best neural network model with greedy algorithm
 getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
 {
-  
   resetEIModels()
     #calculate the first model
     model <- if (hiddenLayers) { if(is.null(id)){ getModel('nnfah')} else {getModel('nnfeh', id)}} else { if(is.null(id)) {getModel('nnfa')} else {getModel('nnfe', id)}}
@@ -339,6 +336,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
     excludedPathAsIndices <- c(1)
     from <- 0
     to <- 1
+    expectedTestResults <- tail(vars$timeSeries[[id]][,1], vars$options$horizon)
     
     for(i in 1 : vars$options$windowSize)
     {
@@ -355,7 +353,7 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
       if(!is.null(oldModel))
       {
         testResults <- testNeuralNetwork(nn, id)
-        smape <- sMAPE(data.expectedTestResults[[id]], testResults)
+        smape <- sMAPE(expectedTestResults, testResults)
         externalError[[pathAsString]] <-  if(!is.nan(smape)){ smape }else{ 0 }
         internalError[[pathAsString]] <- nn$result.matrix[1]
         
@@ -390,9 +388,6 @@ getExcludedInputNeuralNetwork <- function(id, hiddenLayers = FALSE)
     }
   
 }
-
-
-
 
 # it compares the old model with the models in range
 # return NULL if old model is better
@@ -477,8 +472,6 @@ saveExcludedInputModel <- function(model, id = NULL, path = NULL)
 
 getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
 {
-
-
   excludedPathCombination <- list()
   ids <- names(vars$timeSeries)
   excludedPathCounter <- c(rep(0,vars$options$windowSize))
@@ -516,13 +509,7 @@ getStatisticOfExcludedInputs <-function(hiddenLayers = FALSE)
   
   
   return(structure(list(ids = ids, paths = excludedPathCombination, pExcluded = (1 : vars$options$windowSize), excludedPathCounter = excludedPathCounter, pathsCombinedE = dt$excludedInputs, pathsCombinedN = dt$number),class = 'EIStatistic'))
-
 }
-
-
-
-
-
 
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() 
 {

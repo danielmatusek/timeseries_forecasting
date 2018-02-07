@@ -203,15 +203,15 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
 
 getForecastComparisionPlot <- function(id)
 {
-  data.length <- length(vars$timeSeries[[id]]$y)
+  data.length <- length(vars$timeSeries[[id]][,1])
   startRealData <- max(1, data.length - vars$options$horizon + 1)
   startPredictionIndex = data.length - startRealData - vars$options$horizon + 1
   
   # Start with original data
-  original <- data.table(x = vars$timeSeries[[id]]$x[startRealData:data.length], y = vars$timeSeries[[id]]$y[startRealData:data.length])
+  original <- data.table(y = vars$timeSeries[[id]][startRealData:data.length, 1])
   
   # Plot the data
-  p <- plot_ly(original, x = ~x, y = ~y, text = "original", type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)'))
+  p <- plot_ly(original, y = ~y, text = "original", type = 'scatter', mode = 'lines', name = 'Original', line = list(color = 'rgb(0, 0, 0)'))
 
   for(modelName in vars$enabledModels)
   {

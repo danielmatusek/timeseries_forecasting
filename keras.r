@@ -46,7 +46,7 @@ generator <- function(data, lookback, minIndex, maxIndex = NULL, shuffle = FALSE
 }
 
 
-trainLSTM <- function(id)
+getModel.lstm <- function(id)
 {
   #batch_size = 32
   #timesteps = 8
@@ -58,7 +58,7 @@ trainLSTM <- function(id)
   #  input_shape = c(vars$options$windowSize, 16), batch_size = batch_size)
   #model %>% layer_dense(1, activation = NULL)
   
-  data <- data.matrix(vars$timeSeries[[id]][, -1])
+  data <- vars$timeSeries[[id]]
   
   minIndexTrain <- 1
   minIndexTest <- nrow(data) - vars$options$horizon - vars$options$windowSize + 1
@@ -114,7 +114,7 @@ trainLSTM <- function(id)
 
 getTestResults.lstm <- function(model, id)
 {
-  data <- data.matrix(vars$timeSeries[[id]][, -1])
+  data <- vars$timeSeries[[id]]
   data <- scale(data, center = model$mean, scale = model$std)
   test_gen <- generator(data,
     lookback = vars$options$windowSize,

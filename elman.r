@@ -6,15 +6,16 @@
 trainRNN <- function(id, hiddenLayers = c(0))
 {
   set.seed(1)
-  trainset <- getNormalizedTrainSet(id)
+  trainset <- getTrainSet(id, normalization = '0_1')
   #trainset <- getTrainSet(id)
-  traininput <- trainset[, 2:length(trainset)]
+  traininput <- trainset[, -1]
   traintarget <- trainset[, 1]
 
   rnn <- RSNNS::elman(x = traininput, y = traintarget, size = vars$options$hiddenLayers,
     learnFuncParams=c(0.1), maxit = 1000, linOut = TRUE)
   #rnn$snnsObject$setTTypeUnitsActFunc("UNIT_INPUT", "Act_Identity")
   
+  attr(rnn, 'normParams') <- getNormParameters(trainset)
   return(rnn)
 }
 
@@ -25,8 +26,8 @@ getModel.elman <- function(id)
 
 getTestResults.elman <- function(model, id)
 {
-  datanew <- predict(model, getNormalizedTestSet(id))[,1]
-  denormalized <- denormalizeData(datanew, normalizationParam)
+  testSet <- getTestSet(id, normalization = '0_1')
+  datanew <- predict(model, testSet)[,1]
+  denormalized <- denormalizeData(datanew, getNormParameters(model))
   denormalized[,1]
-  #predict(model, getTestSet(id))[,1]
 }
