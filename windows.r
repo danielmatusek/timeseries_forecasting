@@ -144,7 +144,15 @@ getDiffTrainSet <- function(id)
 
 getTestSet <- function(id, normalization = NULL)
 {
-  return(generateWindows(id, minIndex = -vars$options$horizon + 1, normalization = normalization)[, -1])
+  testSet <- generateWindows(id, minIndex = -vars$options$horizon + 1, normalization = normalization)
+  if (ncol(testSet) == 2)
+  {
+    return(data.matrix(testSet[, -1]))
+  }
+  else
+  {
+    return(testSet[, -1])
+  }
 }
 
 getDiffTestSet <- function(id)
