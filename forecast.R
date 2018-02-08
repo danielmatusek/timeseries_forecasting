@@ -24,9 +24,17 @@ forecast <- function(id, modelName, windowSize, horizon, hiddenLayers = c(1))
     prediction <- c()
     for (i in 1:horizon)
     {
+      browser()
       pred <- data %*% model
       prediction <- c(prediction, pred)
-      data <- c(data[2:windowSize], pred, 1)
+      if (windowSize < 2)
+      {
+        data <- c(pred, 1)
+      }
+      else
+      {
+        data <- c(data[2:windowSize], pred, 1)
+      }
     }
   }
   else
