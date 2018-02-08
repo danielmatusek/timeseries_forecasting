@@ -6,6 +6,10 @@ horizon.monthly <<- 3
 horizon.weekly <<- 4
 horizon.daily <<- 9
 
+seasonality.monthly <<- 12
+seasonality.weekly <<- 4
+seasonality.daily <<- 7
+
 filename <<- NULL
 
 startRoutine <- function(modelName, id, granularity){
@@ -16,22 +20,23 @@ startRoutine <- function(modelName, id, granularity){
     if(granularity == 'monthly'){
         filename <<- 'monthly.csv'
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
-        getBestConfig(modelName, id, horizon.monthly)
+        getBestConfig(modelName, id, horizon.monthly, seasonality.monthly)
     }
     else if (granularity == 'weekly'){
         filename <<- 'weekly.csv'
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
-        getBestConfig(modelName, id, horizon.weekly)
+        getBestConfig(modelName, id, horizon.weekly, seasonality.weekly)
     }
     else if (granularity == 'daily'){
         filename <<- 'daily.csv'
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
-        getBestConfig(modelName, id, horizon.daily)
+        getBestConfig(modelName, id, horizon.daily, seasonality.daily)
     } else print('USERWARN: no such granularity (dscup.r)')
 }
 
-getBestConfig.old <- function(modelName, id, horizon){
+getBestConfig.old <- function(modelName, id, horizon, seasonality){
     vars$options$horizon <<- horizon
+    vars$options$seasonality <<- seasonality
 
     #iteriere durch alle Windows und Layer
     for(windowSize in 1:maxWindowSize){
