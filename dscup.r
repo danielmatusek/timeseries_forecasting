@@ -79,7 +79,10 @@ getBestConfig <- function(modelName, id, horizon)
     for(windowSize in 1:maxWindowSize){
         vars$options$windowSize <<- windowSize
         run <- FALSE
+        cat('Progress: ', modelName, ' WindowSize: ', windowSize, '\n')
         for(hiddenLayer in 1:maxHiddenLayer){
+            if(modelName == 'jordan' && hiddenLayer > 1) break
+            if(modelName == 'ar' || modelName == 'mlp') break
             if(run){
                 copyVector <- layerVector
             }
