@@ -1,6 +1,6 @@
-maxWindowSize <<- 2
-maxHiddenLayer <<- 2
-maxHiddenNodes <<- 2
+maxWindowSize <<- 14
+maxHiddenLayer <<- 4
+maxHiddenNodes <<- 9
 
 horizon.monthly <<- 3
 horizon.weekly <<- 4
