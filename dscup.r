@@ -1,6 +1,6 @@
-maxWindowSize <<- 14
-maxHiddenLayer <<- 4
-maxHiddenNodes <<- 9
+maxWindowSize <<- 2
+maxHiddenLayer <<- 2
+maxHiddenNodes <<- 2
 
 horizon.monthly <<- 3
 horizon.weekly <<- 4
@@ -44,10 +44,15 @@ getBestConfig <- function(modelName, id, horizon, seasonality)
     for(windowSize in 1:maxWindowSize){
         vars$options$windowSize <<- windowSize
         run <- FALSE
+        nohidden <- FALSE
         cat('Progress: ', modelName, ' WindowSize: ', windowSize, '\n')
         for(hiddenLayer in 1:maxHiddenLayer){
             if(modelName == 'jordan' && hiddenLayer > 1) break
-            if(modelName == 'ar' || modelName == 'mlp') break
+            if((modelName == 'ar' || modelName == 'mlp') && nohidden == TRUE){
+              nohidden <- FALSE
+              compareMatrix <- matrix(nrow = 1, ncol = 2)
+              break
+            }
             if(run){
                 copyVector <- layerVector
             }
@@ -76,6 +81,10 @@ getBestConfig <- function(modelName, id, horizon, seasonality)
                     if(is.na(compareMatrix[1,1])) compareMatrix <- compareMatrix[-1,]
                     x <- data.frame(id, modelName, windowSize, toString(layerVector), smape)
                     write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
+                }
+                if(modelName == 'ar' || modelName == 'mlp'){
+                  nohidden <- TRUE
+                  break
                 }
                 resetModels(modelName)
             }
