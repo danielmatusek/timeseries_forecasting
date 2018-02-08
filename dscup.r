@@ -34,47 +34,6 @@ startRoutine <- function(modelName, id, granularity){
     } else print('USERWARN: no such granularity (dscup.r)')
 }
 
-getBestConfig.old <- function(modelName, id, horizon, seasonality){
-    vars$options$horizon <<- horizon
-    vars$options$seasonality <<- seasonality
-
-    #iteriere durch alle Windows und Layer
-    for(windowSize in 1:maxWindowSize){
-        vars$options$windowSize <<- windowSize
-        for(hiddenLayer in 1:maxHiddenLayer){
-            layerVector <- rep(1,hiddenLayer)
-            #j <- hiddenLayer
-            for(hiddenNodes in 1:((maxHiddenNodes ^ hiddenLayer)-1)){
-                #Aufbauen des HIdden Nodes Vektors
-                inc <- FALSE
-                j <- hiddenLayer
-                while(!inc){
-                    if (layerVector[j] == maxHiddenNodes){
-                        if(j==1) break
-                        layerVector[j] <- 1
-                        j <- j-1 
-                    } else {
-                        layerVector[j] <- (layerVector[j] + 1)
-                        inc <- TRUE
-                    }
-                    if(inc) break
-                }   
-                # Die eigentliche Verarbeitungsroutine in welcher  das Model gelernt wird 
-                # (in getTestResults und dann wird der SMAPE in eine Datei rausgeschrieben)
-                vars$options$hiddenLayers <<- layerVector
-                testResults <- getTestResults(modelName, id)
-                if(inherits(testResults, 'TestResults'))
-                {
-                    smape <- sMAPE(testResults$expected, testResults$predicted)
-                    x <- data.frame(id, modelName, windowSize, toString(layerVector), smape)
-                    write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
-                }
-                resetModels(modelName)
-            }
-        }
-    }                
-}
-
 getBestConfig <- function(modelName, id, horizon, seasonality)
 {
     vars$options$horizon <<- horizon
@@ -121,13 +80,7 @@ getBestConfig <- function(modelName, id, horizon, seasonality)
                 resetModels(modelName)
             }
         }
-    }
-
-
-
-    # Die eigentliche Verarbeitungsroutine in welcher  das Model gelernt wird 
-                # (in getTestResults und dann wird der SMAPE in eine Datei rausgeschrieben)
-                
+    }                
 }
 
 learnMultipleModels <- function(id, granularity){
@@ -136,6 +89,48 @@ learnMultipleModels <- function(id, granularity){
         startRoutine(models[i], id, granularity)
     }
 }
+
+
+# getBestConfig.old <- function(modelName, id, horizon, seasonality){
+#     vars$options$horizon <<- horizon
+#     vars$options$seasonality <<- seasonality
+
+#     #iteriere durch alle Windows und Layer
+#     for(windowSize in 1:maxWindowSize){
+#         vars$options$windowSize <<- windowSize
+#         for(hiddenLayer in 1:maxHiddenLayer){
+#             layerVector <- rep(1,hiddenLayer)
+#             #j <- hiddenLayer
+#             for(hiddenNodes in 1:((maxHiddenNodes ^ hiddenLayer)-1)){
+#                 #Aufbauen des HIdden Nodes Vektors
+#                 inc <- FALSE
+#                 j <- hiddenLayer
+#                 while(!inc){
+#                     if (layerVector[j] == maxHiddenNodes){
+#                         if(j==1) break
+#                         layerVector[j] <- 1
+#                         j <- j-1 
+#                     } else {
+#                         layerVector[j] <- (layerVector[j] + 1)
+#                         inc <- TRUE
+#                     }
+#                     if(inc) break
+#                 }   
+#                 # Die eigentliche Verarbeitungsroutine in welcher  das Model gelernt wird 
+#                 # (in getTestResults und dann wird der SMAPE in eine Datei rausgeschrieben)
+#                 vars$options$hiddenLayers <<- layerVector
+#                 testResults <- getTestResults(modelName, id)
+#                 if(inherits(testResults, 'TestResults'))
+#                 {
+#                     smape <- sMAPE(testResults$expected, testResults$predicted)
+#                     x <- data.frame(id, modelName, windowSize, toString(layerVector), smape)
+#                     write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
+#                 }
+#                 resetModels(modelName)
+#             }
+#         }
+#     }                
+# }
 # getBestWeeklyConfig <- function(x){
 #     vars$options$horizon <<- 4
 
