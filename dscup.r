@@ -84,6 +84,7 @@ getBestConfig <- function(modelName, id, horizon, seasonality)
                 }
                 if(modelName == 'ar' || modelName == 'mlp'){
                   nohidden <- TRUE
+                  resetModels(modelName)
                   break
                 }
                 resetModels(modelName)
