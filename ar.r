@@ -21,7 +21,7 @@ getModel.ar <- function(id)
 
 getTestResults.ar <- function(model, id)
 {
-  testSet <- cbind(getTestSet(id), 1)
+  testSet <- cbind(getTestSet(id, delay = 0, seasonality = NULL), 1)
   
   (testSet %*% model)[, 1]
 }

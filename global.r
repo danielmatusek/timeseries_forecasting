@@ -14,6 +14,7 @@ vars <<- list(
   options = list(
     windowSize = 7,
     horizon = 7,
+    seasonality = 7,
     arModelName = 'ar',
     excludeBias = TRUE,
     hiddenLayers = c(0)

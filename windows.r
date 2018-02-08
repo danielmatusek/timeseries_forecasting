@@ -123,9 +123,10 @@ createDifferentableWindow <- function(id)
 }
 
 
-getTrainSet <- function(id, normalization = NULL)
+getTrainSet <- function(id, delay = vars$options$horizon - 1, seasonality = vars$options$seasonality, normalization = NULL)
 {
-  return(generateWindows(id, maxIndex = -vars$options$horizon, normalization = normalization))
+  return(generateWindows(id, maxIndex = -vars$options$horizon, delay = delay,
+    seasonality = seasonality, normalization = normalization))
 }
 
 getAllTrainSetsCombined <- function()
@@ -142,9 +143,10 @@ getDiffTrainSet <- function(id)
   return(data.diff.trainSets[[id]])
 }
 
-getTestSet <- function(id, normalization = NULL)
+getTestSet <- function(id, delay = vars$options$horizon - 1, seasonality = vars$options$seasonality, normalization = NULL)
 {
-  testSet <- generateWindows(id, minIndex = -vars$options$horizon + 1, normalization = normalization)
+  testSet <- generateWindows(id, minIndex = -vars$options$horizon + 1, delay = delay,
+    seasonality = seasonality, normalization = normalization)
   if (ncol(testSet) == 2)
   {
     return(data.matrix(testSet[, -1]))
