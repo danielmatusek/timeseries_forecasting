@@ -18,7 +18,7 @@ startRoutine <- function(modelName, id, granularity){
     x <- data.frame("TS-ID", "MODEL", "WINDOWSIZE", "LAYER ARCHITECTURE", "SMAPE")
 
     if(granularity == 'monthly'){
-        filename <<- 'monthly.csv'
+        filename <<- paste('monthly_', id, '.csv', sep="")
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
         getBestConfig(modelName, id, horizon.monthly, seasonality.monthly)
     }
@@ -75,9 +75,10 @@ getBestConfig.old <- function(modelName, id, horizon, seasonality){
     }                
 }
 
-getBestConfig <- function(modelName, id, horizon)
+getBestConfig <- function(modelName, id, horizon, seasonality)
 {
     vars$options$horizon <<- horizon
+    vars$options$seasonality <<- seasonality
 
     compareMatrix <- matrix(nrow = 1, ncol = 2)
 
