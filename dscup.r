@@ -23,12 +23,12 @@ startRoutine <- function(modelName, id, granularity){
         getBestConfig(modelName, id, horizon.monthly, seasonality.monthly)
     }
     else if (granularity == 'weekly'){
-        filename <<- 'weekly.csv'
+        filename <<- paste('weekly_', id, '.csv', sep="")
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
         getBestConfig(modelName, id, horizon.weekly, seasonality.weekly)
     }
     else if (granularity == 'daily'){
-        filename <<- 'daily.csv'
+        filename <<- paste('daily_', id, '.csv', sep="")
         write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";") 
         getBestConfig(modelName, id, horizon.daily, seasonality.daily)
     } else print('USERWARN: no such granularity (dscup.r)')
