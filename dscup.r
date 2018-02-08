@@ -1,5 +1,5 @@
-maxWindowSize <<- 10
-maxHiddenLayer <<- 3
+maxWindowSize <<- 14
+maxHiddenLayer <<- 4
 maxHiddenNodes <<- 9
 
 horizon.monthly <<- 3
@@ -121,6 +121,12 @@ getBestConfig <- function(modelName, id, horizon)
                 
 }
 
+learnMultipleModels <- function(id, granularity){
+    models <- vars$enabledModels
+    for(i in 1:length(models)){
+        startRoutine(models[i], id, granularity)
+    }
+}
 # getBestWeeklyConfig <- function(x){
 #     vars$options$horizon <<- 4
 
