@@ -1,3 +1,5 @@
+isForecast <- FALSE
+
 windowGenerator2 <- function(data, lookback, minIndex, maxIndex = NULL, shuffle = FALSE, delay = 0, step = 1, batchSize = 128) {
   if (is.null(maxIndex))
   {
@@ -41,7 +43,8 @@ resetWindows <- function() {
 
 
 generateWindows <- function(id, minIndex = 1, maxIndex = NULL,
-  lookbackIndices = NULL, delay = 0, seasonality = NULL, normalization = NULL)
+  lookbackIndices = NULL, delay = 0, seasonality = NULL, normalization = NULL,
+  isForecast = FALSE)
 {
   if (mode(lookbackIndices) != 'numeric')
   {
@@ -84,12 +87,31 @@ generateWindows <- function(id, minIndex = 1, maxIndex = NULL,
     return(NULL)
   }
   
-  samples <- array(0, dim = c(maxIndex - minIndex + 1, length(lookbackIndices) + 1))
-  colnames(samples) <- paste0('xt', c(0, lookbackIndices))
+  if (isForecast)
+  {
+    samples <- array(0, dim = c(maxIndex - minIndex + 1, length(lookbackIndices)))
+    colnames(samples) <- paste0('xt', lookbackIndices)
+  }
+  else
+  {
+    samples <- array(0, dim = c(maxIndex - minIndex + 1, length(lookbackIndices) + 1))
+    colnames(samples) <- paste0('xt', c(0, lookbackIndices))
+  }
   current <- minIndex
+  if (isForecast)
+  {
+    current <- current + vars$options$horizon
+  }
   for (i in 1:nrow(samples))
   {
-    indices <- c(current, current - lookbackIndices)
+    if (isForecast)
+    {
+      indices <- current - lookbackIndices
+    }
+    else
+    {
+      indices <- c(current, current - lookbackIndices)
+    }
     samples[i,] <- data[indices,]
     current <- current + 1
   }
@@ -146,14 +168,21 @@ getDiffTrainSet <- function(id)
 getTestSet <- function(id, delay = vars$options$horizon - 1, seasonality = vars$options$seasonality, normalization = NULL)
 {
   testSet <- generateWindows(id, minIndex = -vars$options$horizon + 1, delay = delay,
-    seasonality = seasonality, normalization = normalization)
-  if (ncol(testSet) == 2)
+    seasonality = seasonality, normalization = normalization, isForecast = isForecast)
+  if (isForecast)
   {
-    return(data.matrix(testSet[, -1]))
+    return(testSet)
   }
   else
   {
-    return(testSet[, -1])
+    if (ncol(testSet) == 2)
+    {
+      return(data.matrix(testSet[, -1]))
+    }
+    else
+    {
+      return(testSet[, -1])
+    }
   }
 }
 
