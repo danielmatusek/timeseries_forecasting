@@ -36,6 +36,7 @@ startRoutine <- function(modelName, id, granularity){
 
 getBestConfig <- function(modelName, id, horizon, seasonality)
 {
+  resetModels(modelName)
     vars$options$horizon <<- horizon
     vars$options$seasonality <<- seasonality
 
