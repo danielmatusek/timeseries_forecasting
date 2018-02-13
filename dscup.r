@@ -12,6 +12,11 @@ seasonality.daily <<- 7
 
 filename <<- NULL
 
+# Creates a File for the specified granularity and specified model for a id and calls the routine
+# which will train the models
+# -- modelName: name of model
+# -- id: ID of time series
+# -- granularity: weekly, monthly or daily
 startRoutine <- function(modelName, id, granularity){
     loadedID <- names(vars$timeSeries)
 
@@ -34,6 +39,12 @@ startRoutine <- function(modelName, id, granularity){
     } else print('USERWARN: no such granularity (dscup.r)')
 }
 
+# Creates the Hidden Layer, Models and Configurations according to the 
+# parameters which can be set at the beginning of this file
+# --modelName: Name of model
+# --id: ID of time series
+# --horizon: how many results in the "future" should be forecasted
+# --seasonality: specify the saisonality, e.g. 7 for a week
 getBestConfig <- function(modelName, id, horizon, seasonality)
 {
   resetModels(modelName)
@@ -94,6 +105,9 @@ getBestConfig <- function(modelName, id, horizon, seasonality)
     }                
 }
 
+# Function for getting all enabled Models (in global.r) for a granularity and timeseries ID
+# -- id: id of time series
+# -- granularity: weekly, monthly or daily
 learnMultipleModels <- function(id, granularity){
     models <- vars$enabledModels
     for(i in 1:length(models)){
