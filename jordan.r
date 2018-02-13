@@ -1,6 +1,8 @@
 library(RSNNS)
 
-
+# trains a Jordan network of the RSNNS package
+# --id: ID of the time series
+# --hiddenLayers: vector of the hidden layers
 trainJordan <- function(id, hiddenLayers = c(0))
 {
   set.seed(1)
@@ -28,11 +30,16 @@ trainJordan <- function(id, hiddenLayers = c(0))
   return(jordan)
 }
 
+# get the model for the jordan network of the RSNNS package
+# --id: id of the time series
 getModel.jordan <- function(id)
 {
   trainJordan(id, vars$options$hiddenLayers)
 }
 
+# get the test results for a jordan network
+# --model: the model object
+# --id: id of the time series
 getTestResults.jordan <- function(model, id)
 {
   testSet <- getTestSet(id, normalization = '0_1')

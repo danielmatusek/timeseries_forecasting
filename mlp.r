@@ -1,6 +1,9 @@
 library(RSNNS)
 
 
+# get the model for the feed forward network of the RSNNS package
+# --id: id of the time series
+# --hiddenLayers: Feed Forward network with or without hidden Layer
 getModel.mlp <- function(id, hiddenLayers = FALSE)
 {
   set.seed(1)
@@ -25,6 +28,9 @@ getModel.mlp <- function(id, hiddenLayers = FALSE)
   return(mlp)
 }
 
+# wrapper function for calling getmodel.mlp when a feed forward network 
+# with hidden layers is wanted 
+# --id: id of the time series
 getModel.mlph <- function(id)
 {
   getModel.mlp(id, TRUE)
@@ -33,7 +39,8 @@ getModel.mlph <- function(id)
 
 
 
-
+# get the model for the feed forward network of the RSNNS package with excluded inputs
+# --id: id of the time series
 getModel.mlpei <- function(id)
 {
   baseModelName <- 'mlp'
@@ -137,7 +144,9 @@ getModel.mlpei <- function(id)
 }
 
 
-
+# get the test results for the feed forward network with excluded inputs
+# --model: the model object
+# --id: id of the time series
 getTestResults.mlpei <- function(model, id)
 {
   data <- getTestSet(id)
@@ -147,7 +156,9 @@ getTestResults.mlpei <- function(model, id)
   #denormalized[,1]
 }
 
-
+# get the test results for the feed forward network
+# --model: the model object
+# --id: id of the time series
 getTestResults.mlp <- function(model, id)
 {
   testSet <- getTestSet(id, normalization = '0_1')
