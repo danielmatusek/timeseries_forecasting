@@ -12,6 +12,10 @@ seasonality.daily <<- 7
 
 filename <<- NULL
 
+##### USAGE OF THIS FILE:
+## learnMultipleModels to learn several models for a time series
+## startRoutine to learn one model for a time series
+
 # Creates a File for the specified granularity and specified model for a id and calls the routine
 # which will train the models
 # -- modelName: name of model
