@@ -154,7 +154,7 @@ getAvailableResuls <- function()
 
 #' loads the results of a stored file
 #'
-#' @param name
+#' @param name name of the file
 loadResults <- function(name)
 {
   path <- paste0('../results/', name, '.rdata')
@@ -172,8 +172,8 @@ loadResults <- function(name)
 
 #' #todo
 #'
-#' @param id
-#' @return 
+#' @param id id of the time series 
+#' @return #todo
 getTimeSeriesValueSpan <- function(id)
 {
   values <- vars$timeSeries[[id]][,1]
