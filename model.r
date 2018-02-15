@@ -6,7 +6,7 @@
 #' functions from each package for each model
 #'
 #' @param modelName name of the model
-#' @parma id ID of the time series to get the model for
+#' @param id ID of the time series to get the model for
 #' @return return model
 getModel <- function(modelName, id = NULL)
 {
