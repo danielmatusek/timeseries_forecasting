@@ -3,6 +3,10 @@ library(forecast)
 library(stats)
 library(data.table)
 
+#' get the model for the autoregressive model (options in the UI determine the package which is used)
+#'
+#' @param id id of the time series
+#' @return ar model
 getModel.ar <- function(id)
 {
   trainData <- tail(vars$timeSeries[[id]][, 1], -vars$options$horizon)
@@ -19,6 +23,11 @@ getModel.ar <- function(id)
   }
 }
 
+#' get the test results for the autoregressive model
+#'
+#' @param model the model object
+#' @param id id of the time series
+#' @return test results for model and id 
 getTestResults.ar <- function(model, id)
 {
   testSet <- cbind(getTestSet(id, delay = 0, seasonality = NULL), 1)

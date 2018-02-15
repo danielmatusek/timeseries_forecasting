@@ -4,6 +4,8 @@ library(shinydashboard)
 source('model.r')
 source('neuralNetwork.r', encoding = 'UTF-8')
 
+## Script for creating the Shiny UI
+
 ui <- dashboardPage(skin = 'purple',
 	dashboardHeader(title = 'FPADB',
 	  tags$li(a(

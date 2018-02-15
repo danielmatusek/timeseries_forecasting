@@ -2,13 +2,24 @@ library(keras)
 library(tensorflow)
 library(RSNNS)
 
-
+# just some code to get Keras running
 use_condaenv("tensorflow")
 k <- backend()
 
-
+# batch size which is processed in the lstm network in an iteration
 batch_size <- 32
 
+#' a generator function to prepare the data to fit the Keras models and its demanded input_shapes
+#'
+#' @param data the input data
+#' @param lookback How many observations to go back (Window Size)
+#' @param minIndex Indices in the data array that delimit which timesteps to draw from.
+#' @param maxIndex Indices in the data array that delimit which timesteps to draw from
+#' @param shuffle Whether to shuffle the samples or draw them in chronological order
+#' @param delay how many timesteps in the future the target should be 
+#' @param batchSize The number of samples per batch
+#' @param step The period (in timesteps) in which data is sampled. 1 -> 1 timestep is a sample
+#' @return list of samples and targets
 generator <- function(data, lookback, minIndex, maxIndex = NULL, shuffle = FALSE, delay = 0, batchSize = 128, step = 1) {
   if (is.null(maxIndex))
   {
@@ -45,7 +56,10 @@ generator <- function(data, lookback, minIndex, maxIndex = NULL, shuffle = FALSE
   }
 }
 
-
+#' get the model for the LSTM network of the Keras package
+#'
+#' @param id id of the time series
+#' @return LSTM model
 getModel.lstm <- function(id)
 {
   #batch_size = 32
@@ -112,6 +126,11 @@ getModel.lstm <- function(id)
   return(model)
 }
 
+#' get the test results for a LSTM network
+#'
+#' @param model the model object
+#' @param id id of the time series
+#' @return testresults of the lstm
 getTestResults.lstm <- function(model, id)
 {
   data <- vars$timeSeries[[id]]

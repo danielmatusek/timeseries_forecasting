@@ -1,8 +1,15 @@
 library(ggplot2)
 library(plotly)
 
-errorTable <- NULL
+###This script prepares and creates plots/data for the Comparion panel in the UI.
 
+errorTable <- NULL #errorTable stored here
+
+#' get the error metric for a id and specified metric
+#'
+#' @param id id of the time series
+#' @param FUN function name of the metric, e.g. SMAPE
+#' @return result of the metric
 getErrorMetric <- function(id, FUN)
 {
   metric <- lapply(vars$enabledModels, function(modelName) {
@@ -16,6 +23,10 @@ getErrorMetric <- function(id, FUN)
   metric
 }
 
+#' creates a table with mse, rmse, smape and diff metrics for the specified id
+#'
+#' @param id id of the time series
+#' @return errorTable with errorMetrics
 comparison <- function(id)
 {
   if(is.null(errorTable))
@@ -28,10 +39,11 @@ comparison <- function(id)
   return(errorTable)
 }
 
-
-
-
-
+#' plot the error metric
+#'
+#' @param errorMetricName name of the error metric
+#' @param id id of the time series
+#' @return return the plot
 getModelErrorPlot <- function(errorMetricName, id)
 {
   FUN <- switch(errorMetricName,
@@ -63,7 +75,11 @@ getModelErrorPlot <- function(errorMetricName, id)
   p
 }
 
-
+#' get the mean error vector from models
+#'
+#' @param id id of the time series
+#' @param errorName name of the error metric
+#' @return mean error vector
 getMeanErrorVectorFromModels <- function(id, errorName)
 {
   comparison(id)
@@ -73,7 +89,10 @@ getMeanErrorVectorFromModels <- function(id, errorName)
   }))
 }
 
-
+#' create a table to compare the error metrics by their value
+#'
+#' @param id id of the time series
+#' @return data table with error metrics
 getErrorMetricCompare <- function(id)
 {
   comparison(id)
@@ -82,6 +101,11 @@ getErrorMetricCompare <- function(id)
              RMSE =  getMeanErrorVectorFromModels(id, "rmse"), SMAPE = getMeanErrorVectorFromModels(id, "smape"))
 }
 
+#' gets the coefficients of e.g. the ar model or the weights of the neural network to
+#' compare e,g, whether they calculate the same
+#'
+#' @param id id of the time series
+#' @return data table with coefficents
 getCoef <- function(id)
 {
   variables <- NULL
@@ -149,10 +173,15 @@ getCoef <- function(id)
   dt
 }
 
-# Compares the test results of two given models using all time series.
-# The test results are said to differ´in one point if the difference of both predictions
-# exceeds the threshold value multiplied by the value span of the complete time series.
-# Supported models: ar, nnfe, nnfeh, nnfa, nnfah, jordan, elman, mlp, mlph
+#' Compares the test results of two given models using all time series.
+#' The test results are said to differ´in one point if the difference of both predictions
+#' exceeds the threshold value multiplied by the value span of the complete time series.
+#' Supported models: ar, nnfe, nnfeh, nnfa, nnfah, jordan, elman, mlp, mlph
+#'
+#' @param modelName1 name of the first model
+#' @param modelName2 name of the second model
+#' @param threshold threshold which is set to 0.01
+#' @return test results of the given models 
 compareModels <- function(modelName1, modelName2, threshold = 0.01)
 {
   if (modelName1 == modelName2)
@@ -199,8 +228,10 @@ compareModels <- function(modelName1, modelName2, threshold = 0.01)
   dt
 }
 
-
-
+#' plot the time series which were predicted and the original one to compare
+#'
+#' @param id id of the time series
+#' @return plot of the forecasts and original data
 getForecastComparisionPlot <- function(id)
 {
   data.length <- length(vars$timeSeries[[id]][,1])
@@ -228,6 +259,7 @@ getForecastComparisionPlot <- function(id)
   p
 }
 
+#' resets the error table
 resetComparison <- function()
 {
   errorTable <<- NULL

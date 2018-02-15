@@ -2,6 +2,12 @@
 ### Prediction Models
 ###
 
+#' the wrapper method for all get model functions which calls all specific
+#' functions from each package for each model
+#'
+#' @param modelName name of the model
+#' @param id ID of the time series to get the model for
+#' @return return model
 getModel <- function(modelName, id = NULL)
 {
   # validate model name
@@ -38,13 +44,12 @@ getModel <- function(modelName, id = NULL)
   }
 }
 
-
-###
-### Test Results
-###
-
-# Get the test results for a given model and a given id or for all time series
-# if id = NULL
+#' Get the test results for a given model and a given id or for all time series
+#' if id = NULL
+#'
+#' @param modelNamen name of the model
+#' @param id id of the time series 
+#' @return test results
 getTestResults <- function(modelName, id)
 {
   # validate model name
@@ -107,10 +112,12 @@ getTestResults <- function(modelName, id)
 }
 
 
-###
-### CPU Times
-###
-
+#' gets CPU times for models
+#'
+#' @param modelName name of the model
+#' @param id id of a time series, default(NULL)
+#' @param na.rm Defaults to TRUE
+#' @return CPU times
 getCpuTimes <- function(modelName, id = NULL, na.rm = TRUE)
 {
   if (modelName %in% oneForAllModels)
@@ -158,11 +165,9 @@ getCpuTimes <- function(modelName, id = NULL, na.rm = TRUE)
   }
 }
 
-
-###
-### Resetting
-###
-
+#' resets a model
+#'
+#' @param vector modelName in a vector which should be reset
 resetModels <- function(...)
 {
   for (modelName in c(...))

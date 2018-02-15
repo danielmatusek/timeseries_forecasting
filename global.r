@@ -39,7 +39,13 @@ data.inputDifference.testSets <- NULL
 
 normalizationParam <<- NULL
 
-
+#' parses the data which is read 
+#' 
+#' @param data inout data 
+#' @param idName #todo
+#' @param xName #todo 
+#' @param yName #todo
+#' @return #todo
 parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   # save names
   if (length(data) >= 3)
@@ -96,6 +102,7 @@ parseData <- function(data, idName = NULL, xName = NULL, yName = NULL) {
   }
 }
 
+#' loads the available data sources in /resources folder
 getAvailableDataSources <- function()
 {
   unlist(lapply(list.files('../resources'), function(filename) {
@@ -117,6 +124,9 @@ getAvailableDataSources <- function()
   }))
 }
 
+#' saves the results which are stored in the environment
+#'
+#' @param name filename
 saveResults <- function(name)
 {
   # create dir if not already present
@@ -128,6 +138,7 @@ saveResults <- function(name)
   print(paste0("saved results to 'results/", name, ".rdata'"))
 }
 
+#' loads the results which are in the /results folder
 getAvailableResuls <- function()
 {
   unlist(lapply(list.files('../results'), function(filename) {
@@ -141,6 +152,9 @@ getAvailableResuls <- function()
   }))
 }
 
+#' loads the results of a stored file
+#'
+#' @param name name of the file
 loadResults <- function(name)
 {
   path <- paste0('../results/', name, '.rdata')
@@ -156,6 +170,10 @@ loadResults <- function(name)
   }
 }
 
+#' #todo
+#'
+#' @param id id of the time series 
+#' @return #todo
 getTimeSeriesValueSpan <- function(id)
 {
   values <- vars$timeSeries[[id]][,1]

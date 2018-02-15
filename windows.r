@@ -1,5 +1,16 @@
 isForecast <- FALSE
 
+#' a generator function to prepare the data to fit the Keras models and its demanded input_shapes
+#'
+#' @param data the input data
+#' @param lookback How many observations to go back (Window Size)
+#' @param minIndex Indices in the data array that delimit which timesteps to draw from.
+#' @param maxIndex Indices in the data array that delimit which timesteps to draw from
+#' @param shuffle Whether to shuffle the samples or draw them in chronological order
+#' @param delay how many timesteps in the future the target should be 
+#' @param batchSize The number of samples per batch
+#' @param step The period (in timesteps) in which data is sampled. 1 -> 1 timestep is a sample
+#' @return list of samples and targets
 windowGenerator2 <- function(data, lookback, minIndex, maxIndex = NULL, shuffle = FALSE, delay = 0, step = 1, batchSize = 128) {
   if (is.null(maxIndex))
   {
@@ -36,12 +47,23 @@ windowGenerator2 <- function(data, lookback, minIndex, maxIndex = NULL, shuffle 
   }
 }
 
+#' resets the windows for the diff.trainset and diff.testset
 resetWindows <- function() {
   data.diff.trainSets <<- NULL
   data.diff.testSets <<- NULL
 }
 
-
+#' Generate Windows with train and test sets to train, test and make forcasts
+#'
+#' @param id id of the time series
+#' @param minIndex Indices in the data array that delimit which timesteps to draw from.
+#' @param maxIndex Indices in the data array that delimit which timesteps to draw from
+#' @param loookbackIndices
+#' @param delay how many timesteps in the future the target should be 
+#' @param seasonality  apply a parameter which season will be considered, e.g. 7 for a week, defaults to NULL
+#' @param normalization whether the data must be normalized, defaults to NULL
+#' @param isForecast prepares data for a forecast "behind" the existing dataset
+#' @return returns windows
 generateWindows <- function(id, minIndex = 1, maxIndex = NULL,
   lookbackIndices = NULL, delay = 0, seasonality = NULL, normalization = NULL,
   isForecast = FALSE)
@@ -124,7 +146,10 @@ generateWindows <- function(id, minIndex = 1, maxIndex = NULL,
   return (samples)
 }
 
-
+#' create the windows with additional differences of the input nodes 
+#'
+#' @param id time series id 
+#' @return returns the trainset and testset with differences of the input nodes 
 createDifferentableWindow <- function(id)
 {
   dataSet <- vars$timeSeries[[id]][,1]
@@ -144,18 +169,29 @@ createDifferentableWindow <- function(id)
   data.diff.testSets[[id]] <<- win[-index, ]
 }
 
-
+#' get the train set for a time series id 
+#'
+#' @param id id of the time series 
+#' @param delay 
+#' @param seasonality apply a parameter which season will be considered, e.g. 7 for a week
+#' @param normalization normalization of data, Defaults to NULL
+#' @return trainset 
 getTrainSet <- function(id, delay = vars$options$horizon - 1, seasonality = vars$options$seasonality, normalization = NULL)
 {
   return(generateWindows(id, maxIndex = -vars$options$horizon, delay = delay,
     seasonality = seasonality, normalization = normalization))
 }
 
+#' gets all trainsets 
 getAllTrainSetsCombined <- function()
 {
   return(do.call(rbind, lapply(names(vars$timeSeries), function(id) { getTrainSet(id) })))
 }
 
+#' get the train set with the differences between the input nodes 
+#'
+#' @param id 
+#' @return train set with differences
 getDiffTrainSet <- function(id)
 {
   if(is.null(data.diff.trainSets[[id]]))
@@ -165,6 +201,13 @@ getDiffTrainSet <- function(id)
   return(data.diff.trainSets[[id]])
 }
 
+#' get the test set for a time series id 
+#'
+#' @param id id of the time series 
+#' @param delay lets the window start with an offset(delay) before earlier than now
+#' @param seasonality apply a parameter which season will be considered, e.g. 7 for a week
+#' @param normalization normalization of data, Defaults to NULL
+#' @return testset 
 getTestSet <- function(id, delay = vars$options$horizon - 1, seasonality = vars$options$seasonality, normalization = NULL)
 {
   testSet <- generateWindows(id, minIndex = -vars$options$horizon + 1, delay = delay,
@@ -186,6 +229,10 @@ getTestSet <- function(id, delay = vars$options$horizon - 1, seasonality = vars$
   }
 }
 
+#' get the test set with the differences between the input nodes 
+#'
+#' @param id 
+#' @return test set with differences
 getDiffTestSet <- function(id)
 {
   if(is.null(data.diff.testSets[[id]]))

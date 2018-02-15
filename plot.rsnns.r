@@ -1,3 +1,8 @@
+#' The method to plot the visualization of models from the RSNNS package
+#'
+#' @param x #TODO
+#' @param labels #TODO
+#' @return #TODO
 plot.rsnns <- function(x, labels = NULL)
 {
   nn <<- x

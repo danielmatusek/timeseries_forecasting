@@ -19,6 +19,11 @@ source('windows.r')
 
 options(shiny.maxRequestSize = 50*1024^2)	# Upload up to 50 MiB
 
+#' creates the shiny ui and is responsible for running the whole system
+#'
+#' @param input the ui input
+#' @param output the ui output
+#' @param session stores the session of the web application
 server <- function(input, output, session) {
   values <- reactiveValues(dataImported = 0)
   
@@ -497,7 +502,9 @@ server <- function(input, output, session) {
 	
 	# Exclude Inputs Datatable
 	
-	
+	#' get the table with the excluded input nodes
+	#'
+	#' @param modelName name of the model 
 	getExcludedInputTable <- function(modelName)
 	{
 	  s <- getModel(modelName, input$idSelect)
@@ -702,7 +709,6 @@ server <- function(input, output, session) {
 	
 	### UI elements: Auto Regression
 	
-	
 	output$arACF <- renderPlot({
 	  values$dataImported
 	  
@@ -716,10 +722,7 @@ server <- function(input, output, session) {
 	})
 	
 	
-	
-	
-	
-	### UI elements: Comparision
+	 ### UI elements: Comparision
 	
 	output$forecastComparisionPlot <- renderPlotly({
 	  windowsChanged()
