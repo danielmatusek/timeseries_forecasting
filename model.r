@@ -2,6 +2,10 @@
 ### Prediction Models
 ###
 
+# the wrapper method for all get model functions which calls all specific
+# functions from each package for each model
+# --modelName: name of the model
+# --id: ID of the time series to get the model for
 getModel <- function(modelName, id = NULL)
 {
   # validate model name
