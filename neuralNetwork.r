@@ -512,6 +512,8 @@ getStatisticOfExcludedInputs <-function()
   return(model)
 }
 
+#' Find differences in a neural network without and with a hidden layer to see
+#' whether hidden layer do have any impact
 findDifferenceInNeuralNetworksWrtHiddenLayers <- function() 
 {
   tolerance <- 1e-5
@@ -543,6 +545,15 @@ findDifferenceInNeuralNetworksWrtHiddenLayers <- function()
   }
 }
 
+#' This function adds hidden layer to a neural network one by one to get the  
+#' 'ideal' configuration of hidden layers. As a comparison metric between
+#' models it uses SMAPE. Layers are added to lower the SMAPE. 
+#' It has a greedy approach by aborting adding additional layers when the 
+#' SMAPE rises again. It can be seen as a local optimum since we do not
+#' check every configuration possible. Note, that only two layers are used.
+#'
+#' @param id id of the time series
+#' @return hidden nodes vector for neuralnet with "optimal" configuration
 optimizeNeuralNetworkHiddenLayer <- function(id)
 {
   resetNeuralNetworks.hlOptimizationNN()
@@ -608,6 +619,10 @@ optimizeNeuralNetworkHiddenLayer <- function(id)
   }   
 }
 
+#' Get the table with SMAPEs which occured during "optimizing" the hidden layer
+#' 
+#' @param id id of the time series
+#' @return error table
 getHlOptimizationErrorTable <- function(id)
 {
   #print(neuralNetwork.hlOptimizationErrorVector)
