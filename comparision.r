@@ -31,7 +31,7 @@ comparison <- function(id)
 {
   if(is.null(errorTable))
   {
-    errorTable$mse <<- getErrorMetric(id, mse)
+    errorTable$mse  <<- getErrorMetric(id, mse)
     errorTable$rmse <<- getErrorMetric(id, rmse)
     errorTable$smape <<- getErrorMetric(id, sMAPE)
     errorTable$diff <<- getErrorMetric(id, function(x, y) { abs(x - y) })
@@ -58,11 +58,14 @@ getModelErrorPlot <- function(errorMetricName, id)
   {
     testResults <- getTestResults(modelName, id)
     errors <- NULL
+    
+
     if(inherits(testResults, 'TestResults'))
     {
       errors <- unlist(lapply(1:length(testResults$expected), function(i) {
         FUN(testResults$expected[[i]], testResults$predicted[[i]])
       }))
+      
       p <- p %>% add_boxplot(y = errors, line = list(color = modelColors[[modelName]]),
                              name = modelName, boxmean = TRUE)
       
@@ -74,6 +77,59 @@ getModelErrorPlot <- function(errorMetricName, id)
   p$elementId <- NULL
   p
 }
+
+saveErrors <- function()
+{
+  filename <- paste("ModelName", "SMAPE","CPUT", '.csv', sep="")
+  x <- data.frame("ModelName", "SMAPE","CPUT")
+  write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";")
+  
+  for (modelName in vars$enabledModels)
+  {
+    
+    
+    filename <- paste(modelName, "_Error", '.csv', sep="")
+    x <- data.frame("ID", "Smape", "cpuTime")
+    write.table(x, file = filename, append = FALSE, row.names = FALSE, col.names = FALSE, sep=";")
+    ids <- vector()
+    smapes <- vector()
+    cpuTime <- vector()
+    for(id in names(vars$timeSeries))  
+    {
+      result <- getTestResults(modelName, id)
+      if(!is.na(result[1]))
+      {
+        smape <- sMAPE(result$expected, result$predicted)
+        if(!is.logical(smape[1]))
+        {
+          ids <- c(ids, id)
+          smapes <- c(smapes, smape)
+          cpu <-  getCpuTimes(modelName, id, na.rm = TRUE)
+          cpuTime <- c(cpuTime, cpu)
+          save(filename,id, sMAPE(result$expected, result$predicted), cpu)
+        }
+      }
+    }
+    x <- data.frame("SMAPE:",mean(smape),"CPUTIME:", mean(cpuTime))
+    write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";")
+    
+    filename <- paste("ModelName", "SMAPE","CPUT", '.csv', sep="")
+    x <- data.frame(modelName, mean(smape), mean(cpuTime))
+    write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";")
+  }
+}
+
+
+
+save <- function(filename, id, smape, cpuTime)
+{
+  x <- data.frame(id, smape, cpuTime)
+  write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";")
+}
+
+
+
+
 
 #' get the mean error vector from models
 #'
@@ -97,6 +153,7 @@ getErrorMetricCompare <- function(id)
 {
   comparison(id)
   
+  b = 1
   data.table(NAME = vars$enabledModels, MSE = getMeanErrorVectorFromModels(id, "mse"),
              RMSE =  getMeanErrorVectorFromModels(id, "rmse"), SMAPE = getMeanErrorVectorFromModels(id, "smape"))
 }

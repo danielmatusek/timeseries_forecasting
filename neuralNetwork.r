@@ -142,7 +142,7 @@ trainNeuralNetwork <- function(trainset, hiddenLayers = c(0), excludeVector = NU
     if(!is.logical(excludedVectorPos))
     {
       nn <- neuralnet(f, trainset, hidden = hiddenLayers, linear.output = TRUE, act.fct = identity,
-        exclude = excludedVectorPos, stepmax = 500000)
+        exclude = excludedVectorPos, stepmax = 100000)
     }
     else
     {
@@ -263,7 +263,7 @@ getNeuralNetwork <- function(id, hiddenLayers = FALSE, hlOptimization = FALSE) {
 #' @return prediction values
 testNeuralNetwork <- function(neuralNetwork, testSetID, isDiffInput = FALSE)
 {
-  testData <- if(isDiffInput){getDiffTestSet(testSetID)}else{getTestSet(testSetID)}
+  testData <- if(isDiffInput){getDiffTestSet(testSetID)[,-1]}else{getTestSet(testSetID)}
 
   compute(neuralNetwork, testData)$net.result[,1]
 }
