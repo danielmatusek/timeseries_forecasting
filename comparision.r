@@ -46,6 +46,7 @@ comparison <- function(id)
 #' @return return the plot
 getModelErrorPlot <- function(errorMetricName, id)
 {
+  
   FUN <- switch(errorMetricName,
     'smape' = { sMAPE },
     'mse' = { mse },
@@ -100,7 +101,7 @@ saveErrors <- function()
       if(!is.na(result[1]))
       {
         smape <- sMAPE(result$expected, result$predicted)
-        if(!is.logical(smape[1]))
+        if(!is.na(smape[1]))
         {
           ids <- c(ids, id)
           smapes <- c(smapes, smape)
@@ -110,11 +111,11 @@ saveErrors <- function()
         }
       }
     }
-    x <- data.frame("SMAPE:",mean(smape),"CPUTIME:", mean(cpuTime))
+    x <- data.frame("SMAPE:",mean(smape, na.rm = TRUE),"CPUTIME:",  mean(cpuTime, na.rm = TRUE))
     write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";")
     
     filename <- paste("ModelName", "SMAPE","CPUT", '.csv', sep="")
-    x <- data.frame(modelName, mean(smape), mean(cpuTime))
+    x <- data.frame(modelName, mean(smapes, na.rm = TRUE), mean(cpuTime, na.rm = TRUE))
     write.table(x, file = filename, append = TRUE, row.names = FALSE, col.names = FALSE, sep=";")
   }
 }
